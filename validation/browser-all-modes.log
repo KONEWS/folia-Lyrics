@@ -1,0 +1,23 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+npm warn Unknown project config "allow-remote". This will stop working in the next major version of npm.
+npm warn Unknown project config "onnxruntime-node-install". This will stop working in the next major version of npm.
+
+> folia-major@0.7.11 test:desktop:ui
+> node test/verify-renderers.mjs
+
+PASS acrylic / glass / minimum-window checks
+PASS 01 商籁
+PASS 02 Tempera
+PASS 03 绘光
+PASS 04 Luminous
+PASS 05 Mindscape
+PASS 06 云阶
+PASS 07 Fume
+PASS 08 Tilt
+PASS 09 Claddagh
+PASS 10 Monet
+PASS 11 Pendolo
+PASS 12 Cappella
+PASS 13 镜台
+PASS Lumiere lifecycle checks
+PASS desktop integration checks

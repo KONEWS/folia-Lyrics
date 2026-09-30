@@ -44,7 +44,7 @@ export default function DesktopLyrics() {
       <p>{title ? `已识别「${title}」 · ${state.online.message}` : '打开你常用的音乐播放器，识别歌曲后自动匹配在线歌词。'}</p>
       <div className="waiting-actions"><button className="primary-button" onClick={() => setPanel(true)}><Settings2 size={17}/>在线歌词设置</button><button disabled={state.scan.active} onClick={() => send('addFolder')}><FolderPlus size={17}/>选择音乐目录</button>
         <button onClick={() => send('import')}><FileUp size={17}/>导入歌词 / 音乐文件</button></div>
-      <div className="waiting-notes"><span>原版 12 种动效</span><i/><span>在线自动匹配</span><i/><span>本地歌词缓存</span></div>
+      <div className="waiting-notes"><span>原版 {MODES.length} 种动效</span><i/><span>在线自动匹配</span><i/><span>本地歌词缓存</span></div>
       <p className="compatibility-note">播放器需要支持 Windows 系统媒体接口。未识别时，可在设置中使用手动歌词时钟。</p></div>}</div>
     <header className="desktop-topbar"><div className="desktop-brand">Folia<span>.</span><small>桌面歌词</small></div>
       <div className="track-caption">{cover ? <img src={cover} alt="专辑封面"/> : <span className="cover-placeholder"><Music2 size={18}/></span>}<div><strong>{title || '等待音乐'}</strong><small>{artist || '跟随你的播放器'}</small></div></div>

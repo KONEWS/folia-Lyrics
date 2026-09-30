@@ -1,54 +1,47 @@
-# Folia 桌面歌词 0.4.1 验证记录
+# folia-Lyrics 0.4.2 验证记录
 
-本版修复暂停后控制目标失效、目录扫描跨线程访问 WebView2，并将名称/图标区域改为自绘透明标题栏。编译及验证在 Linux 完成，未运行真实 Windows EXE。
+验证日期：2026-09-30。源码以用户附件为基础，上游基线 v0.7.11，桌面宿主版本 0.4.2。此前用户确认解决的暂停继续、媒体绑定、目录扫描和整窗亚克力修复均保留。
 
-## 已验证
+## 本次结果
 
-| 项目 | 结果 |
+| 项目 | 结果与范围 |
 | --- | --- |
-| TypeScript | 桌面入口类型检查通过 |
-| 前端单测 | 13 项通过，3 项依赖临时线上样本的测试跳过 |
-| 原生控制与扫描逻辑 | 39 项通过，使用生产的 MediaTransport、MediaSessionBinding、UiDispatcher、LyricLibrary、LyricFiles；Windows API 和窗口事件仍由模拟输入提供 |
-| 暂停后控制 | 暂停 → 继续 → 下一首可连续执行；暂停时系统推荐另一播放应用仍保留原目标 |
-| 会话身份 | 同一 COM 身份的新包装对象保留 token；同应用唯一重建会话重新解析当前目标；歧义替换、明确换播放器、退出后重开拒绝旧命令；发送前仍校验真实歌曲快照 |
-| 扫描 | 实际临时 LRC 目录的 1 文件、45 文件扫描成功；中间和完成回调先调度到所有者线程；取消后原目录和索引不变 |
-| 线程调度 | 后台报告不读取 UI 就绪属性，调度后才检查；窗口退出与句柄销毁不会执行旧消息 |
-| 界面 | 11 项检查通过：文档透明、原生背景消息、实色/高对比回退、反光清理、减少动效、664×411 布局、设置滚动、透明标题/图标、窗口控制消息、最大化/全屏消息状态 |
-| 播放控制界面 | 10 项通过：暂停/继续/上下首、等待与 ACK、失败、能力变化、切歌旧回复隔离、小窗口、断连、无音频元素 |
-| 歌词交互 | 14 项整合检查通过，包括暂停换动效真实时间通知、偏移、倒退、沉浸、在线搜索选择和过期结果隔离 |
-| 原版动效 | 284 个 visualizer 文件与原基线源码包逐字节一致。0.4.0 已验证 12 种全部挂载；0.4.1 针对 Luminous、基础模式与更新区域验证，未重复宣称全量 12 种实测 |
-| 发布构建 | .NET 10.0.401 自带运行时的 Windows x64 单文件 WinExe，发布无错误/警告；Vite 成功，保留原模块体积提示 |
+| 上游核对 | GitHub 最新稳定发行及默认分支最新提交均为 v0.7.11，提交 `6fe68d89abb7031eb266d71fda01b36a0fa0573e`；344 个 `src/components/visualizer` 文件的 Git blob SHA-1 与上游完全一致，未改写渲染器 |
+| 桌面类型检查 | `npm run typecheck:desktop` 通过 |
+| 桌面前端单测 | 13 项通过；3 项需要临时真实在线样本的测试跳过，此次没有真实请求第三方歌词源 |
+| 绘光设置 | 上游既有设置/导入导出测试 13 项通过 |
+| 绘光与共享运行时 | 上游既有编译程序、运行时、GPU 资源释放及换歌交接测试 67 项通过；部分环境使用隔离替身 |
+| 原生控制与扫描 | 既有生产逻辑检查 39 项通过，媒体会话与 Windows UI 调度使用替身，目录扫描使用真实临时文件 |
+| 动态样式 | 13 种全部挂载成功，无页面/控制台错误；设置显示的数量与实际按钮数量一致，包含绘光；still 不属于桌面动态样式列表 |
+| 绘光暂停与继续 | 暂停挂载后 Canvas 非零尺寸，像素与时钟保持；继续后像素变化、时钟推进；再次暂停后画面保持 |
+| 绘光缩放与换歌 | 暂停时缩放 Canvas 尺寸跟随窗口；换歌清除旧 Canvas，新歌词只挂载一个 Canvas；标题及时间正确更新 |
+| 绘光卸载 | 3 次来回切换均移除旧 Canvas、调用 ResizeObserver.disconnect 及 WebGL 资源删除；同时以源码检查确认 ticker、场景缓存、纹理、filter 和 Pixi Application 清理路径。没有进行长时间内存曲线实测 |
+| 桌面界面与桥接 | 11 项外观检查、10 项控制检查及既有歌词交互检查通过，包括小窗口、亚克力回退、在线手动选择、过期回复隔离、偏移和倒退 |
+| 前端生产构建 | `npm run build:desktop` 通过。保留上游的大模块/混合静态与动态导入提示，不影响本次构建 |
+| Windows 发布编译 | .NET SDK 10.0.401 发布 Windows x64、自带 .NET 的单文件 GUI EXE；发布无编译错误或警告。**未启动真实 Windows EXE** |
 
-浏览器验证使用 Chromium 153、生产构建、模拟 WebView 消息与软件 WebGL。原生逻辑测试模拟系统会话和 UI 消息队列，不等同于真实 WinRT、WebView2 或 Windows 窗口验证。目录测试使用真实文件读取和生产扫描器，但索引持久化使用隔离测试替身。
+浏览器检查使用 Chromium 153、生产构建、模拟 WebView2 消息及软件 WebGL。Canvas 像素检查证明当前浏览器场景中的停止/恢复行为，不能保证真实显卡性能；资源释放检查不等同于长时间零泄漏证明。普通 LRC 测试仅验证逐行同步，不宣称精准逐字时间轴。
 
-## Windows 实机仍需确认
+## Windows 实机验证边界
 
-椒盐音乐实际公开的会话/控制能力、暂停重建行为、进度同步；WinRT 指针获取与 COM 身份映射；WebView2 在真实 STA 的跨线程投递；原生 DWM 亚克力、透明开关和主题切换；自绘标题栏的拖动、双击、边缘缩放、最大化工作区、多屏/DPI、最小化恢复和 F11；鼠标穿透、托盘快捷键与 WASAPI。
+本次环境为 Linux，无 Windows 实机。椒盐音乐实际公开的会话/控制能力、进度同步与暂停重建，真实 WinRT/COM 和 WebView2 STA 线程行为，DWM 亚克力/主题变更、多屏/DPI、标题栏拖动缩放、鼠标穿透、托盘热键和 WASAPI 均未在本次实机复验。
 
-当前证据足以说明源码缺陷已修正和构建已完成，不能据此保证椒盐音乐所有版本实机兼容。发生问题时提供本地 `media.log` 与 `errors.log`；媒体日志有大小上限，不记录歌词正文或音频。
+这些是验证环境的边界，不是把用户已确认解决的问题重新列为待修任务。四个在线歌词适配、缓存、手动选择、本地优先与请求取消逻辑沿用附件；此轮不宣称第三方服务实时可用。
 
-## 证据及重现
-
-- `validation/repair-ui-0.4.1.json`
-- `validation/media-controls-native-0.4.1.json`
-- `validation/build-0.4.1.json`、`validation/executable-sha256.txt`
-- 历史完整动效验证：`validation/v0.4.0-VALIDATION.md`、`validation/acrylic-ui.json`
+## 重现
 
 ```sh
+npm ci --ignore-scripts --no-audit --no-fund
 npm run typecheck:desktop
 npm run test:desktop
+npm run test:unit -- test/unit/visualizer/lumiereSettings.test.ts test/unit/visualizer/lumiere/lumiereProgram.test.ts test/unit/visualizer/lumiere/lumiereRuntime.test.ts test/unit/visualizer/lumiere/lumiereGpuRelease.test.ts test/unit/visualizer/songHandover.test.ts
 dotnet run --project test/transport-smoke/TransportSmoke.csproj
 npm run build:desktop
-FOLIA_MODE_INDEX=2 node test/verify-renderers.mjs
+npm run test:desktop:ui
+node tools/package-web.mjs
+dotnet publish native/FoliaLyrics.csproj -c Release -r win-x64 --self-contained true -o release/win-x64
 ```
 
-可用 `FOLIA_CHROMIUM_PATH` 指定 Chromium。Windows 执行 `build-windows.cmd` 重新构建。
+浏览器检查需要 Playwright Chromium；可用 `FOLIA_CHROMIUM_PATH` 指向本机 Chromium。`FOLIA_MODE_INDEX=2` 可只进行绘光挂载及完整交互检查，默认遍历实际全部动态样式。时钟检查按 Luminous 名称定位，避免新增模式改变序号后选择错误模式。
 
-## 原生 API 依据
-
-- https://learn.microsoft.com/en-us/microsoft-edge/webview2/concepts/threading-model
-- https://learn.microsoft.com/en-us/windows/win32/com/rules-for-implementing-queryinterface
-- https://learn.microsoft.com/en-us/windows/win32/dwm/customframe
-- https://learn.microsoft.com/en-us/windows/win32/api/dwmapi/ne-dwmapi-dwm_systembackdrop_type
-
-四个在线歌词来源沿用此前实现，本版不改变匹配协议。其真实请求验证范围见 `ONLINE-SOURCES.md` 与历史验证记录。
+Windows 可直接运行 `build-windows.cmd`。证据见 `validation/`：上游指纹核对、测试与构建日志、完整浏览器检查 JSON、绘光截图以及 EXE 的 SHA-256。浏览器检查 JSON 中的共享交互覆盖项不是每项各一条独立单测。

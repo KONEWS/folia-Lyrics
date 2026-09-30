@@ -1,0 +1,118 @@
+{
+  "modes": [
+    {
+      "mode": "01 商籁",
+      "mounted": true,
+      "consoleErrors": 0
+    },
+    {
+      "mode": "02 Tempera",
+      "mounted": true,
+      "consoleErrors": 0
+    },
+    {
+      "mode": "03 绘光",
+      "mounted": true,
+      "consoleErrors": 0
+    },
+    {
+      "mode": "04 Luminous",
+      "mounted": true,
+      "consoleErrors": 0
+    },
+    {
+      "mode": "05 Mindscape",
+      "mounted": true,
+      "consoleErrors": 0
+    },
+    {
+      "mode": "06 云阶",
+      "mounted": true,
+      "consoleErrors": 0
+    },
+    {
+      "mode": "07 Fume",
+      "mounted": true,
+      "consoleErrors": 0
+    },
+    {
+      "mode": "08 Tilt",
+      "mounted": true,
+      "consoleErrors": 0
+    },
+    {
+      "mode": "09 Claddagh",
+      "mounted": true,
+      "consoleErrors": 0
+    },
+    {
+      "mode": "10 Monet",
+      "mounted": true,
+      "consoleErrors": 0
+    },
+    {
+      "mode": "11 Pendolo",
+      "mounted": true,
+      "consoleErrors": 0
+    },
+    {
+      "mode": "12 Cappella",
+      "mounted": true,
+      "consoleErrors": 0
+    },
+    {
+      "mode": "13 镜台",
+      "mounted": true,
+      "consoleErrors": 0
+    }
+  ],
+  "appearanceChecks": [
+    "transparent document",
+    "native acrylic handshake",
+    "solid fallback",
+    "high contrast handshake",
+    "pointer cleanup",
+    "reduced motion",
+    "664x411 layout",
+    "settings scroll without covering transport",
+    "transparent title and icon",
+    "native caption and resize commands",
+    "maximized and fullscreen caption state"
+  ],
+  "transportChecks": [
+    "pause/play/previous/next IPC target",
+    "pending disables duplicate controls",
+    "ACK waits for real session state",
+    "provider rejection shown",
+    "capability changes disable buttons",
+    "old command result ignored after track change",
+    "new track loads new lyrics",
+    "680px controls visible",
+    "connection failure disables controls",
+    "no audio/video output"
+  ],
+  "lumiereChecks": [
+    "paused mount creates a nonzero canvas and freezes its pixels and lyric clock",
+    "resume advances pixels and clock; pause freezes again",
+    "paused resize updates canvas dimensions",
+    "track change removes old canvas and mounts exactly one canvas for new lyrics",
+    "three mode-switch cycles disconnect observers, delete GPU resources and keep one canvas"
+  ],
+  "checks": [
+    "host handshake",
+    "mode mounts",
+    "paused mode switch initializes visible lyric without advancing time",
+    "offset",
+    "preference messages",
+    "pause",
+    "backward seek",
+    "immersion",
+    "no media element",
+    "track change clears lyrics",
+    "online source controls",
+    "manual search and selection",
+    "untimed result disabled",
+    "stale song and search results ignored"
+  ],
+  "errors": []
+}

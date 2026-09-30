@@ -21,7 +21,7 @@ export default function ControlPanel(p: Props) {
   const toggleClock = () => p.setManual(old => ({ ...old, playing: !old.playing, position: clockPosition(EMPTY, performance.now(), old), received: performance.now() }));
   return <aside className="control-panel" aria-label="歌词设置">
     <div className="panel-heading"><div><span>歌词设置</span><small>让音乐，以你喜欢的方式呈现</small></div><button aria-label="关闭设置" onClick={p.onClose}><X size={18}/></button></div>
-    <section><div className="section-label">歌词动效 <span>12 种</span></div><div className="effect-grid">{MODES.map((entry, i) => <button key={entry.mode}
+    <section><div className="section-label">歌词动效 <span>{MODES.length} 种</span></div><div className="effect-grid">{MODES.map((entry, i) => <button key={entry.mode}
       className={`effect ${p.mode === entry.mode ? 'active' : ''}`} aria-pressed={p.mode === entry.mode} onClick={() => p.onMode(entry.mode)}>
       <small>{String(i + 1).padStart(2, '0')}</small><span>{entry.labelFallback}</span></button>)}</div></section>
     <OnlineLyricsPanel session={p.session} preferences={p.preferences} online={p.online}/>
@@ -47,6 +47,6 @@ export default function ControlPanel(p: Props) {
       <label className="toggle"><span>跟随系统声音变化</span><input type="checkbox" checked={p.preferences.audioReactive} onChange={e => send('audioReactive', e.target.checked)}/></label>
       <p className="hint">{p.audioStatus}。仅在内存中分析默认输出设备的混合声音。</p><button className="wide-button" onClick={() => send('clickThrough')}>启用鼠标穿透</button>
       <p className="hint">Ctrl + Alt + L 或双击托盘图标恢复操作。F11 切换全屏。</p></section>
-    <footer className="panel-footer">Folia 桌面歌词 · 0.4.1<br/>基于 Folia Major 原版动效 · AGPL-3.0</footer>
+    <footer className="panel-footer">Folia 桌面歌词 · 0.4.2<br/>基于 Folia Major 原版动效 · AGPL-3.0</footer>
   </aside>;
 }
