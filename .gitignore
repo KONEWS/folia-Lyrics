@@ -85,3 +85,14 @@ __pycache__/
 
 # Built by build/buildPythonRuntime.mjs - binary artifacts that live on the mirrors, not in git.
 dist-runtime/
+# Folia Desktop Lyrics generated outputs
+dist-desktop/
+native/bin/
+native/obj/
+native/release/
+native/web-assets.zip
+release/win-x64/
+test-results/desktop/
+test-results/desktop-playback/
+test/transport-smoke/bin/
+test/transport-smoke/obj/

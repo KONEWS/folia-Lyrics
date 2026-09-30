@@ -1,0 +1,1 @@
+{"extends":"./tsconfig.json","include":["src/desktopLyrics","src/vite-env.d.ts"],"exclude":["node_modules","dist-desktop","native","test"]}

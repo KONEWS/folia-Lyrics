@@ -2,7 +2,7 @@
   "name": "folia-major",
   "productName": "Folia",
   "desktopName": "folia-major.desktop",
-  "description": "Lyrics Reimagine",
+  "description": "Folia lyrics application plus the Folia Desktop Lyrics external-player display",
   "author": {
     "name": "chthollyphile",
     "email": "chthollyphile@users.noreply.github.com"
@@ -56,7 +56,11 @@
     "contributors:add": "npx all-contributors-cli add",
     "contributors:generate": "npx all-contributors-cli generate",
     "models:fetch": "node build/fetchModels.mjs",
-    "manual:ai-probe": "node test/manual/ai_probe.mjs"
+    "manual:ai-probe": "node test/manual/ai_probe.mjs",
+    "build:desktop": "vite build --config vite.desktop.config.ts",
+    "typecheck:desktop": "tsc -p tsconfig.desktop.json --noEmit",
+    "test:desktop": "vitest run -c vitest.desktop.config.ts",
+    "test:desktop:ui": "node test/verify-renderers.mjs"
   },
   "build": {
     "appId": "top.izuna.foliamajor",
