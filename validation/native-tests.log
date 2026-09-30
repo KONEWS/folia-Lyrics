@@ -1,0 +1,40 @@
+PASS routes play only to selected target
+PASS routes pause only to selected target
+PASS routes previous only to selected target
+PASS routes next only to selected target
+PASS toggle-only player supports play
+PASS fresh play state is idempotent
+PASS toggle-only player supports pause
+PASS fresh pause state is idempotent
+PASS unsupported operation never sent
+PASS stale song never controlled
+PASS replaced session never controlled
+PASS disconnected player rejected
+PASS source change during async lookup blocks dispatch
+PASS rapid clicks rejected without a stale queue
+PASS completed operation unlocks controls
+PASS player rejection is reported
+PASS native exception is reported
+PASS unrecognized actions rejected
+PASS deadline cancels lookup and does not dispatch
+PASS shutdown prevents dispatch
+PASS fresh managed wrapper keeps native session token on pause
+PASS paused player stays bound when another app becomes current and playing
+PASS unique player session recreation resolves fresh target before next poll
+PASS unique same-app recreation preserves paused control token
+PASS ambiguous same-app replacement cannot receive an old command
+PASS explicit player change invalidates old command
+PASS closed player clears binding
+PASS player reopening after observed disconnect receives new token
+PASS worker progress marshals before touching any UI property
+PASS UI readiness is read only on owning thread
+PASS WebView message is sent only on owning thread
+PASS marshalled scan progress reaches UI
+PASS UI readiness is read only on owning thread
+PASS queued send is discarded after window disposal
+PASS handle destruction while queueing does not crash scanner
+PASS pause then resume then next remains controllable
+PASS one-file directory scan completes and saves its index
+PASS 45-file scan marshals intermediate and final progress and commits index
+PASS cancelled scan preserves prior folders and lyric index
+39 checks passed

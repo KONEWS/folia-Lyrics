@@ -5,6 +5,7 @@ import { resolve, extname, sep } from 'node:path';
 import assert from 'node:assert/strict';
 import { verifyTransport } from './verify-transport.mjs';
 import { verifyAppearance } from './verify-appearance.mjs';
+import { verifyLumiere } from './verify-lumiere.mjs';
 
 // test/verify-renderers.mjs
 const root = resolve('dist-desktop');
@@ -77,8 +78,12 @@ try {
   await page.locator('.waiting-screen').waitFor({ state: 'detached' });
   await page.getByRole('button', { name: '打开歌词设置' }).click();
   const modes = page.locator('button.effect');
-  assert(await modes.count() >= 12, `expected Folia's 12 original modes, found ${await modes.count()}`);
-  for (let i = 0; i < 12; i++) {
+  const modeCount = await modes.count();
+  assert(modeCount > 0, 'registry must expose dynamic modes');
+  assert.equal((await page.locator('.section-label').first().innerText()).replace(/\s+/g, ' '), `歌词动效 ${modeCount} 种`);
+  assert.equal(await modes.filter({ hasText: '绘光' }).count(), 1);
+  const clockMode = modes.filter({ hasText: 'Luminous' });
+  for (let i = 0; i < modeCount; i++) {
     if (singleMode !== undefined && i !== Number(singleMode)) continue;
     const label = (await modes.nth(i).innerText()).replace(/\n/g, ' ');
     await modes.nth(i).click();
@@ -86,15 +91,16 @@ try {
     assert.equal(await modes.nth(i).getAttribute('aria-pressed'), 'true');
     assert.equal(await page.getByText('这个动效暂时无法显示', { exact: false }).count(), 0);
     assert.equal(errors.length, 0, errors.join('\n'));
-    if (i === 2 && !process.env.FOLIA_TEST_LRC && !onlinePacket) {
+    if (!process.env.FOLIA_TEST_LRC && !onlinePacket) {
       assert.match(await page.locator('.clock-readout').innerText(), /^0:36/);
     }
     await page.screenshot({ path: `${output}/mode-${String(i + 1).padStart(2, '0')}.png`, timeout: 90000 });
     results.push({ mode: label, mounted: true, consoleErrors: 0 });
     console.log('PASS', label);
   }
+  const lumiereChecks = await verifyLumiere(page, song, output);
   // Exercise real frame updates with a mocked external player, then freeze the lyric on pause.
-  await modes.nth(0).click();
+  await clockMode.click();
   await page.getByRole('button', { name: '关闭设置' }).click();
   await page.evaluate(song => {
     const start = performance.now();
@@ -105,11 +111,11 @@ try {
   }, song);
   await page.waitForFunction(() => !document.querySelector('.clock-readout')?.textContent?.startsWith('0:36'));
   await page.waitForTimeout(1800);
-  await page.screenshot({ path: `${output}/sonnet-playing.png` });
+  await page.screenshot({ path: `${output}/desktop-playing.png` });
   await page.evaluate(song => { clearInterval(window.__foliaClockTimer); window.__foliaEmit('session', song); }, song);
   await page.getByRole('button', { name: '打开歌词设置' }).click();
   // Use the lightweight renderer for clock assertions: software WebGL can stall animation frames.
-  await modes.nth(2).click();
+  await clockMode.click();
   await page.getByRole('checkbox', { name: '自动匹配在线歌词', exact: true }).uncheck();
   assert(await page.getByRole('checkbox', { name: '启用QQ 音乐歌词源' }).isDisabled());
   await page.getByRole('checkbox', { name: '自动匹配在线歌词', exact: true }).check();
@@ -160,7 +166,7 @@ try {
   assert.equal(await page.locator('.waiting-screen').count(), 1);
   assert(!(await page.locator('.status-left').innerText()).includes('stale'));
   assert.equal(errors.length, 0, errors.join('\n'));
-  await writeFile(`${output}/results.json`, JSON.stringify({ modes: results, appearanceChecks, transportChecks, checks: ['host handshake','mode mounts','paused mode switch initializes visible lyric without advancing time','offset','preference messages','pause','backward seek','immersion','no media element','track change clears lyrics','online source controls','manual search and selection','untimed result disabled','stale song and search results ignored'], errors }, null, 2));
+  await writeFile(`${output}/results.json`, JSON.stringify({ modes: results, appearanceChecks, transportChecks, lumiereChecks, checks: ['host handshake','mode mounts','paused mode switch initializes visible lyric without advancing time','offset','preference messages','pause','backward seek','immersion','no media element','track change clears lyrics','online source controls','manual search and selection','untimed result disabled','stale song and search results ignored'], errors }, null, 2));
   console.log('PASS desktop integration checks');
 } finally {
   await browser.close(); await new Promise(r => server.close(r));

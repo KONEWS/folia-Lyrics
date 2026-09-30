@@ -1,8 +1,13 @@
-# Folia 桌面歌词 0.4.1
+# folia-Lyrics 0.4.2
 
 Windows 歌词显示器，自身不播放音频。使用 Windows GSMTC 获取其他播放器公开的歌曲和进度，使用 WASAPI 默认输出设备的混合声音驱动原版歌词动效。
 
-## 0.4.1 修复
+## 0.4.2 更新
+- 桌面设置与等待界面的动态样式数量由注册表自动计数；当前为 13 种，包含绘光 Lumiere。still 是上游静止模式，不计入桌面动态样式。
+- 修正上游基线、.NET SDK 和构建输出说明；保留原版渲染器与共享运行时。
+- 当前验证结果见 VALIDATION.md。
+
+## 已保留的 0.4.1 修复（用户已确认解决）
 - 暂停时保持原播放器绑定，不因其他应用正在播放而自动转移控制目标。用 COM 原生身份识别会话；同一应用重建会话时，只对唯一候选重新绑定，发送操作前仍核对真实歌曲信息。
 - 继续播放、上下首使用重新解析的当前会话；明确更换播放器、实际断开或歧义会话仍拦截旧命令。
 - 扫描进度先切回 UI 线程，再读取任何 WebView2 属性。取消扫描不覆盖原目录和索引；文件对话框与窗口移动循环在 WebView 回调退出后执行。
@@ -16,14 +21,14 @@ Windows 歌词显示器，自身不播放音频。使用 Windows GSMTC 获取其
 - 名称图标与窗口按钮进入透明客户区，整窗使用同一原生亚克力背景。F11、鼠标穿透恢复和系统主题变更时重新应用背景。
 - 小窗口中设置面板独立滚动，底部播放控制保持可见；尊重系统减少动态效果设置。指针反光只在移动时更新，不驱动歌词组件逐帧重渲染。
 - 修正暂停时切换部分动效可能空白的问题：桌面时钟将真实时间戳提供给新订阅的动效，不推进暂停中的播放进度，不修改原版渲染器。
-- 保留 12 种原版动效、四源在线歌词以及外部播放器控制。
+- 保留 13 种原版动效、四源在线歌词以及外部播放器控制。
 
 ## 使用
 1. 在常用播放器中播放音乐，再打开 FoliaLyrics.exe。
 2. 识别到歌名、歌手和进度后，自动从启用的在线歌词源匹配；已有本地歌词或缓存时优先使用。
 3. 不准确时，进入设置的“在线歌词”，修改歌名/歌手搜索并点击合适版本，选择会自动记住。也可添加音乐目录，或导入带内嵌歌词的音乐文件及 LRC / TTML / YRC / QRC / FIA。
 4. 底部三个按钮控制外部播放器的上一首、暂停/继续、下一首；切歌后自动匹配新歌词。
-5. 右上角设置切换 12 种动效、译文、时间微调、窗口置顶和声音响应。
+5. 右上角设置切换 13 种动效、译文、时间微调、窗口置顶和声音响应。
 6. F11 全屏；Esc 恢复控制栏。开启鼠标穿透后，Ctrl+Alt+L 或双击托盘图标恢复。
 
 ## 兼容性与边界
@@ -65,12 +70,13 @@ Windows 歌词显示器，自身不播放音频。使用 Windows GSMTC 获取其
 npm ci --ignore-scripts --no-audit --no-fund
 npm run typecheck:desktop
 npm run build:desktop
+npm run test:desktop
 node tools/package-web.mjs
 dotnet publish native/FoliaLyrics.csproj -c Release -r win-x64 --self-contained true -o release/win-x64
 ```
 
 ## 来源
-原版 visualizer 源码来自 https://github.com/chthollyphile/folia-major ，基线 481805873a0b04ca6277dd21c0968ab1e1c4ab02（0.7.9）。src/components/visualizer 目录不作改写。新增适配位于 native 与 src/desktopLyrics，src/index.css 的网络字体路径调整为离线文件。本项目是独立衍生版本，不是官方发行版，按 AGPL-3.0 提供完整源码，见 LICENSE。
+原版 visualizer 源码来自 https://github.com/chthollyphile/folia-major ，基线 6fe68d89abb7031eb266d71fda01b36a0fa0573e（v0.7.11）。src/components/visualizer 目录不作改写。新增适配位于 native 与 src/desktopLyrics，src/index.css 的网络字体路径调整为离线文件。本项目是独立衍生版本，不是官方发行版，按 AGPL-3.0 提供完整源码，见 LICENSE。
 
 第三方：.NET / NAudio 使用 MIT 等许可；TagLibSharp 2.3.0 使用 LGPL-2.1，可通过提供的工程替换依赖并重新编译；WebView2 SDK 按微软许可使用；Noto 中日文字体使用 SIL OFL。相应许可证见 licenses 目录。保留 npm 锁文件以记录其余 Folia 依赖；第三方许可证汇编见 licenses/npm-bundled-NOTICES.txt。本源码包不含用户音乐音频。
 

@@ -1,0 +1,16 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+npm warn Unknown project config "allow-remote". This will stop working in the next major version of npm.
+npm warn Unknown project config "onnxruntime-node-install". This will stop working in the next major version of npm.
+
+> folia-major@0.7.11 test:desktop
+> vitest run -c vitest.desktop.config.ts
+
+
+ RUN  v4.1.11 /workspace/scratch/0c595ff4984a/folia-Lyrics
+
+
+ Test Files  1 passed | 1 skipped (2)
+      Tests  13 passed | 3 skipped (16)
+   Start at  20:43:16
+   Duration  1.01s (transform 618ms, setup 0ms, import 1.12s, tests 31ms, environment 0ms)
+

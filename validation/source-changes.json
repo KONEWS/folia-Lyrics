@@ -1,0 +1,37 @@
+{
+  "originalFiles": 2292,
+  "changedFiles": [
+    "README-DESKTOP.md",
+    "README.md",
+    "VALIDATION.md",
+    "native/FoliaLyrics.csproj",
+    "native/Online/OnlineHttp.cs",
+    "src/desktopLyrics/ControlPanel.tsx",
+    "src/desktopLyrics/DesktopLyrics.tsx",
+    "test/verify-renderers.mjs"
+  ],
+  "newFiles": [
+    "CHANGELOG-DESKTOP.md",
+    "test/verify-lumiere.mjs",
+    "validation/browser-all-modes.log",
+    "validation/browser-focused.log",
+    "validation/desktop-tests.log",
+    "validation/desktop-ui-0.4.2.json",
+    "validation/desktop-ui-focused-0.4.2.json",
+    "validation/executable-sha256.txt",
+    "validation/frontend-build.log",
+    "validation/lumiere-paused.png",
+    "validation/lumiere-resized.png",
+    "validation/lumiere-runtime-tests.log",
+    "validation/lumiere-settings-tests.log",
+    "validation/lumiere-track-change.png",
+    "validation/native-tests.log",
+    "validation/source-changes.json",
+    "validation/typecheck.log",
+    "validation/upstream-0.7.11.json",
+    "validation/windows-publish.log"
+  ],
+  "upstreamVersion": "v0.7.11",
+  "desktopVersion": "0.4.2",
+  "githubUploaded": false
+}
