@@ -1,0 +1,37 @@
+/* src/desktopLyrics/topbar.css — compact song-first controls on the shared liquid-glass surface. */
+.desktop-topbar-shell{--topbar-padding:18px;--topbar-button:36px;position:absolute;z-index:20;top:48px;left:24px;right:24px;height:66px;pointer-events:none}
+.desktop-topbar-shell .desktop-topbar{position:static;width:100%;height:100%;pointer-events:auto}
+.immersive .desktop-topbar-shell .desktop-topbar{pointer-events:none}
+.immersive.top-controls-revealed:not(.native-fullscreen) .desktop-topbar-shell .desktop-topbar{pointer-events:auto}
+.immersive-toggle-slot{flex:none;width:var(--topbar-button);height:var(--topbar-button)}
+.desktop-topbar-shell .restore-controls{display:grid;right:calc(var(--topbar-padding) + 1px);top:calc((100% - var(--topbar-button))/2);width:var(--topbar-button);height:var(--topbar-button);padding:0;z-index:21;opacity:1;pointer-events:auto;backdrop-filter:blur(20px) saturate(1.25)}
+.cursor-idle .desktop-topbar-shell .restore-controls,.immersive.immersive-toggle-idle .desktop-topbar-shell .restore-controls{opacity:0;visibility:hidden;pointer-events:none}
+.desktop-topbar.desktop-topbar-compact{gap:14px;padding:0 18px;border-radius:999px}
+.desktop-topbar-compact .track-caption{flex:1;max-width:none;min-width:0;border-left:0;padding-left:0;gap:11px}
+.desktop-topbar-compact .track-caption strong{font-size:14px;color:var(--glass-text)}
+.desktop-topbar-compact .track-caption small{color:var(--glass-muted)}
+.desktop-topbar-compact .track-caption img,.desktop-topbar-compact .cover-placeholder{border-color:var(--glass-line);width:42px;height:42px;border-radius:12px}
+.desktop-topbar-compact .cover-placeholder{color:var(--glass-muted);background:color-mix(in srgb,var(--glass-text) 7%,transparent)}
+.desktop-topbar-compact .connection-pill{color:var(--glass-muted);border-color:var(--glass-line);background:color-mix(in srgb,var(--glass-text) 3%,transparent);font-size:9px;padding:7px 9px}
+.desktop-topbar-compact .topbar-mode-picker{display:flex;position:relative;align-items:center;gap:6px;flex:none;height:36px;padding:0 10px;border:1px solid var(--glass-line);border-radius:99px;background:color-mix(in srgb,var(--glass-text) 5%,transparent);box-shadow:inset 0 1px 0 color-mix(in srgb,var(--glass-text) 9%,transparent);color:var(--glass-text)}
+.topbar-mode-picker>span{font-size:10px;color:var(--glass-muted)}
+.desktop-topbar-compact .topbar-mode-picker select{appearance:none;width:74px;min-width:0;padding:6px 14px 6px 0;border:0;background:transparent;color:var(--glass-text);font-size:11px;cursor:pointer}
+.topbar-mode-picker select option{color:var(--glass-text);background:var(--cover-background,#263544)}
+.topbar-mode-picker .topbar-mode-chevron{position:absolute;right:10px;pointer-events:none;color:var(--glass-muted)}
+.desktop-topbar-compact .topbar-actions{gap:6px;flex:none}
+.desktop-topbar-compact .icon-button{color:var(--glass-text);border-color:var(--glass-line);background:color-mix(in srgb,var(--glass-text) 5%,transparent)}
+.desktop-topbar-compact .icon-button.selected{color:var(--glass-text);background:color-mix(in srgb,var(--glass-text) 13%,transparent);border-color:color-mix(in srgb,var(--glass-text) 40%,transparent)}
+.desktop-topbar-compact .icon-button:hover:not(:disabled){border-color:color-mix(in srgb,var(--glass-text) 50%,transparent);background:color-mix(in srgb,var(--glass-text) 10%,transparent)}
+@media(max-width:1050px){.desktop-topbar-compact .connection-pill{display:none}.desktop-topbar.desktop-topbar-compact{gap:12px}}
+@media(max-width:850px){.desktop-topbar-shell{--topbar-padding:14px;top:44px;left:16px;right:16px;height:60px}}
+@media(max-width:640px){.desktop-topbar-shell{--topbar-padding:12px;--topbar-button:32px}}
+@media(max-width:520px){.desktop-topbar-shell{--topbar-padding:10px;--topbar-button:28px}.desktop-topbar-shell .restore-controls svg{width:15px;height:15px}}
+@media(max-width:850px){.desktop-topbar.desktop-topbar-compact{gap:10px;padding:0 14px}.desktop-topbar-compact .track-caption{gap:9px}.desktop-topbar-compact .track-caption img,.desktop-topbar-compact .cover-placeholder{width:36px;height:36px;border-radius:10px}.desktop-topbar-compact .track-caption strong{font-size:12px}.topbar-mode-picker>span{display:none}.desktop-topbar-compact .topbar-mode-picker{gap:5px;padding:0 9px}.desktop-topbar-compact .topbar-mode-picker select{width:65px;font-size:10px}.desktop-topbar-compact .topbar-actions{gap:5px}}
+@media(max-width:640px){.desktop-topbar.desktop-topbar-compact{gap:8px;padding:0 12px}.desktop-topbar-compact .icon-button{width:32px;height:32px}.desktop-topbar-compact .topbar-mode-picker{height:32px}.desktop-topbar-compact .track-caption{gap:8px}.desktop-topbar-compact .track-caption img,.desktop-topbar-compact .cover-placeholder{width:32px;height:32px}.desktop-topbar-compact .track-caption small{font-size:9px}.desktop-topbar-compact .icon-button svg{width:16px;height:16px}}
+@media(max-width:520px){.desktop-topbar.desktop-topbar-compact{gap:7px;padding:0 10px}.desktop-topbar-compact .topbar-actions{gap:4px}.desktop-topbar-compact .icon-button{width:28px;height:28px}.desktop-topbar-compact .icon-button svg{width:15px;height:15px}.desktop-topbar-compact .topbar-mode-picker{height:29px;padding:0 8px;gap:4px}.desktop-topbar-compact .topbar-mode-picker select{width:57px}.desktop-topbar-compact .track-caption{gap:7px}.desktop-topbar-compact .track-caption img,.desktop-topbar-compact .cover-placeholder{width:30px;height:30px}.desktop-topbar-compact .track-caption strong{font-size:11px}}
+.high-contrast .desktop-topbar-compact :is(.topbar-mode-picker,.icon-button,.icon-button.selected){background:ButtonFace;color:ButtonText;border-color:ButtonText;box-shadow:none}
+.high-contrast .desktop-topbar-compact :is(.track-caption strong,.track-caption small,.cover-placeholder,.connection-pill,.topbar-mode-picker>span,.topbar-mode-chevron){color:CanvasText}
+.high-contrast .topbar-mode-picker select,.high-contrast .topbar-mode-picker select option{background:ButtonFace;color:ButtonText}
+.high-contrast .desktop-topbar-compact .icon-button.selected{border:3px double ButtonText}
+@media(forced-colors:active){.desktop-topbar-compact :is(.topbar-mode-picker,.icon-button,.icon-button.selected){background:ButtonFace;color:ButtonText;border-color:ButtonText;box-shadow:none}.desktop-topbar-compact .topbar-mode-picker select,.desktop-topbar-compact .topbar-mode-picker select option{background:ButtonFace;color:ButtonText}}
+@media(forced-colors:active){.desktop-topbar-compact .icon-button.selected{border:3px double ButtonText}}

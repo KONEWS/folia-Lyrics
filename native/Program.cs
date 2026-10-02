@@ -1,6 +1,4 @@
-using System.IO.Compression;
 using System.Reflection;
-using System.Security.Cryptography;
 using System.Text.Json;
 
 // native/Program.cs
@@ -36,21 +34,10 @@ internal static class DataFiles
     }
     public static string Assets()
     {
-        using var input = Assembly.GetExecutingAssembly().GetManifestResourceStream("FoliaLyrics.web-assets.zip") ?? throw new IOException("缺少界面资源");
-        using var bytes = new MemoryStream(); input.CopyTo(bytes);
-        var hash = Convert.ToHexString(SHA256.HashData(bytes.ToArray()))[..16];
-        var folder = Path.Combine(Root, "web", hash);
-        if (File.Exists(Path.Combine(folder, ".ready"))) return folder;
-        Directory.CreateDirectory(folder); bytes.Position = 0;
-        using var zip = new ZipArchive(bytes); zip.ExtractToDirectory(folder, true);
-        File.WriteAllText(Path.Combine(folder, ".ready"), hash); return folder;
+        var assembly = Assembly.GetExecutingAssembly();
+        using var version = assembly.GetManifestResourceStream("FoliaLyrics.web-assets.sha256") ?? throw new IOException("缺少界面资源版本");
+        using var reader = new StreamReader(version);
+        return DesktopAssets.Resolve(Root, reader.ReadToEnd().Trim(),
+            () => assembly.GetManifestResourceStream("FoliaLyrics.web-assets.zip") ?? throw new IOException("缺少界面资源"));
     }
-}
-internal sealed class Preferences
-{
-    public bool Topmost { get; set; }
-    public bool AudioReactive { get; set; } = true;
-    public string Source { get; set; } = "";
-    public bool OnlineEnabled { get; set; } = true;
-    public string[] OnlineProviders { get; set; } = ["kugou", "qq", "netease", "lrclib"];
 }

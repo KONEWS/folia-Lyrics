@@ -1,13 +1,15 @@
-import React, { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useId } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import { Theme } from '../../types';
 import {
     CustomSelectMenu,
-    type CustomSelectMenuPosition,
     type CustomSelectOption,
 } from './CustomSelectMenu';
+import { useCustomSelectPosition } from './useCustomSelectPosition';
+import { useCustomSelectKeyboard } from './useCustomSelectKeyboard';
+import type { CustomSelectMenuNavigation } from './useCustomSelectOptionFocus';
 
 // CustomSelect.tsx
 // A custom dropdown select component designed to replace the browser's default select element.
@@ -24,12 +26,14 @@ interface CustomSelectProps {
     disabled?: boolean;
     isDaylight?: boolean;
     theme?: Theme;
+    className?: string;
+    menuClassName?: string;
+    menuMinWidth?: number;
+    getPortalContainer?: () => HTMLElement | null;
+    getClipElement?: () => HTMLElement | null;
+    getAnchorElement?: () => HTMLElement | null;
+    keyboardNavigation?: boolean;
 }
-
-const DROPDOWN_GAP = 4;
-const DROPDOWN_VIEWPORT_GUTTER = 8;
-const DROPDOWN_MAX_HEIGHT = 240;
-const DROPDOWN_MIN_PREFERRED_HEIGHT = 160;
 
 export const CustomSelect: React.FC<CustomSelectProps> = ({
     value,
@@ -41,54 +45,28 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
     disabled = false,
     isDaylight = false,
     theme,
+    className,
+    menuClassName,
+    menuMinWidth = 0,
+    getPortalContainer,
+    getClipElement,
+    getAnchorElement,
+    keyboardNavigation = false,
 }) => {
     const [isOpen, setIsOpen] = useState(false);
-    const [dropdownPosition, setDropdownPosition] = useState<CustomSelectMenuPosition | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const menuRef = useRef<HTMLDivElement>(null);
+    const menuNavigation = useRef<CustomSelectMenuNavigation | null>(null);
+    const triggerRef = useRef<HTMLButtonElement>(null);
+    const menuId = useId();
+    const close = useCallback(() => { menuNavigation.current?.cancelFocus(); setIsOpen(false); }, []);
+    const show = () => { if (!disabled) { onOpen?.(); setIsOpen(true); } };
 
     // Positions the portaled menu against the trigger and flips it when viewport space is limited.
-    const updateDropdownPosition = useCallback(() => {
-        const container = containerRef.current;
-        if (!container) return;
-
-        const rect = container.getBoundingClientRect();
-        const spaceBelow = window.innerHeight - rect.bottom - DROPDOWN_GAP - DROPDOWN_VIEWPORT_GUTTER;
-        const spaceAbove = rect.top - DROPDOWN_GAP - DROPDOWN_VIEWPORT_GUTTER;
-        const useViewportPlacement = Math.max(spaceAbove, spaceBelow) < DROPDOWN_MIN_PREFERRED_HEIGHT;
-        const placement: CustomSelectMenuPosition['placement'] = useViewportPlacement
-            ? 'viewport'
-            : spaceBelow < DROPDOWN_MIN_PREFERRED_HEIGHT && spaceAbove > spaceBelow
-                ? 'top'
-                : 'bottom';
-        const availableHeight = placement === 'viewport'
-            ? window.innerHeight - DROPDOWN_VIEWPORT_GUTTER * 2
-            : placement === 'top'
-                ? spaceAbove
-                : spaceBelow;
-        const width = Math.min(rect.width, window.innerWidth - DROPDOWN_VIEWPORT_GUTTER * 2);
-        const left = Math.max(
-            DROPDOWN_VIEWPORT_GUTTER,
-            Math.min(rect.left, window.innerWidth - width - DROPDOWN_VIEWPORT_GUTTER),
-        );
-
-        setDropdownPosition({
-            left,
-            width,
-            maxHeight: Math.max(
-                72,
-                placement === 'viewport'
-                    ? availableHeight
-                    : Math.min(DROPDOWN_MAX_HEIGHT, availableHeight),
-            ),
-            placement,
-            ...(placement === 'viewport'
-                ? { top: DROPDOWN_VIEWPORT_GUTTER }
-                : placement === 'top'
-                ? { bottom: window.innerHeight - rect.top + DROPDOWN_GAP }
-                : { top: rect.bottom + DROPDOWN_GAP }),
-        });
-    }, []);
+    const dropdownPosition = useCustomSelectPosition({ open: isOpen, container: containerRef, menu: menuRef,
+        minWidth: menuMinWidth, getClipElement, getAnchorElement, close });
+    const key = useCustomSelectKeyboard({ enabled: keyboardNavigation, open: isOpen, ready: Boolean(dropdownPosition),
+        value, options, navigation: menuNavigation, trigger: triggerRef, show, close });
 
     // Toggle the dropdown menu visibility
     const handleToggle = () => {
@@ -96,10 +74,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
             return;
         }
 
-        if (!isOpen) {
-            onOpen?.();
-        }
-        setIsOpen(!isOpen);
+        if (isOpen) close(); else show();
     };
 
     // Close the dropdown when clicking outside of the container
@@ -111,7 +86,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
                 && !containerRef.current.contains(target)
                 && !menuRef.current?.contains(target)
             ) {
-                setIsOpen(false);
+                close();
             }
         };
 
@@ -119,22 +94,9 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, []);
+    }, [close]);
 
-    useLayoutEffect(() => {
-        if (!isOpen) {
-            setDropdownPosition(null);
-            return;
-        }
-
-        updateDropdownPosition();
-        window.addEventListener('resize', updateDropdownPosition);
-        window.addEventListener('scroll', updateDropdownPosition, true);
-        return () => {
-            window.removeEventListener('resize', updateDropdownPosition);
-            window.removeEventListener('scroll', updateDropdownPosition, true);
-        };
-    }, [isOpen, updateDropdownPosition]);
+    useEffect(() => { if (disabled) close(); }, [disabled, close]);
 
     const selectedOption = options.find((opt) => opt.value === value);
     const accentColor = theme?.accentColor || (isDaylight ? '#44403c' : '#f4f4f5');
@@ -143,14 +105,19 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
     const borderColor = isDaylight ? 'rgba(28, 25, 23, 0.14)' : 'rgba(244, 244, 245, 0.14)';
 
     return (
-        <div ref={containerRef} className="relative w-full">
+        <div ref={containerRef} className={`relative w-full ${className ?? ''}`} onKeyDown={key}
+            onBlurCapture={event => { if (keyboardNavigation && !containerRef.current?.contains(event.relatedTarget) && !menuRef.current?.contains(event.relatedTarget)) close(); }}>
             <button
+                ref={triggerRef}
                 type="button"
                 onClick={handleToggle}
                 disabled={disabled}
                 aria-label={ariaLabel}
                 aria-haspopup="listbox"
                 aria-expanded={isOpen}
+                role={keyboardNavigation ? 'combobox' : undefined}
+                aria-controls={isOpen ? menuId : undefined}
+                data-value={value}
                 className="w-full flex items-center justify-between rounded-xl border px-4 py-3 text-sm transition-all focus:outline-none disabled:cursor-not-allowed disabled:opacity-45 cursor-pointer"
                 style={{
                     backgroundColor: 'var(--overlay-medium)',
@@ -173,6 +140,10 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
                 <AnimatePresence>
                     {isOpen && dropdownPosition && (
                         <CustomSelectMenu
+                            id={menuId}
+                            className={menuClassName}
+                            keyboardNavigation={keyboardNavigation}
+                            navigationRef={menuNavigation}
                             menuRef={menuRef}
                             position={dropdownPosition}
                             options={options}
@@ -184,12 +155,13 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
                             borderColor={borderColor}
                             onSelect={(nextValue) => {
                                 onChange(nextValue);
-                                setIsOpen(false);
+                                close();
+                                if (keyboardNavigation) triggerRef.current?.focus({ preventScroll: true });
                             }}
                         />
                     )}
                 </AnimatePresence>,
-                document.body,
+                getPortalContainer?.() ?? document.body,
             )}
         </div>
     );

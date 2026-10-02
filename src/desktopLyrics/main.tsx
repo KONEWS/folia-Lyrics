@@ -8,6 +8,10 @@ import './desktop.css';
 import './settings.css';
 import './window-chrome.css';
 import DesktopLyrics from './DesktopLyrics';
+import './reference-glass.css';
+import './cover-immersion.css';
+import './topbar.css';
+import './unified-glass.css';
 
 // src/desktopLyrics/main.tsx: Install Pixi's CSP-compatible implementation before loading the original renderers.
 const render = () => createRoot(document.getElementById('root')!).render(<React.StrictMode><DesktopLyrics/></React.StrictMode>);

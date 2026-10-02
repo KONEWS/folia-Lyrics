@@ -14,11 +14,11 @@ export default function WindowChrome() {
         if (event.button !== 0) return;
         event.preventDefault(); command(event.detail > 1 ? 'maximize' : 'drag');
       }} title="拖动窗口 · 双击最大化"><AudioLines size={16}/><span>Folia 桌面歌词</span></div>
-      <div className="window-buttons">
+      {!state.fullscreen ? <div className="window-buttons">
         <button aria-label="最小化窗口" onClick={() => command('minimize')}><Minus size={15}/></button>
         <button aria-label={state.maximized ? '还原窗口' : '最大化窗口'} disabled={state.fullscreen} onClick={() => command('maximize')}>{state.maximized ? <Copy size={13}/> : <Square size={13}/>}</button>
         <button className="window-close" aria-label="关闭应用" onClick={() => command('close')}><X size={16}/></button>
-      </div>
+      </div> : null}
     </div>
     {!state.fullscreen && !state.maximized ? edges.map(([edge, hit]) => <div key={edge} className={`window-edge edge-${edge}`} aria-hidden="true"
       onMouseDown={event => { if (event.button === 0) { event.preventDefault(); send('window', { action: 'resize', edge: hit }); } }}/>) : null}

@@ -27,9 +27,13 @@ const loadImagePixels = (imageUrl: string): Promise<Uint8ClampedArray | null> =>
             canvas.width = width;
             canvas.height = height;
 
-            ctx.drawImage(img, 0, 0, width, height);
-
-            resolve(ctx.getImageData(0, 0, width, height).data);
+            // Cross-origin or unreadable covers should keep the fallback theme, not strand the promise.
+            try {
+                ctx.drawImage(img, 0, 0, width, height);
+                resolve(ctx.getImageData(0, 0, width, height).data);
+            } catch {
+                resolve(null);
+            }
         };
 
         img.onerror = (e) => {

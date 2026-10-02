@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType><TargetFramework>net10.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../native/DesktopAssets.cs" Link="DesktopAssets.cs"/>
+    <Compile Include="../../native/AudioSpectrumWindow.cs" Link="AudioSpectrumWindow.cs"/>
+    <Compile Include="../../native/AudioSpectrum.cs" Link="AudioSpectrum.cs"/>
+    <PackageReference Include="NAudio" Version="2.2.1"/>
+  </ItemGroup>
+</Project>

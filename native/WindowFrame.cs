@@ -18,7 +18,10 @@ internal sealed partial class MainWindow
         {
             case "minimize": WindowState = FormWindowState.Minimized; break;
             case "maximize": if (!fullscreen) WindowState = WindowState == FormWindowState.Maximized ? FormWindowState.Normal : FormWindowState.Maximized; break;
-            case "close": Close(); break;
+            case "close":
+                if (preferences.CloseToTaskbar) WindowState = FormWindowState.Minimized;
+                else Close();
+                break;
             case "drag":
                 if (fullscreen) break;
                 var position = Cursor.Position; var now = Environment.TickCount64;
@@ -46,7 +49,11 @@ internal sealed partial class MainWindow
     }
     private bool HandleCustomFrame(ref Message message)
     {
-        if (message.Msg == 0x83 && message.WParam != IntPtr.Zero)
+        // The WebView draws the entire frame; skip native painting but keep default activation.
+        if (message.Msg == 0x85) { message.Result = IntPtr.Zero; return true; }
+        if (message.Msg == 0x86) message.LParam = new IntPtr(-1);
+        // Both WM_NCCALCSIZE forms start with a RECT; keep the full window as the client area.
+        if (message.Msg == 0x83)
         {
             if (!fullscreen && (GetWindowLongPtr(Handle, -16).ToInt64() & 0x1000000) != 0)
             {
@@ -71,7 +78,7 @@ internal sealed partial class MainWindow
         base.OnResize(e);
         if (dispatcher is not null) SendWindowState();
     }
-    private void SendWindowState() => Send("windowState", new { maximized = WindowState == FormWindowState.Maximized, fullscreen });
+    private void SendWindowState() => Send("windowState", new { maximized = WindowState == FormWindowState.Maximized, fullscreen, clickThrough });
     [StructLayout(LayoutKind.Sequential)] private struct NativePoint(int x, int y) { public int X = x, Y = y; }
     [StructLayout(LayoutKind.Sequential)] private struct NativeRect { public int Left, Top, Right, Bottom; }
     [StructLayout(LayoutKind.Sequential)] private struct MinMaxInfo { public NativePoint Reserved, MaxSize, MaxPosition, MinTrackSize, MaxTrackSize; }

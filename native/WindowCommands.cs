@@ -10,7 +10,7 @@ internal sealed partial class MainWindow
     {
         switch (cmd.GetProperty("type").GetString())
         {
-            case "ready": ready = true; SendWindowState(); statusKey = ""; SendAppearance(); Send("preferences", preferences); Send("library", library.Summary());
+            case "ready": ready = true; FocusLyricsIfActive(); SendWindowState(); statusKey = ""; SendAppearance(); Send("preferences", preferences); Send("library", library.Summary());
                 if (song is not null) Send("session", song); if (lyrics is not null) Send("lyrics", lyrics); Send("online", onlineState); mediaTimer.Start(); audioTimer.Start(); await Poll(); break;
             case "import":
                 using (var dialog = new OpenFileDialog { Title = "读取音乐文件中的歌词或独立歌词（不会播放）", Filter = "音乐或歌词|*.flac;*.mp3;*.m4a;*.mp4;*.ogg;*.opus;*.wav;*.ape;*.wma;*.aiff;*.lrc;*.ttml;*.yrc;*.qrc;*.fia|所有文件|*.*" })
@@ -34,9 +34,19 @@ internal sealed partial class MainWindow
                 lyricKey = "\0"; statusKey = ""; SavePreferences(); await Poll(); break;
             case "window": WindowCommand(cmd.GetProperty("value")); break;
             case "mediaControl": await ControlMedia(cmd.GetProperty("value")); break;
+            case "systemVolume": ChangeSystemVolume(cmd); break;
             case "topmost": TopMost = preferences.Topmost = cmd.GetProperty("value").GetBoolean(); SavePreferences(); break;
+            case "closeToTaskbar": preferences.CloseToTaskbar = cmd.GetProperty("value").GetBoolean(); SavePreferences(); break;
             case "audioReactive": preferences.AudioReactive = cmd.GetProperty("value").GetBoolean(); audio.Ensure(preferences.AudioReactive); SavePreferences(); break;
+            case "transparentBackground": preferences.TransparentBackground = cmd.GetProperty("value").GetBoolean(); ApplyAppearance(); SavePreferences(); break;
+            case "coverTheme": preferences.CoverTheme = cmd.GetProperty("value").GetBoolean(); SavePreferences(); break;
+            case "autoImmersive": preferences.AutoImmersive = cmd.GetProperty("value").GetBoolean(); SavePreferences(); break;
+            case "bottomHoverControls": preferences.BottomHoverControls = cmd.GetProperty("value").GetBoolean(); SavePreferences(); break;
+            case "immersiveDelay":
+                if (cmd.GetProperty("value").TryGetInt32(out var delay) && delay is >= 1 and <= 3600) { preferences.ImmersiveDelay = delay; SavePreferences(); }
+                break;
             case "fullscreen": ToggleFullscreen(); break;
+            case "exitFullscreen": if (fullscreen) ToggleFullscreen(); break;
             case "clickThrough": SetClickThrough(!clickThrough); break;
             case "onlineEnabled": preferences.OnlineEnabled = cmd.GetProperty("value").GetBoolean(); OnlinePreferenceChanged(); break;
             case "onlineProvider":
@@ -83,10 +93,11 @@ internal sealed partial class MainWindow
     }
     private void SetClickThrough(bool enabled)
     {
+        if (enabled && !preferences.TransparentBackground) { preferences.TransparentBackground = true; SavePreferences(); }
         clickThrough = enabled; var style = GetWindowLongPtr(Handle, -20).ToInt64();
         SetWindowLongPtr(Handle, -20, new IntPtr(enabled ? style | 0x20 | 0x80000 : style & ~(0x20 | 0x80000)));
         if (enabled) { SetLayeredWindowAttributes(Handle, 0, 255, 2); tray.ShowBalloonTip(4000, Text, "已启用鼠标穿透。按 Ctrl+Alt+L 或双击托盘图标恢复操作。", ToolTipIcon.Info); }
-        ApplyAppearance();
+        ApplyAppearance(); SendWindowState();
     }
     private void RestoreInteraction() { SetClickThrough(false); Show(); WindowState = FormWindowState.Normal; Activate(); Send("restore", new { }); }
     protected override void WndProc(ref Message message)

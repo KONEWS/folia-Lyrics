@@ -38,7 +38,8 @@ internal static class LyricFiles
     {
         if (new FileInfo(path).Length > 8_000_000) throw new IOException("歌词文件超过 8 MB");
         var bytes = File.ReadAllBytes(path);
-        if (bytes.Length >= 2 && (bytes[0] == 0xff && bytes[1] == 0xfe || bytes[0] == 0xfe && bytes[1] == 0xff)) return File.ReadAllText(path, Encoding.Unicode);
+        if (bytes.Length >= 2 && bytes[0] == 0xff && bytes[1] == 0xfe) return Encoding.Unicode.GetString(bytes, 2, bytes.Length - 2);
+        if (bytes.Length >= 2 && bytes[0] == 0xfe && bytes[1] == 0xff) return Encoding.BigEndianUnicode.GetString(bytes, 2, bytes.Length - 2);
         try { return new UTF8Encoding(false, true).GetString(bytes).TrimStart('\ufeff'); }
         catch (DecoderFallbackException) { return Encoding.GetEncoding(936).GetString(bytes); }
     }

@@ -9,7 +9,8 @@ internal sealed partial class MainWindow : Form
     private readonly UiDispatcher dispatcher;
     private readonly WebView2 web = new() { Dock = DockStyle.Fill, DefaultBackgroundColor = Color.Transparent };
     private readonly Preferences preferences = DataFiles.Load("preferences.json", new Preferences());
-    private readonly LyricLibrary library = new(); private readonly MediaMonitor media = new(); private readonly AudioSpectrum audio = new();
+    private readonly Task<LyricLibrary> libraryLoad = Task.Run(() => new LyricLibrary());
+    private LyricLibrary library = null!; private readonly MediaMonitor media = new(); private readonly AudioSpectrum audio = new();
     private readonly System.Windows.Forms.Timer mediaTimer = new() { Interval = 500 }, audioTimer = new() { Interval = 50 };
     private readonly CancellationTokenSource lifetime = new(); private readonly NotifyIcon tray = new();
     private bool ready, polling, scanning; private int ticks; private Song? song; private Lyrics? lyrics;
@@ -27,18 +28,28 @@ internal sealed partial class MainWindow : Form
         var menu = new ContextMenuStrip(); menu.Items.Add("显示窗口 / 解除鼠标穿透", null, (_, _) => RestoreInteraction()); menu.Items.Add("退出", null, (_, _) => Close());
         tray.ContextMenuStrip = menu; tray.DoubleClick += (_, _) => RestoreInteraction(); tray.Visible = true;
         Shown += async (_, _) => await Initialize();
+        Activated += (_, _) => FocusLyricsIfActive();
         mediaTimer.Tick += async (_, _) => await Poll();
         audioTimer.Tick += (_, _) => { if (ready && preferences.AudioReactive && WindowState != FormWindowState.Minimized) Send("spectrum", new { bins = Convert.ToBase64String(audio.Read()), sampleRate = audio.SampleRate }); };
         FormClosed += (_, _) => { lifetime.Cancel(); lyricWork?.Cancel(); online.Dispose(); mediaTimer.Dispose(); audioTimer.Dispose(); audio.Dispose(); tray.Visible = false; tray.Dispose(); };
+    }
+    // 仅给当前前台歌词窗口补焦点，异步初始化完成时不抢其他程序的焦点。
+    private void FocusLyricsIfActive()
+    {
+        if (ready && !clickThrough && ActiveForm == this && WindowState != FormWindowState.Minimized
+            && !IsDisposed && !Disposing && web.CanFocus && !web.ContainsFocus) web.Focus();
     }
     private async Task Initialize()
     {
         try
         {
             Directory.CreateDirectory(DataFiles.Root);
-            var environment = await CoreWebView2Environment.CreateAsync(null, Path.Combine(DataFiles.Root, "browser"));
-            await web.EnsureCoreWebView2Async(environment); var core = web.CoreWebView2;
-            core.SetVirtualHostNameToFolderMapping("folia.local", DataFiles.Assets(), CoreWebView2HostResourceAccessKind.DenyCors);
+            var browser = InitializeBrowser();
+            var assets = Task.Run(DataFiles.Assets, lifetime.Token);
+            await Task.WhenAll(browser, assets, libraryLoad);
+            if (IsDisposed || Disposing || lifetime.IsCancellationRequested) return;
+            library = await libraryLoad; var core = await browser;
+            core.SetVirtualHostNameToFolderMapping("folia.local", await assets, CoreWebView2HostResourceAccessKind.DenyCors);
             core.Settings.AreDevToolsEnabled = false; core.Settings.AreDefaultContextMenusEnabled = false;
             core.Settings.IsStatusBarEnabled = false; core.Settings.AreBrowserAcceleratorKeysEnabled = false;
             core.PermissionRequested += (_, e) => e.State = CoreWebView2PermissionState.Deny;
@@ -64,9 +75,17 @@ internal sealed partial class MainWindow : Form
         }
         catch (WebView2RuntimeNotFoundException)
         {
+            if (IsDisposed || Disposing) return;
             MessageBox.Show("需要 Microsoft Edge WebView2 Runtime 才能显示歌词。请安装微软 WebView2 Evergreen Runtime 后重新打开。\n\nhttps://developer.microsoft.com/microsoft-edge/webview2/", Text); Close();
         }
-        catch (Exception e) { DataFiles.Log(e); MessageBox.Show("界面启动失败：" + e.Message, Text); Close(); }
+        catch (Exception e) { if (IsDisposed || Disposing) return; DataFiles.Log(e); MessageBox.Show("界面启动失败：" + e.Message, Text); Close(); }
+    }
+    // WebView initialization stays on the UI context while asset extraction and library loading run alongside it.
+    private async Task<CoreWebView2> InitializeBrowser()
+    {
+        var environment = await CoreWebView2Environment.CreateAsync(null, Path.Combine(DataFiles.Root, "browser"));
+        await web.EnsureCoreWebView2Async(environment);
+        return web.CoreWebView2;
     }
     private async Task Poll()
     {
