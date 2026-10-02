@@ -1,0 +1,18 @@
+/* src/desktopLyrics/cover-immersion.css — cover palette surfaces and idle interaction states */
+.desktop-lyrics.cover-theme:not(.high-contrast){--glass-text:var(--cover-foreground);--glass-muted:var(--cover-secondary);--glass-line:color-mix(in srgb,var(--cover-foreground) 18%,transparent);--glass-fill:linear-gradient(150deg,color-mix(in srgb,var(--cover-foreground) 9%,transparent),transparent 60%),color-mix(in srgb,var(--cover-background) 28%,transparent);--text-primary:var(--cover-foreground);--text-secondary:var(--cover-secondary);--text-accent:var(--cover-accent)}
+.cover-theme:not(.high-contrast):not(.solid-surfaces) .acrylic-backdrop{background:radial-gradient(ellipse at 25% 75%,color-mix(in srgb,var(--cover-accent) 20%,var(--cover-background)),transparent 70%),var(--cover-background)}
+.cover-theme.native-acrylic:not(.high-contrast):not(.solid-surfaces) .acrylic-backdrop{background:color-mix(in srgb,var(--cover-background) 18%,transparent)}
+.cover-theme:not(.high-contrast):not(.solid-surfaces) .acrylic-wash{background:linear-gradient(135deg,color-mix(in srgb,var(--cover-accent) 6%,transparent),color-mix(in srgb,var(--cover-background) 24%,transparent))}
+.cover-theme:not(.high-contrast) :is(.desktop-brand>span,.connection-pill,.clock-readout,.desktop-statusbar .transport-buttons button){color:var(--glass-text)}
+.cover-theme:not(.high-contrast) :is(.desktop-brand small,.eyebrow,.waiting-screen>p,.waiting-notes){color:var(--glass-muted)}
+.cover-theme:not(.high-contrast) .effect-grid .effect.active{background:color-mix(in srgb,var(--cover-accent) 17%,transparent);border-color:color-mix(in srgb,var(--cover-accent) 48%,transparent)}
+.cover-theme:not(.high-contrast) .audio-progress{color:var(--cover-accent)}
+.immersive.controls-revealed .desktop-statusbar{opacity:1;visibility:visible;pointer-events:auto}
+.immersive .window-chrome{opacity:0;visibility:hidden;pointer-events:none}
+.immersive.top-controls-revealed:not(.native-fullscreen) :is(.window-chrome,.desktop-topbar){opacity:1;visibility:visible;pointer-events:auto}
+.desktop-lyrics.cursor-idle,.desktop-lyrics.cursor-idle *{cursor:none!important}
+.cursor-idle .restore-controls{opacity:0;visibility:hidden;pointer-events:none}
+.control-panel .immersion-delay{display:flex;align-items:center;gap:10px;margin:12px 0;font-size:11px;color:var(--glass-muted)}
+.control-panel .immersion-delay>span:first-child{flex:1}
+.control-panel .immersion-delay input{width:82px;padding:8px 10px;font-variant-numeric:tabular-nums}
+@media(forced-colors:active){.desktop-lyrics.cover-theme{--glass-text:CanvasText;--glass-muted:CanvasText}.cover-theme .audio-progress{color:CanvasText!important}}

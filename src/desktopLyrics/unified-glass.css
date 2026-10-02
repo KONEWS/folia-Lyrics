@@ -1,0 +1,107 @@
+/* src/desktopLyrics/unified-glass.css — one theme-aware glass material for desktop controls and nested menus. */
+.desktop-lyrics .system-volume-feedback{bottom:32%;gap:9px;padding:11px 18px;border-radius:999px;pointer-events:none;font-variant-numeric:tabular-nums}
+.desktop-lyrics{
+  --bg-color:#321a18;
+  --desktop-glass-base:var(--bg-color);
+  --desktop-glass-accent:var(--text-accent);
+  --desktop-glass-rim:color-mix(in srgb,var(--glass-text) 30%,transparent);
+  --desktop-glass-control:linear-gradient(150deg,color-mix(in srgb,var(--glass-text) 8%,transparent),color-mix(in srgb,var(--glass-text) 2%,transparent) 60%);
+  --desktop-glass-panel:linear-gradient(150deg,color-mix(in srgb,var(--glass-text) 8%,transparent),transparent 60%),color-mix(in srgb,var(--desktop-glass-base) 78%,transparent);
+  --desktop-glass-inner:inset 0 1px 0 color-mix(in srgb,var(--glass-text) 10%,transparent),inset 0 -1px 0 color-mix(in srgb,var(--glass-text) 3%,transparent);
+  --desktop-glass-hover:color-mix(in srgb,var(--glass-text) 9%,transparent);
+  --desktop-glass-selected:color-mix(in srgb,var(--desktop-glass-accent) 17%,transparent);
+}
+.desktop-lyrics.cover-theme{--desktop-glass-base:var(--cover-background,var(--bg-color));--desktop-glass-accent:var(--cover-accent,var(--text-accent))}
+.desktop-lyrics:not(.high-contrast) :is(.desktop-topbar,.desktop-statusbar,.desktop-notice){background:var(--glass-fill);border-color:var(--glass-line);box-shadow:var(--glass-shadow);backdrop-filter:blur(34px) saturate(1.25)}
+.desktop-lyrics:not(.high-contrast) .control-panel{background:var(--desktop-glass-panel);border-color:var(--glass-line);box-shadow:var(--glass-shadow);backdrop-filter:blur(34px) saturate(1.25)}
+.desktop-lyrics:not(.high-contrast) .desktop-statusbar .transport-buttons button{color:var(--glass-text)}
+.desktop-lyrics:not(.high-contrast) .desktop-statusbar .transport-buttons button::before{background:radial-gradient(45px 35px at var(--light-x,50%) var(--light-y,0%),color-mix(in srgb,var(--glass-text) 18%,transparent),transparent 85%)}
+.desktop-lyrics:not(.high-contrast) .desktop-statusbar .transport-buttons button:hover:not(:disabled){background:var(--desktop-glass-hover);border-color:var(--glass-line);box-shadow:var(--desktop-glass-inner)}
+.desktop-lyrics:not(.high-contrast) :is(.window-chrome,.desktop-topbar,.waiting-screen,.control-panel,.desktop-notice) button,.desktop-lyrics:not(.high-contrast) .restore-controls{
+  color:var(--glass-text);border:1px solid var(--glass-line);border-top-color:var(--desktop-glass-rim);border-radius:999px;background:var(--desktop-glass-control);box-shadow:var(--desktop-glass-inner);
+  transition:background .18s,border-color .18s,box-shadow .18s,transform .18s,opacity .18s;
+}
+.desktop-lyrics:not(.high-contrast) :is(.window-chrome,.desktop-topbar,.waiting-screen,.control-panel,.desktop-notice) button::before,.desktop-lyrics:not(.high-contrast) .restore-controls::before{background:radial-gradient(95px 60px at var(--light-x,50%) var(--light-y,0%),color-mix(in srgb,var(--glass-text) 18%,transparent),transparent 85%)}
+.desktop-lyrics:not(.high-contrast) :is(.window-chrome,.desktop-topbar,.waiting-screen,.control-panel,.desktop-notice) button:hover:not(:disabled),.desktop-lyrics:not(.high-contrast) .restore-controls:hover{background-color:var(--desktop-glass-hover);border-color:var(--desktop-glass-rim);box-shadow:var(--desktop-glass-inner);transform:translateY(-1px)}
+.desktop-lyrics:not(.high-contrast) :is(.window-chrome,.desktop-topbar,.waiting-screen,.control-panel,.desktop-notice) button:active:not(:disabled),.desktop-lyrics:not(.high-contrast) .restore-controls:active{transform:translateY(1px) scale(.97)}
+.desktop-lyrics:not(.high-contrast) :is(.desktop-topbar .selected,.desktop-topbar button[aria-pressed=true],.desktop-glass-select button[aria-expanded=true],.online-results .chosen,.waiting-actions .primary-button){background:var(--desktop-glass-selected);border-color:color-mix(in srgb,var(--desktop-glass-accent) 45%,transparent);box-shadow:var(--desktop-glass-inner)}
+.desktop-lyrics:not(.high-contrast) .desktop-topbar button[aria-pressed=true]:hover:not(:disabled),.desktop-lyrics:not(.high-contrast) .online-results .chosen:hover:not(:disabled){background:var(--desktop-glass-selected);border-color:color-mix(in srgb,var(--desktop-glass-accent) 60%,transparent)}
+.desktop-lyrics:not(.high-contrast) .topbar-mode-picker{background:var(--desktop-glass-control);border-color:var(--glass-line);border-top-color:var(--desktop-glass-rim);box-shadow:var(--desktop-glass-inner)}
+.desktop-lyrics .topbar-mode-picker{isolation:isolate;overflow:hidden;transition:background .18s,border-color .18s,box-shadow .18s}
+.desktop-lyrics .topbar-mode-picker::before{content:'';position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none;background:radial-gradient(95px 60px at var(--light-x,50%) var(--light-y,0%),color-mix(in srgb,var(--glass-text) 18%,transparent),transparent 85%);opacity:var(--light-opacity,0);transition:opacity .2s}
+.desktop-lyrics:not(.high-contrast) .topbar-mode-picker:hover:not(:has(button:disabled)):not(:has(button[aria-expanded=true])){background-color:var(--desktop-glass-hover);border-color:var(--desktop-glass-rim)}
+.desktop-lyrics:not(.high-contrast) .topbar-mode-picker:has(button[aria-expanded=true]){background:var(--desktop-glass-selected);border-color:var(--desktop-glass-accent)}
+.desktop-lyrics:not(.high-contrast) .topbar-mode-picker:has(button:focus-visible){outline:2px solid var(--desktop-glass-accent);outline-offset:3px}
+.desktop-lyrics :is(.window-drag,.window-drag svg,.section-label,.toggle,.result-heading strong,.waiting-screen h1){color:var(--glass-text)}
+.desktop-lyrics :is(.panel-heading small,.section-label>span:not(.online-heading),.hint,.library-summary,.control-panel details,.lyric-source small,.online-search>label,.result-heading>span,.result-artist,.result-meta,.panel-footer,.waiting-screen>p,.eyebrow,.waiting-notes,.waiting-screen .compatibility-note,.desktop-host-warning){color:var(--glass-muted)}
+.desktop-lyrics:not(.high-contrast) .connection-pill{border-color:var(--glass-line);background:var(--desktop-glass-control);color:var(--glass-muted)}
+.desktop-lyrics:not(.high-contrast) .connection-pill i{background:var(--glass-muted)}
+.desktop-lyrics:not(.high-contrast) .connection-pill.playing i{background:var(--desktop-glass-accent);box-shadow:0 0 8px color-mix(in srgb,var(--desktop-glass-accent) 25%,transparent)}
+.desktop-lyrics:not(.high-contrast) :is(.waiting-symbol,.waiting-notes span){background:var(--desktop-glass-control);border-color:var(--glass-line);box-shadow:var(--desktop-glass-inner);color:var(--glass-text)}
+.desktop-lyrics:not(.high-contrast) .waiting-notes i{background:var(--glass-muted)}
+.desktop-lyrics .control-panel :is(section,.panel-footer){border-color:var(--glass-line)}
+.desktop-lyrics:not(.high-contrast) .control-panel :is(input:not([type=checkbox]),select){color:var(--glass-text);border-color:var(--glass-line);border-top-color:var(--desktop-glass-rim);border-radius:999px;background:var(--desktop-glass-control);box-shadow:var(--desktop-glass-inner)}
+.desktop-lyrics .control-panel input::placeholder{color:var(--glass-muted);opacity:.75}
+.desktop-lyrics:not(.high-contrast) .control-panel option{color:var(--glass-text);background:var(--desktop-glass-base)}
+.desktop-lyrics:not(.high-contrast) .control-panel input[type=checkbox]{border-color:var(--glass-line);background:var(--desktop-glass-control);box-shadow:var(--desktop-glass-inner)}
+.desktop-lyrics:not(.high-contrast) .control-panel input[type=checkbox]::before{background:linear-gradient(145deg,var(--glass-text),color-mix(in srgb,var(--glass-text) 72%,var(--desktop-glass-base)));box-shadow:0 1px 3px color-mix(in srgb,var(--desktop-glass-base) 25%,transparent)}
+.desktop-lyrics:not(.high-contrast) .control-panel input[type=checkbox]:checked{background:color-mix(in srgb,var(--desktop-glass-accent) 35%,transparent);border-color:color-mix(in srgb,var(--desktop-glass-accent) 60%,transparent)}
+.desktop-lyrics:not(.high-contrast) .control-panel :is(details,.lyric-source,.online-status){border:1px solid var(--glass-line);border-top-color:var(--desktop-glass-rim);border-radius:16px;background:var(--desktop-glass-control);box-shadow:var(--desktop-glass-inner)}
+.desktop-lyrics .control-panel details{padding:10px 12px}
+.desktop-lyrics .control-panel details>summary{color:var(--glass-text);outline-offset:2px}
+.desktop-lyrics .control-panel details>summary::marker{color:var(--glass-muted)}
+.desktop-lyrics .control-panel details[open]>summary{margin-bottom:9px}
+.desktop-lyrics .control-panel details .hint{margin-top:8px}
+.desktop-lyrics .control-panel details ul{margin-bottom:0}
+.desktop-lyrics .control-panel li+li{margin-top:5px}
+.desktop-lyrics:not(.high-contrast) .online-status{color:var(--glass-muted)}
+.desktop-lyrics:not(.high-contrast) .online-status.busy{color:var(--glass-text)}
+.desktop-lyrics:not(.high-contrast) .online-errors{color:var(--desktop-glass-accent)!important}
+.desktop-lyrics:not(.high-contrast) .online-results .online-result{border-radius:16px}
+.desktop-lyrics :is(.online-result,.lyric-source,.control-panel details){min-width:0;overflow-wrap:anywhere}
+.desktop-lyrics .result-heading strong{min-width:0}
+.desktop-lyrics:not(.high-contrast) :is(.desktop-topbar,.window-chrome,.waiting-screen,.control-panel,.desktop-notice,.restore-controls) :is(button,input,select,summary):focus-visible,.desktop-lyrics:not(.high-contrast) .restore-controls:focus-visible{outline:2px solid var(--desktop-glass-accent);outline-offset:3px}
+.desktop-lyrics:not(.high-contrast) .desktop-glass-select button{background:var(--desktop-glass-control)!important;border-color:var(--glass-line)!important;color:var(--glass-text)!important;box-shadow:var(--desktop-glass-inner)!important}
+.desktop-lyrics:not(.high-contrast) .desktop-glass-select button[aria-expanded=true]{background:var(--desktop-glass-selected)!important;border-color:var(--desktop-glass-accent)!important}
+.desktop-lyrics .desktop-glass-select button svg{color:var(--glass-muted)!important}
+.desktop-topbar-compact .desktop-glass-select{width:74px;min-width:0}
+.desktop-topbar-compact .desktop-glass-select button{padding:6px 0;font-size:11px;line-height:18px;min-height:28px}
+.desktop-lyrics:not(.high-contrast) .desktop-topbar-compact .desktop-glass-select button{border-color:transparent!important;background:transparent!important;box-shadow:none!important}
+.desktop-lyrics:not(.high-contrast) .desktop-topbar-compact .desktop-glass-select button[aria-expanded=true]{background:transparent!important}
+.desktop-lyrics .desktop-topbar-compact .topbar-mode-picker .desktop-glass-select button{border:0!important;background:transparent!important;box-shadow:none!important;transform:none!important}
+.desktop-lyrics .desktop-topbar-compact .topbar-mode-picker .desktop-glass-select button::before{display:none}
+.desktop-lyrics .desktop-topbar-compact .topbar-mode-picker .desktop-glass-select button:focus-visible{outline:none}
+.desktop-topbar-compact .desktop-glass-select button>span{min-width:0}
+.desktop-topbar-compact .desktop-glass-select button svg{width:12px;height:12px}
+.desktop-lyrics .control-panel .desktop-glass-select button{font-size:11px;min-height:38px;padding:10px 12px;line-height:16px}
+.desktop-glass-menu{z-index:200;background:var(--desktop-glass-panel)!important;border:1px solid var(--glass-line)!important;border-top-color:var(--desktop-glass-rim)!important;border-radius:18px;box-shadow:var(--glass-shadow);backdrop-filter:blur(34px) saturate(1.25);color:var(--glass-text)!important}
+.desktop-glass-menu button[role=option]{position:relative;isolation:isolate;overflow:hidden;font:inherit;font-size:11px;padding:10px 12px;border:1px solid transparent;border-radius:11px;color:var(--glass-text)!important;background:transparent!important;box-shadow:none;transition:background .18s,border-color .18s}
+.desktop-glass-menu button[role=option]::before{content:'';position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none;background:radial-gradient(95px 60px at var(--light-x,50%) var(--light-y,0%),color-mix(in srgb,var(--glass-text) 18%,transparent),transparent 85%);opacity:var(--light-opacity,0)}
+.desktop-glass-menu button[role=option]:hover{background:var(--desktop-glass-hover)!important;border-color:var(--glass-line)}
+.desktop-glass-menu button[aria-selected=true]{background:var(--desktop-glass-selected)!important;border-color:var(--glass-line)}
+.desktop-glass-menu button[aria-selected=true]:hover{background:var(--desktop-glass-selected)!important;border-color:var(--desktop-glass-rim)}
+.desktop-glass-menu button[aria-selected=true] svg{color:var(--desktop-glass-accent)!important}
+.desktop-glass-menu button:focus-visible{outline:2px solid var(--desktop-glass-accent);outline-offset:-2px}
+.desktop-top-menu>div{padding:4px}
+.desktop-top-menu button[role=option]{padding-inline:6px}
+.desktop-top-menu button[role=option]>span{margin-right:4px}
+.desktop-lyrics .control-panel,.desktop-glass-menu,.desktop-glass-menu .custom-scrollbar{scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--glass-muted) 40%,transparent) transparent}
+.desktop-lyrics .control-panel::-webkit-scrollbar,.desktop-glass-menu::-webkit-scrollbar,.desktop-glass-menu .custom-scrollbar::-webkit-scrollbar{width:7px;height:7px}
+.desktop-lyrics .control-panel::-webkit-scrollbar-thumb,.desktop-glass-menu::-webkit-scrollbar-thumb,.desktop-glass-menu .custom-scrollbar::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--glass-muted) 40%,transparent);border-radius:99px;border:2px solid transparent;background-clip:padding-box}
+.desktop-lyrics.solid-surfaces:not(.high-contrast) :is(.desktop-topbar,.desktop-statusbar,.control-panel,.desktop-notice,.desktop-glass-menu){background:var(--desktop-glass-base)!important;backdrop-filter:none}
+.desktop-lyrics.high-contrast :is(.desktop-topbar,.desktop-statusbar,.control-panel,.desktop-notice,.waiting-symbol,.lyric-source,.online-status,.control-panel details,.desktop-glass-menu){background:Canvas!important;color:CanvasText!important;border:1px solid CanvasText!important;box-shadow:none;backdrop-filter:none}
+.desktop-lyrics.high-contrast :is(.window-chrome,.desktop-topbar,.waiting-screen,.control-panel,.desktop-notice,.desktop-glass-menu) :is(button,input,select),.desktop-lyrics.high-contrast .restore-controls{background:ButtonFace!important;color:ButtonText!important;border:1px solid ButtonText!important;box-shadow:none!important}
+.desktop-lyrics.high-contrast .desktop-topbar button[aria-pressed=true],.desktop-lyrics.high-contrast .desktop-glass-menu button[aria-selected=true]{border:3px double ButtonText!important}
+.desktop-lyrics.high-contrast :is(.window-drag,.window-drag svg,.hint,.section-label,.toggle,.control-panel details,.control-panel summary,.result-heading strong,.result-heading>span,.result-artist,.result-meta,.panel-footer,.online-errors,.desktop-glass-select button svg,.desktop-glass-menu button svg){color:CanvasText!important}
+.desktop-lyrics.high-contrast .control-panel input[type=checkbox]{appearance:auto}
+.desktop-lyrics.high-contrast :is(button,input)::before{display:none}
+.desktop-lyrics.high-contrast .topbar-mode-picker::before{display:none}
+.desktop-lyrics.high-contrast .topbar-mode-picker:has(button:focus-visible){outline:2px solid Highlight;outline-offset:2px}
+.desktop-lyrics.high-contrast :is(button,input,select,summary):focus-visible{outline:2px solid Highlight;outline-offset:2px}
+@media(max-width:850px){.desktop-topbar-compact .desktop-glass-select{width:65px}.desktop-topbar-compact .desktop-glass-select button{font-size:10px}}
+@media(max-width:520px){.desktop-topbar-compact .desktop-glass-select{width:65px}.desktop-topbar-compact .desktop-glass-select button{min-height:25px;padding:3px 0}}
+@media(max-width:520px){.desktop-top-menu button[role=option]{font-size:10px}}
+@media(max-height:380px){.desktop-lyrics .control-panel{top:44px}}
+@media(prefers-reduced-motion:reduce){.desktop-lyrics :is(.window-chrome,.desktop-topbar,.waiting-screen,.control-panel,.desktop-notice,.restore-controls) :is(button,input,summary),.desktop-glass-menu,.desktop-glass-menu button,.desktop-lyrics .topbar-mode-picker{animation:none!important;transition:none!important}.desktop-glass-menu{transform:none!important}.desktop-glass-menu button::before,.desktop-lyrics .topbar-mode-picker::before{display:none}.desktop-lyrics :is(.window-chrome,.desktop-topbar,.waiting-screen,.control-panel,.desktop-notice) button:hover,.desktop-lyrics .restore-controls:hover,.desktop-lyrics :is(.window-chrome,.desktop-topbar,.waiting-screen,.control-panel,.desktop-notice) button:active,.desktop-lyrics .restore-controls:active{transform:none!important}}
+@media(forced-colors:active){.desktop-lyrics .topbar-mode-picker{background:ButtonFace!important;color:ButtonText!important;border-color:ButtonText!important;box-shadow:none!important}.desktop-lyrics .topbar-mode-picker::before{display:none}.desktop-lyrics .topbar-mode-picker:has(button:focus-visible){outline:2px solid Highlight;outline-offset:2px}}
+@media(forced-colors:active){.desktop-lyrics :is(.desktop-topbar,.desktop-statusbar,.control-panel,.desktop-notice,.waiting-symbol,.lyric-source,.online-status,.control-panel details),.desktop-glass-menu{background:Canvas!important;color:CanvasText!important;border:1px solid CanvasText!important;box-shadow:none;backdrop-filter:none}.desktop-lyrics :is(.window-chrome,.desktop-topbar,.waiting-screen,.control-panel,.desktop-notice) :is(button,input,select),.desktop-lyrics .restore-controls,.desktop-glass-menu button{background:ButtonFace!important;color:ButtonText!important;border:1px solid ButtonText!important;box-shadow:none!important}.desktop-lyrics .desktop-topbar button[aria-pressed=true],.desktop-glass-menu button[aria-selected=true]{border:3px double ButtonText!important}.desktop-lyrics :is(.window-drag,.window-drag svg,.hint,.section-label,.toggle,.control-panel details,.control-panel summary,.result-heading strong,.result-heading>span,.result-artist,.result-meta,.panel-footer,.online-errors,.desktop-glass-select button svg),.desktop-glass-menu button svg{color:CanvasText!important}.desktop-lyrics .control-panel input[type=checkbox]{appearance:auto}.desktop-lyrics :is(button,input)::before{display:none}.desktop-lyrics :is(button,input,select,summary):focus-visible,.desktop-glass-menu button:focus-visible{outline:2px solid Highlight;outline-offset:2px}.desktop-lyrics .control-panel,.desktop-glass-menu,.desktop-glass-menu .custom-scrollbar{scrollbar-color:ButtonText Canvas}}

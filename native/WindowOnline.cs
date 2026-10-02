@@ -33,38 +33,62 @@ internal sealed partial class MainWindow
         try
         {
             if (target.Title.Length == 0) return;
-            await Task.Delay(350, work.Token);
-            var cached = onlineCache.Read(target);
+            // Read cache and local files off the UI thread; debounce only requests that need the network.
+            var resolved = await Task.Run(() =>
+            {
+                work.Token.ThrowIfCancellationRequested();
+                var workerCached = onlineCache.Read(target);
+                Lyrics? workerLocal = null;
+                if (workerCached is not { Manual: true })
+                {
+                    try { workerLocal = library.Find(target); }
+                    catch (Exception e) when (e is not OperationCanceledException) { DataFiles.Log(e); }
+                }
+                work.Token.ThrowIfCancellationRequested();
+                return (Cached: workerCached, Local: workerLocal);
+            }, work.Token);
+            if (!Current(work, target)) return;
+            var cached = resolved.Cached;
             if (cached is { Manual: true })
             {
                 if (Current(work, target)) { ApplyLyrics(cached.Lyrics); OnlineStatus(new(target.Key, false, "已使用你选择的在线歌词（缓存）", [], [], cached.CandidateKey)); }
                 return;
             }
-            Lyrics? local = null;
-            try { local = await Task.Run(() => library.Find(target), work.Token); }
-            catch (Exception e) when (e is not OperationCanceledException) { DataFiles.Log(e); }
-            if (!Current(work, target)) return;
+            var local = resolved.Local;
             if (local is not null) { ApplyLyrics(local); OnlineStatus(new(target.Key, false, "已使用本地歌词；也可手动搜索在线版本", [], [])); return; }
             if (cached is not null) { ApplyLyrics(cached.Lyrics); OnlineStatus(new(target.Key, false, "已读取在线歌词缓存", [], [], cached.CandidateKey)); return; }
             if (!preferences.OnlineEnabled) { OnlineStatus(new(target.Key, false, "在线匹配已关闭", [], [])); return; }
-            OnlineStatus(new(target.Key, true, "正在搜索已启用的歌词源…", [], []));
-            var result = await online.Search(LyricQuery.From(target), EnabledSources(), work.Token);
+            await Task.Delay(350, work.Token);
             if (!Current(work, target)) return;
-            var errors = result.Errors.ToList();
-            var eligible = result.Candidates.Where(c => c.AutoEligible).OrderBy(c => Array.IndexOf(OnlineLyrics.ProviderIds, c.Provider))
-                .GroupBy(c => c.Provider).SelectMany(g => g.Take(2)).ToArray();
-            foreach (var candidate in eligible)
+            OnlineStatus(new(target.Key, true, "正在搜索已启用的歌词源…", [], []));
+            var errors = new List<string>(); Lyrics? matched = null; LyricCandidate? selectedCandidate = null; var selectedKey = "";
+            var result = await online.SearchProgressive(LyricQuery.From(target), EnabledSources(), work.Token, async page =>
             {
-                try
+                foreach (var candidate in page.Where(c => c.AutoEligible).Take(2))
                 {
-                    var packet = await online.Fetch(candidate, target, work.Token);
-                    if (!Current(work, target)) return;
-                    if (packet is null) continue;
-                    ApplyLyrics(packet); SaveOnline(target, packet, candidate.Key, false);
-                    OnlineStatus(new(target.Key, false, "已自动匹配 · " + packet.Source, result.Candidates, errors.ToArray(), candidate.Key)); return;
+                    try
+                    {
+                        var packet = await online.Fetch(candidate, target, work.Token);
+                        if (!Current(work, target)) return false;
+                        if (packet is null) continue;
+                        matched = packet; selectedCandidate = candidate; selectedKey = candidate.Key;
+                        ApplyLyrics(packet); SaveOnline(target, packet, candidate.Key, false);
+                        OnlineStatus(new(target.Key, false, "已自动匹配 · " + packet.Source + "；正在补全其他搜索结果", page, errors.ToArray(), candidate.Key)); return true;
+                    }
+                    catch (OperationCanceledException) when (work.Token.IsCancellationRequested) { throw; }
+                    catch (Exception e) { errors.Add(candidate.Provider + "：" + e.Message); }
                 }
-                catch (OperationCanceledException) when (work.Token.IsCancellationRequested) { throw; }
-                catch (Exception e) { errors.Add(candidate.Provider + "：" + e.Message); }
+                return false;
+            });
+            if (!Current(work, target)) return;
+            errors.InsertRange(0, result.Errors);
+            if (matched is not null)
+            {
+                var completed = result.Candidates;
+                // Keep the early selection visible when later high-scoring pages fill the 40-row result limit.
+                if (selectedCandidate is not null && !completed.Any(c => c.Key == selectedKey)) completed = completed.Take(39).Append(selectedCandidate)
+                    .OrderByDescending(c => c.Score).ThenBy(c => Array.IndexOf(OnlineLyrics.ProviderIds, c.Provider)).ToArray();
+                OnlineStatus(new(target.Key, false, "已自动匹配 · " + matched.Source, completed, errors.ToArray(), selectedKey)); return;
             }
             OnlineStatus(new(target.Key, false, result.Candidates.Length > 0 ? "未找到足够可靠的自动匹配，请选择一个搜索结果" : "没有找到歌词，可修改歌名/歌手后搜索或导入本地歌词", result.Candidates, errors.ToArray()));
         }

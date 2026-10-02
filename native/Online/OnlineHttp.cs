@@ -15,7 +15,7 @@ internal sealed class OnlineHttp : IDisposable
     public OnlineHttp(HttpMessageHandler? handler = null)
     {
         client = new(handler ?? new HttpClientHandler { AutomaticDecompression = DecompressionMethods.All }) { Timeout = TimeSpan.FromSeconds(12) };
-        client.DefaultRequestHeaders.UserAgent.ParseAdd("folia-Lyrics/0.4.2 (+https://github.com/KONEWS/folia-Lyrics; standalone-derivative)");
+        client.DefaultRequestHeaders.UserAgent.ParseAdd("folia-Lyrics/0.4.17 (+https://github.com/KONEWS/folia-Lyrics; standalone-derivative)");
     }
     public static string Url(string endpoint, params (string, object)[] parameters) => endpoint + "?" + string.Join('&', parameters.Select(p =>
         Uri.EscapeDataString(p.Item1) + "=" + Uri.EscapeDataString(Convert.ToString(p.Item2, CultureInfo.InvariantCulture) ?? "")));

@@ -55,19 +55,24 @@ internal sealed class AudioSpectrum : IDisposable
     public byte[] Read()
     {
         var result = new byte[1024];
+        bool fresh;
         lock (gate)
         {
-            var fresh = capture is not null && Stopwatch.GetElapsedTime(lastSamples).TotalSeconds < .3;
-            for (var i = 0; i < 2048; i++)
+            fresh = capture is not null && Stopwatch.GetElapsedTime(lastSamples).TotalSeconds < .3;
+            if (fresh)
             {
-                var window = .42 - .5 * Math.Cos(2 * Math.PI * i / 2048) + .08 * Math.Cos(4 * Math.PI * i / 2048);
-                fft[i].X = fresh ? (float)(ring[(cursor + i) & 2047] * window) : 0; fft[i].Y = 0;
+                var window = AudioSpectrumWindow.Coefficients;
+                for (var i = 0; i < 2048; i++)
+                {
+                    fft[i].X = (float)(ring[(cursor + i) & 2047] * window[i]); fft[i].Y = 0;
+                }
             }
         }
-        FastFourierTransform.FFT(true, 11, fft);
+        // With no fresh samples the original FFT is all zeros; preserve the same decay without transforming silence.
+        if (fresh) FastFourierTransform.FFT(true, 11, fft);
         for (var i = 0; i < 1024; i++)
         {
-            smooth[i] = (float)(smooth[i] * .6 + Math.Sqrt(fft[i].X * fft[i].X + fft[i].Y * fft[i].Y) * .4);
+            smooth[i] = (float)(smooth[i] * .6 + (fresh ? Math.Sqrt(fft[i].X * fft[i].X + fft[i].Y * fft[i].Y) : 0) * .4);
             result[i] = (byte)Math.Clamp((20 * Math.Log10(Math.Max(1e-9, smooth[i])) + 100) / 70 * 255, 0, 255);
         }
         return result;

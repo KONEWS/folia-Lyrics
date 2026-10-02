@@ -1,40 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
 import { Pause, Play, SkipBack, SkipForward, LoaderCircle } from 'lucide-react';
-import { isDesktop, listen, send, type MediaAction, type Session } from './bridge';
+import type { Session } from './bridge';
+import type { MediaControls } from './useMediaControls';
 
 // src/desktopLyrics/PlaybackControls.tsx
-export default function PlaybackControls({ session, disconnected }: { session: Session; disconnected: boolean }) {
-  const request = useRef(''), deadline = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const [pending, setPending] = useState(false), [feedback, setFeedback] = useState<{ text: string; error: boolean } | null>(null);
-  useEffect(() => {
-    request.current = ''; setPending(false); setFeedback(null);
-    const unsubscribe = listen(message => {
-      if (message.type !== 'transport' || !request.current || message.data.requestId !== request.current) return;
-      request.current = ''; clearTimeout(deadline.current); setPending(false);
-      setFeedback({ text: message.data.message, error: !message.data.success });
-    });
-    return () => { unsubscribe(); clearTimeout(deadline.current); request.current = ''; };
-  }, [session.sessionId, session.key]);
-  useEffect(() => {
-    if (!feedback) return;
-    const timer = setTimeout(() => setFeedback(null), 6000);
-    return () => clearTimeout(timer);
-  }, [feedback]);
-  const connected = isDesktop() && Boolean(session.sessionId) && !disconnected;
-  const caps = session.controls;
-  const canPlayPause = Boolean(caps && (caps.toggle || (session.playing ? caps.pause : caps.play)));
+export default function PlaybackControls({ session, controls }: { session: Session; controls: MediaControls }) {
+  const { connected, pending, feedback, caps, canPlayPause, control } = controls;
   const unavailable = !connected || pending;
   const playLabel = session.playing ? '暂停音乐' : '继续播放音乐';
-  const control = (action: MediaAction) => {
-    if (unavailable || request.current) return;
-    const requestId = crypto.randomUUID();
-    request.current = requestId; setPending(true); setFeedback(null);
-    deadline.current = setTimeout(() => {
-      if (request.current !== requestId) return;
-      request.current = ''; setPending(false); setFeedback({ text: '未收到播放器回复，请确认实际播放状态。', error: true });
-    }, 6500);
-    send('mediaControl', { requestId, sessionId: session.sessionId, songKey: session.key, action });
-  };
   const title = (enabled: boolean, label: string) => !connected ? '请先连接音乐播放器'
     : pending ? '正在等待播放器响应' : enabled ? `${label} · ${session.source}` : '当前播放器未开放这项控制';
   return <div className="playback-controls" role="group" aria-label="外部播放器控制" aria-busy={pending}>

@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { Check } from 'lucide-react';
-import { List, type RowComponentProps } from 'react-window';
+import { List, useListRef, type RowComponentProps } from 'react-window';
+import { useCustomSelectOptionFocus, type CustomSelectMenuNavigation } from './useCustomSelectOptionFocus';
 
 // CustomSelectMenu.tsx
 // Renders the viewport-anchored option menu used by CustomSelect.
@@ -10,7 +11,7 @@ import { List, type RowComponentProps } from 'react-window';
 // 选择器各要铺约 125 条命令，是仓库里最长的两个下拉；其余三十来个下拉只有 2-8 项，走原来的
 // 分支，标记逐字不变，不承担任何风险。
 //
-// 高度策略：**不引入任何新测量**。虚拟化分支消费的是 CustomSelect.updateDropdownPosition
+// 高度策略：**不引入任何新测量**。虚拟化分支消费的是 useCustomSelectPosition
 // 已经算好的 position.maxHeight（开合与 resize/scroll 时更新），只是把它减去内边距当成列表高度。
 
 export interface CustomSelectOption {
@@ -38,6 +39,10 @@ interface CustomSelectMenuProps {
     textColor: string;
     borderColor: string;
     onSelect: (value: string) => void;
+    id?: string;
+    className?: string;
+    keyboardNavigation?: boolean;
+    navigationRef?: React.RefObject<CustomSelectMenuNavigation | null>;
 }
 
 const VIRTUALIZE_THRESHOLD = 24;
@@ -55,6 +60,7 @@ type OptionRowProps = {
     accentColor: string;
     textColor: string;
     onSelect: (value: string) => void;
+    keyboardNavigation?: boolean;
 };
 
 const optionBackground = (isSelected: boolean, isDaylight: boolean, accentColor: string) => (
@@ -68,12 +74,20 @@ const OptionButton: React.FC<{
     accentColor: string;
     textColor: string;
     fixedHeight?: number;
+    keyboardNavigation?: boolean;
+    index: number;
+    count: number;
     onSelect: (value: string) => void;
-}> = ({ option, isSelected, isDaylight, accentColor, textColor, fixedHeight, onSelect }) => (
+}> = ({ option, isSelected, isDaylight, accentColor, textColor, fixedHeight, keyboardNavigation, index, count, onSelect }) => (
     <button
         type="button"
         role="option"
         aria-selected={isSelected}
+        data-value={option.value}
+        data-option-index={keyboardNavigation ? index : undefined}
+        aria-posinset={keyboardNavigation ? index + 1 : undefined}
+        aria-setsize={keyboardNavigation ? count : undefined}
+        tabIndex={keyboardNavigation ? -1 : undefined}
         onClick={() => onSelect(option.value)}
         className="w-full flex items-center justify-between px-3 py-2.5 text-sm rounded-lg transition-colors text-left cursor-pointer"
         style={{
@@ -114,6 +128,7 @@ const CustomSelectMenuRow = ({
     accentColor,
     textColor,
     onSelect,
+    keyboardNavigation,
 }: RowComponentProps<OptionRowProps>): React.ReactElement | null => {
     const option = options[index];
     if (!option) {
@@ -129,6 +144,9 @@ const CustomSelectMenuRow = ({
                 accentColor={accentColor}
                 textColor={textColor}
                 fixedHeight={OPTION_ROW_HEIGHT}
+                keyboardNavigation={keyboardNavigation}
+                index={index}
+                count={options.length}
                 onSelect={onSelect}
             />
         </div>
@@ -146,8 +164,16 @@ export const CustomSelectMenu: React.FC<CustomSelectMenuProps> = ({
     textColor,
     borderColor,
     onSelect,
+    id,
+    className,
+    keyboardNavigation,
+    navigationRef,
 }) => {
+    const reducedMotion = useReducedMotion();
     const isVirtualized = options.length >= VIRTUALIZE_THRESHOLD;
+    const listRef = useListRef(null);
+    const focusMountedOption = useCustomSelectOptionFocus({ enabled: Boolean(keyboardNavigation), count: options.length,
+        virtualized: isVirtualized, menu: menuRef, list: listRef, navigation: navigationRef });
 
     const rowProps = useMemo(() => ({
         options,
@@ -156,7 +182,8 @@ export const CustomSelectMenu: React.FC<CustomSelectMenuProps> = ({
         accentColor,
         textColor,
         onSelect,
-    }), [options, value, isDaylight, accentColor, textColor, onSelect]);
+        keyboardNavigation,
+    }), [options, value, isDaylight, accentColor, textColor, onSelect, keyboardNavigation]);
 
     const listHeight = Math.max(
         OPTION_ROW_HEIGHT,
@@ -169,7 +196,8 @@ export const CustomSelectMenu: React.FC<CustomSelectMenuProps> = ({
     return (
         <motion.div
             ref={menuRef}
-            initial={{
+            id={id}
+            initial={reducedMotion ? false : {
                 opacity: 0,
                 y: position.placement === 'top' ? 8 : -8,
                 scale: 0.96,
@@ -180,8 +208,8 @@ export const CustomSelectMenu: React.FC<CustomSelectMenuProps> = ({
                 y: position.placement === 'top' ? 8 : -8,
                 scale: 0.96,
             }}
-            transition={{ duration: 0.15, ease: 'easeOut' }}
-            className={`fixed z-[200] rounded-xl border shadow-xl overscroll-contain backdrop-blur-md custom-scrollbar${isVirtualized ? '' : ' overflow-y-auto'}`}
+            transition={{ duration: reducedMotion ? 0 : 0.15, ease: 'easeOut' }}
+            className={`fixed z-[200] rounded-xl border shadow-xl overscroll-contain backdrop-blur-md custom-scrollbar${isVirtualized ? '' : ' overflow-y-auto'} ${className ?? ''}`}
             data-wheel-scroll-region
             role="listbox"
             aria-label={ariaLabel}
@@ -199,6 +227,8 @@ export const CustomSelectMenu: React.FC<CustomSelectMenuProps> = ({
             {isVirtualized ? (
                 <div className="p-1.5">
                     <List
+                        listRef={listRef}
+                        onRowsRendered={keyboardNavigation ? focusMountedOption : undefined}
                         rowCount={options.length}
                         rowHeight={OPTION_ROW_HEIGHT + OPTION_ROW_GAP}
                         rowComponent={CustomSelectMenuRow}
@@ -210,7 +240,7 @@ export const CustomSelectMenu: React.FC<CustomSelectMenuProps> = ({
                 </div>
             ) : (
                 <div className="p-1.5 space-y-0.5">
-                    {options.map((option) => (
+                    {options.map((option, index) => (
                         <OptionButton
                             key={option.value}
                             option={option}
@@ -219,6 +249,9 @@ export const CustomSelectMenu: React.FC<CustomSelectMenuProps> = ({
                             accentColor={accentColor}
                             textColor={textColor}
                             onSelect={onSelect}
+                            keyboardNavigation={keyboardNavigation}
+                            index={index}
+                            count={options.length}
                         />
                     ))}
                 </div>

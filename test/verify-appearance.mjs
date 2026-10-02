@@ -10,7 +10,16 @@ export async function verifyAppearance(page, output) {
   assert.equal(await style('.acrylic-backdrop','backgroundColor'),'rgba(0, 0, 0, 0)');
   await emit({acrylic:false,solid:true,highContrast:false}); await page.locator('.solid-surfaces').waitFor();
   assert.equal(await style('.desktop-topbar','backdropFilter'),'none');
-  assert.equal(await style('.desktop-topbar','backgroundColor'),'rgb(36, 51, 67)');
+  const solid = await page.locator('.desktop-lyrics').evaluate(el => {
+    const probe = document.createElement('i'); probe.style.backgroundColor = 'var(--desktop-glass-base)'; el.append(probe);
+    const expected = getComputedStyle(probe).backgroundColor; probe.remove();
+    const actual = getComputedStyle(el.querySelector('.desktop-topbar')).backgroundColor;
+    const canvas = document.createElement('canvas'); canvas.width = canvas.height = 1;
+    const context = canvas.getContext('2d'); context.fillStyle = actual; context.fillRect(0, 0, 1, 1);
+    return { actual, expected, alpha: context.getImageData(0, 0, 1, 1).data[3] };
+  });
+  assert.equal(solid.actual, solid.expected, 'solid fallback follows the cover theme or default background');
+  assert.equal(solid.alpha, 255, 'solid fallback must stay opaque');
   await emit({acrylic:false,solid:true,highContrast:true}); await page.locator('.high-contrast').waitFor();
   await emit({acrylic:false,solid:false,highContrast:false}); await page.locator('.solid-surfaces').waitFor({state:'detached'});
   assert.equal(await style('.window-chrome','backgroundColor'),'rgba(0, 0, 0, 0)');
@@ -29,8 +38,8 @@ export async function verifyAppearance(page, output) {
   await page.locator('.window-edge').first().waitFor({state:'detached'});
   assert.equal(await page.locator('.window-edge').count(),0);
   await page.evaluate(()=>window.__foliaEmit('windowState',{maximized:false,fullscreen:true}));
-  await page.locator('.window-buttons button:disabled').waitFor();
-  assert(await page.getByRole('button',{name:'最大化窗口',exact:true}).isDisabled());
+  await page.locator('.window-buttons').waitFor({state:'detached'});
+  assert.equal(await page.locator('.window-buttons').count(),0);
   await page.evaluate(()=>window.__foliaEmit('windowState',{maximized:false,fullscreen:false}));
   const button=page.getByRole('button',{name:'在线歌词设置',exact:true});
   await button.hover(); await page.waitForFunction(()=>document.querySelector('.waiting-actions button')?.style.getPropertyValue('--light-opacity')==='1');
@@ -50,5 +59,5 @@ export async function verifyAppearance(page, output) {
   await page.screenshot({path:`${output}/settings-small.png`});
   await page.getByRole('button',{name:'关闭设置'}).click(); await page.setViewportSize({width:1280,height:800});
   console.log('PASS acrylic / glass / minimum-window checks');
-  return ['transparent document','native acrylic handshake','solid fallback','high contrast handshake','pointer cleanup','reduced motion','664x411 layout','settings scroll without covering transport','transparent title and icon','native caption and resize commands','maximized and fullscreen caption state'];
+  return ['transparent document','native acrylic handshake','solid fallback','high contrast handshake','pointer cleanup','reduced motion','664x411 layout','settings scroll without covering transport','transparent title and icon','native caption and resize commands','fullscreen hides window buttons'];
 }

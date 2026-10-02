@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType><TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable>
+    <NativeSourceRoot Condition="'$(NativeSourceRoot)' == ''">../../native</NativeSourceRoot>
+    <OnlineCacheSource Condition="'$(OnlineCacheSource)' == ''">../../native/Online/OnlineCache.cs</OnlineCacheSource>
+    <OnlineLyricsSource Condition="'$(OnlineLyricsSource)' == ''">../../native/Online/OnlineLyrics.cs</OnlineLyricsSource>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(NativeSourceRoot)/LyricLibrary.cs" Link="LyricLibrary.cs"/>
+    <Compile Include="$(NativeSourceRoot)/LyricFiles.cs" Link="LyricFiles.cs"/>
+    <Compile Include="$(NativeSourceRoot)/WindowOnline.cs" Link="WindowOnline.cs"/>
+    <Compile Include="$(OnlineCacheSource)" Link="OnlineCache.cs"/>
+    <Compile Include="../../native/MediaModels.cs" Link="MediaModels.cs"/>
+    <Compile Include="../../native/Preferences.cs" Link="Preferences.cs"/>
+    <Compile Include="../../native/Online/OnlineModels.cs" Link="OnlineModels.cs"/>
+    <Compile Include="$(OnlineLyricsSource)" Link="OnlineLyrics.cs"/>
+    <Compile Include="../../native/Online/OnlineHttp.cs" Link="OnlineHttp.cs"/>
+    <Compile Include="../../native/Online/KugouLyricProvider.cs" Link="KugouLyricProvider.cs"/>
+    <Compile Include="../../native/Online/QqLyricProvider.cs" Link="QqLyricProvider.cs"/>
+    <Compile Include="../../native/Online/NeteaseLyricProvider.cs" Link="NeteaseLyricProvider.cs"/>
+    <Compile Include="../../native/Online/LrclibLyricProvider.cs" Link="LrclibLyricProvider.cs"/>
+    <PackageReference Include="TagLibSharp" Version="2.3.0"/>
+  </ItemGroup>
+</Project>

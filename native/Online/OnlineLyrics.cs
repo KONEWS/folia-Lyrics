@@ -11,13 +11,30 @@ internal sealed class OnlineLyrics : IDisposable
     public OnlineLyrics(OnlineHttp? transport = null)
     { http = transport ?? new(); providers = [new KugouLyricProvider(http), new QqLyricProvider(http), new NeteaseLyricProvider(http), new LrclibLyricProvider(http)]; }
     public async Task<OnlineSearchResult> Search(LyricQuery query, string[] enabled, CancellationToken token)
+        => await Complete(StartSearch(query, enabled, token), query, token);
+    // Search all enabled sources together, but try automatic matches in the original provider order as each page is ready.
+    public async Task<OnlineSearchResult> SearchProgressive(LyricQuery query, string[] enabled, CancellationToken token, Func<LyricCandidate[], Task<bool>> tryPage)
     {
-        var pages = await Task.WhenAll(providers.Where(p => enabled.Contains(p.Id)).Select(async p =>
+        var pages = StartSearch(query, enabled, token);
+        foreach (var pageTask in pages)
         {
-            try { return (Candidates: await p.Search(query, token), Error: ""); }
+            var page = await pageTask.WaitAsync(token); token.ThrowIfCancellationRequested();
+            var ranked = page.Candidates.Select(c => Rank(c, query)).DistinctBy(c => c.Key).OrderByDescending(c => c.Score).ToArray();
+            if (await tryPage(ranked)) break;
+        }
+        return await Complete(pages, query, token);
+    }
+    private readonly record struct SearchPage(LyricCandidate[] Candidates, string Error);
+    private Task<SearchPage>[] StartSearch(LyricQuery query, string[] enabled, CancellationToken token) => providers
+        .Where(p => enabled.Contains(p.Id)).OrderBy(p => Array.IndexOf(ProviderIds, p.Id)).Select(async p =>
+        {
+            try { return new SearchPage(await p.Search(query, token), ""); }
             catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
-            catch (Exception e) { return (Candidates: Array.Empty<LyricCandidate>(), Error: $"{p.Name}：{(e is OperationCanceledException ? "请求超时" : e.Message)}"); }
-        }));
+            catch (Exception e) { return new SearchPage([], $"{p.Name}：{(e is OperationCanceledException ? "请求超时" : e.Message)}"); }
+        }).ToArray();
+    private static async Task<OnlineSearchResult> Complete(Task<SearchPage>[] work, LyricQuery query, CancellationToken token)
+    {
+        var pages = await Task.WhenAll(work).WaitAsync(token);
         token.ThrowIfCancellationRequested();
         var candidates = pages.SelectMany(p => p.Candidates).Select(c => Rank(c, query)).DistinctBy(c => c.Key)
             .OrderByDescending(c => c.Score).ThenBy(c => Array.IndexOf(ProviderIds, c.Provider)).Take(40).ToArray();

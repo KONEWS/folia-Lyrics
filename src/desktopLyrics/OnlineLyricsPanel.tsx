@@ -12,14 +12,16 @@ const SOURCES = [
 ];
 export default function OnlineLyricsPanel({ session, preferences, online }: { session: Session; preferences: Preferences; online: OnlineState }) {
   const [title, setTitle] = useState(session.title), [artist, setArtist] = useState(session.artist);
+  const enabledSources = SOURCES.filter(source => preferences.onlineProviders.includes(source.id)).length;
   useEffect(() => { setTitle(session.title); setArtist(session.artist); }, [session.key, session.title, session.artist]);
   return <section className="online-lyrics-panel" aria-label="在线歌词">
     <div className="section-label"><span className="online-heading"><Globe2 size={13}/>在线歌词</span><span>自动匹配 / 手动选词</span></div>
     <label className="toggle"><span>自动匹配在线歌词</span><input type="checkbox" checked={preferences.onlineEnabled} onChange={e => send('onlineEnabled', e.target.checked)}/></label>
-    <div className="lyric-sources">{SOURCES.map(source => <label key={source.id} className="lyric-source">
+    <details className="lyric-source-settings"><summary>歌词来源 <span className="hint">已启用 {enabledSources}/{SOURCES.length} 个来源</span></summary>
+      <div className="lyric-sources">{SOURCES.map(source => <label key={source.id} className="lyric-source">
       <div><strong>{source.name}</strong><small>{source.detail}</small></div>
       <input type="checkbox" aria-label={`启用${source.name}歌词源`} checked={preferences.onlineProviders.includes(source.id)} disabled={!preferences.onlineEnabled}
-        onChange={e => send('onlineProvider', { id: source.id, enabled: e.target.checked })}/></label>)}</div>
+        onChange={e => send('onlineProvider', { id: source.id, enabled: e.target.checked })}/></label>)}</div></details>
     <p className="hint">找不到本地歌词时自动联网。只发送歌名、歌手、专辑和时长，不上传音频。已匹配歌词会缓存；关闭联网后仍可使用缓存。</p>
     <form className="online-search" onSubmit={e => { e.preventDefault(); send('searchOnline', { title: title.trim(), artist: artist.trim() }); }}>
       <label>歌名<input aria-label="在线搜索歌名" value={title} maxLength={200} placeholder="输入歌名" onChange={e => setTitle(e.target.value)}/></label>
