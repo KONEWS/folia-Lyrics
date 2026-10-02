@@ -19,7 +19,7 @@
 | utils | 128+ |
 | backend/electron | 64+ |
 | hooks | 64+ |
-| src (其他) | 32+ |
+| src (其他) | 64+ |
 | stores | 32+ |
 | 其他 | 32+ |
 | types | 16+ |
@@ -41,6 +41,7 @@
 | 32+ | `src/components/ponder/surfaces/ponderSurfaceGeometry.ts` |
 | 32+ | `src/components/visualizer/colorMix.ts` |
 | 32+ | `src/components/visualizer/definition.ts` |
+| 32+ | `src/i18n/config.ts` |
 | 32+ | `src/mods/folium/contract.ts` |
 | 32+ | `src/services/db.ts` |
 | 32+ | `src/services/onlineMusic/songMetadata.ts` |
