@@ -1,5 +1,4 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { writeFileSync } from 'node:fs';
 import { MotionValue } from 'framer-motion';
 import { useVisualizerClock } from '../../../src/desktopLyrics/useVisualizerClock';
 import { EMPTY } from '../../../src/desktopLyrics/bridge';
@@ -60,13 +59,6 @@ describe('desktop clock audio work', () => {
     expect(snapshots[0][0]).toBe(128);
     expect(snapshots.at(-1)?.[0]).toBe(255);
     expect(mounted.runtime.audioBands.bass.get()).toBe(255);
-    writeFileSync('validation/performance/frontend-runtime-operations.json', JSON.stringify({
-      scenario: '60 RAF frames with 20 incoming 1024-bin FFT snapshots',
-      unchangedFrameCadence: 60, immutableSnapshots: 60,
-      legacyBandPowerEvaluations: 480, optimizedBandPowerEvaluations: 160,
-      reductionPercent: 100 * (480 - 160) / 480,
-      exactUniformSpectrumBandValuesPreserved: true,
-    }, null, 2));
     unsubscribe(); mounted.cleanup?.(); expect(mounted.scheduled.size).toBe(0);
   });
   it('clears stale input at 500ms and reacts immediately to a new sample rate and packet', () => {

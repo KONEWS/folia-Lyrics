@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
-import { selectDesktopOption } from './desktop-select.mjs';
+import { selectDesktopOption, setDesktopCoverTheme } from './desktop-select.mjs';
 
 // test/verify-cover-immersion.mjs — real browser input/timers and deterministic cover fixtures.
 export async function verifyCoverImmersion(page, song, output) {
+  const previousCoverTheme = await setDesktopCoverTheme(page);
   const emit = (type, data) => page.evaluate(({ type, data }) => window.__foliaEmit(type, data), { type, data });
   const cover = color => `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" fill="${color}"/></svg>`)}`;
   const setSong = async (key, color) => {
@@ -14,7 +15,7 @@ export async function verifyCoverImmersion(page, song, output) {
   };
   const background = () => page.locator('.desktop-lyrics').evaluate(el => el.style.getPropertyValue('--cover-background'));
   const open = () => page.getByRole('button', { name: '打开歌词设置' }).click();
-  const close = () => page.getByRole('button', { name: '关闭设置' }).click();
+  const close = () => page.locator('.desktop-topbar [data-settings-trigger]').click();
   await selectDesktopOption(page, '歌词样式', { label: '绘光' });
   await setSong('cover-red', '#dc5432'); const red = await background();
   await page.screenshot({ path: `${output}/cover-theme-red.png` });
@@ -83,6 +84,7 @@ export async function verifyCoverImmersion(page, song, output) {
   assert.equal(await page.locator('.immersive').count(), 0, 'keyboard activity restarts the delay');
   await page.locator('.immersive').waitFor(); await page.keyboard.press('Escape'); await open();
   await automatic.uncheck(); await close();
+  await setDesktopCoverTheme(page, previousCoverTheme);
   console.log('PASS cover theme / configurable idle immersion / bottom controls checks');
   return ['red-blue cover theme changes', 'neutral palette for monochrome covers', 'stable theme when returning', 'theme switch', 'high contrast preserved', 'stale extraction discarded', 'missing cover fallback', 'native preference commands', 'seconds validation', 'settings suspend timer', 'pointer resets timer', 'idle hides controls and cursor', 'bottom hover reveals working transport', 'leaving bottom hides focused controls', 'hover switch', 'manual immersive cursor hiding', 'mouse restores cursor', 'Escape restores controls', 'automatic switch', 'keyboard resets timer'];
 }

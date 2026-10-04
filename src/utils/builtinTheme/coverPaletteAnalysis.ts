@@ -14,6 +14,7 @@ export type CoverPalette = {
     accentHue: number;
     scheme: HarmonyScheme;
     tone: PaletteTone;
+    preserveCoverHue?: boolean;
 };
 
 const MIN_SUPPORT_SATURATION = 0.15;
@@ -107,14 +108,16 @@ const resolveAccentHue = (
 };
 
 // Turns raw cover swatches into the hue/tone contract the built-in theme generator builds on.
-export const analyzeCoverPalette = (coverColors: string[], random: () => number): CoverPalette => {
+export const analyzeCoverPalette = (coverColors: string[], random: () => number, preserveCoverHue = false): CoverPalette => {
     const parsedColors = coverColors
         .map(color => hexToHsl(color))
         .filter((color): color is Hsl => color !== null);
 
-    const base = pickBaseColor(parsedColors, random);
+    // Representative swatches arrive in population order. Skip neutral backgrounds without promoting tiny saturated details.
+    const dominant = parsedColors.find(({ s, l }) => s * (1 - Math.abs(2 * l - 1)) >= 0.06 && l > 0.08 && l < 0.94);
+    const base = preserveCoverHue ? dominant ?? parsedColors[0] ?? pickBaseColor([], random) : pickBaseColor(parsedColors, random);
     const supportHue = pickSupportHue(parsedColors, base);
-    const scheme = pickScheme(base.s, supportHue, random);
+    const scheme = preserveCoverHue ? 'monochrome' : pickScheme(base.s, supportHue, random);
     const accentJitter = scheme === 'monochrome' ? 0 : (random() - 0.5) * 16;
 
     return {
@@ -128,5 +131,6 @@ export const analyzeCoverPalette = (coverColors: string[], random: () => number)
             { value: 'tinted', weight: 4 },
             { value: 'rich', weight: 2.5 },
         ]),
+        preserveCoverHue,
     };
 };

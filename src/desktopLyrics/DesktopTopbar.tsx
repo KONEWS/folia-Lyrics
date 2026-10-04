@@ -80,7 +80,7 @@ export default function DesktopTopbar(p: Props) {
         <button className="icon-button" aria-label={actions[3].label} title={actions[3].title}
           aria-pressed={p.fullscreen} onClick={actions[3].onAction}>{actions[3].icon}</button>
       </>}
-      <button className={`icon-button ${p.panel ? 'selected' : ''}`} aria-label={text('settings')} title={text('settings')}
+      <button data-settings-trigger className={`icon-button ${p.panel ? 'selected' : ''}`} aria-label={text('settings')} title={text('settings')}
         aria-expanded={p.panel} onClick={p.onPanel}><Settings2 size={19}/></button>
       <span className="immersive-toggle-slot" aria-hidden="true"/>
     </div>

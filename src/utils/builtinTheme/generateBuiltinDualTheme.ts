@@ -71,7 +71,7 @@ const buildAccentColor = (
     const collidesWithPrimary = getHueDistance(palette.accentHue, palette.baseHue) < 15
         && getContrastRatio(accent, primaryColor) < 1.3;
 
-    if (!collidesWithPrimary) {
+    if (palette.preserveCoverHue || !collidesWithPrimary) {
         return accent;
     }
 
@@ -133,11 +133,13 @@ const buildModeTheme = (
 export const generateBuiltinDualTheme = ({
     coverColors = [],
     random = Math.random,
+    preserveCoverHue = false,
 }: {
     coverColors?: string[];
     random?: () => number;
+    preserveCoverHue?: boolean;
 } = {}): DualTheme => {
-    const palette = analyzeCoverPalette(coverColors, random);
+    const palette = analyzeCoverPalette(coverColors, random, preserveCoverHue);
     const names = pickBuiltinThemeNames(palette, random);
     const descriptions = pickBuiltinThemeDescriptions(palette, random);
 

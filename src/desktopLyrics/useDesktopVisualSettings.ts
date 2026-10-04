@@ -12,6 +12,7 @@ import { useDesktopVisualDraft } from './useDesktopVisualDraft';
 import { applyTypographyPatch, type DesktopTypographyPatch, type DesktopVisualizerPatch } from './desktopVisualFields';
 import { buildDesktopBackgroundActions, buildDesktopModePanelProps, resetDesktopMode } from './desktopVisualSettingsPanels';
 import { exportDesktopVisualConfig, importDesktopVisualConfig } from './desktopVisualSettingsCodec';
+import { DEFAULT_SETTINGS_TRANSPARENCY, useDesktopPanelSettingsStore } from '../stores/useDesktopPanelSettingsStore';
 
 // src/desktopLyrics/useDesktopVisualSettings.ts — original visual settings feed the desktop renderer without App playback state.
 type Options = { baseTheme: Theme; cover: string; transparent: boolean; translated: boolean; onTranslated: (value: boolean) => void };
@@ -89,7 +90,7 @@ export function useDesktopVisualSettings(input: Options) {
     draftVisualizer.monetBackgroundTuning, draftVisualizer.nomandBackgroundTuning, draftVisualizer.latentBackgroundTuning, draftVisualizer.soraBackgroundTuning, draftVisualizer.visualizerBackgroundMode]);
   const backgroundActions = buildDesktopBackgroundActions(draftVisualizer, assets, edits.patchVisualizer);
   const panelProps = buildDesktopModePanelProps(draftVisualizer, assets, edits.patchVisualizer, edits.beginSlider, edits.commitSlider);
-  const resetCommon = () => { edits.commitSlider(); applyTypographyPatch(commonDefaults); visualizer.handleSetVisualizerOpacity(1); useThemeSettingsStore.getState().handleToggleStaticMode(false); localStorage.removeItem(INTENSITY_KEY); setIntensityOverride(null); };
+  const resetCommon = () => { edits.commitSlider(); applyTypographyPatch(commonDefaults); visualizer.handleSetVisualizerOpacity(1); useThemeSettingsStore.getState().handleToggleStaticMode(false); useDesktopPanelSettingsStore.getState().setSettingsTransparency(DEFAULT_SETTINGS_TRANSPARENCY); localStorage.removeItem(INTENSITY_KEY); setIntensityOverride(null); };
   const resetSubtitle = () => { edits.commitSlider(); applyTypographyPatch(subtitleDefaults); input.onTranslated(true); };
   const resetMode = (mode: VisualizerMode) => { edits.commitSlider(); resetDesktopMode(mode); };
   const codecOptions = { animationIntensity, backgroundEnabled, translated: input.translated, setAnimationIntensity, setBackgroundEnabled, setTranslated: input.onTranslated };

@@ -3,7 +3,7 @@
     <OutputType>WinExe</OutputType><TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
     <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion><UseWindowsForms>true</UseWindowsForms>
     <EnableWindowsTargeting>true</EnableWindowsTargeting><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable>
-    <AssemblyName>FoliaLyrics</AssemblyName><Product>folia-Lyrics</Product><Version>0.4.25</Version>
+    <AssemblyName>FoliaLyrics</AssemblyName><Product>folia-Lyrics</Product><Version>0.4.26</Version>
     <ApplicationIcon>icon.ico</ApplicationIcon><PublishSingleFile>true</PublishSingleFile>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract><SelfContained>true</SelfContained>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier><DebugType>none</DebugType><EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>

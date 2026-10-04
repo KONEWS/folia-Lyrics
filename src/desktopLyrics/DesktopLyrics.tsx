@@ -28,6 +28,7 @@ import { useDesktopSegmentation } from './useDesktopSegmentation';
 import type { DesktopVisualSection } from './DesktopVisualSettings';
 import i18n from '../i18n/config';
 import { useTypographySettingsStore } from '../stores/useTypographySettingsStore';
+import { useDesktopSettingsTransparency } from './useDesktopSettingsTransparency';
 
 // src/desktopLyrics/DesktopLyrics.tsx
 const DesktopVisualSettings = lazy(() => import('./DesktopVisualSettings'));
@@ -35,6 +36,7 @@ const DesktopSegmentationSettings = lazy(() => import('./DesktopSegmentationSett
 export default function DesktopLyrics() {
   const state = useDesktopState();
   const glassSurface = useGlassHighlights();
+  useDesktopSettingsTransparency(glassSurface);
   const footer = useRef<HTMLElement>(null);
   const [mode, setMode] = useState<VisualizerMode>(() => ALL_MODES.find(m => m.mode === localStorage.getItem('folia.desktop.mode.v1'))?.mode ?? 'classic');
   const [panel, setPanel] = useState(false), [immersive, setImmersive] = useState(false), [offset, setOffset] = useState(0);

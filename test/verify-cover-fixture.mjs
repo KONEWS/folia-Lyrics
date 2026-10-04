@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { emitVisual, readVisual, visualFrame } from './desktop-visual-fixture.mjs';
+import { setDesktopCoverTheme } from './desktop-select.mjs';
 
 // test/verify-cover-fixture.mjs — optional external SMTC bytes, browser decode and same-song late cover propagation.
 const syntheticCover = () => {
@@ -16,6 +17,7 @@ const parseFixture = text => {
 };
 // Check decoding separately, then observe the application's real late-cover and refresh paths.
 export async function verifyCoverFixture(page, song, output, { onPalette } = {}) {
+  const previousCoverTheme = await setDesktopCoverTheme(page);
   const checks = [], fixture = process.env.FOLIA_COVER_FIXTURE
     ? parseFixture(await readFile(process.env.FOLIA_COVER_FIXTURE, 'utf8')) : syntheticCover();
   let sha256;
@@ -83,5 +85,6 @@ export async function verifyCoverFixture(page, song, output, { onPalette } = {})
   checks.push('the repaired cover enables the existing theme refresh action, which changes its palette without changing the artwork, lyrics or player state');
   await emitVisual(page, 'session', { ...song, cover: '' }); await page.locator('.cover-theme').waitFor({ state: 'detached' });
   await page.evaluate(() => delete window.__foliaCoverBefore);
+  await setDesktopCoverTheme(page, previousCoverTheme);
   return { checks, samples: [{ source: fixture.source, bytes: fixture.bytes, sha256, decoded, lateCover: stable }, ...palette.samples] };
 }

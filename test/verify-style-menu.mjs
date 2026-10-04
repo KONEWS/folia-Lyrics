@@ -136,7 +136,7 @@ export async function verifyStyleMenu(page, song, output) {
   };
   try {
     await windowState(); await emit(page, 'restore', {});
-    if (await page.locator('.control-panel').count()) await page.getByRole('button', { name: '关闭设置', exact: true }).click();
+    if (await page.locator('.control-panel').count()) await page.locator('.desktop-topbar [data-settings-trigger]').click();
     await prefs({ autoImmersive: false, immersiveDelay: 30, bottomHoverControls: true });
     await emit(page, 'session', { ...song, playing: false, position: 36 });
     await emit(page, 'lyrics', { key: song.key, title: song.title, artist: song.artist, cover: '', format: 'lrc', embedded: false,

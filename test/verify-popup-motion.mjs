@@ -52,7 +52,7 @@ export async function verifyPopupMotion(page, song, output) {
         else if (placement === 'top') assert(Math.abs(popup.y + popup.height - anchor.y + 4) <= .75,
           'a selector opened during panel entry follows the final top anchor');
       });
-      await page.getByRole('button', { name: '关闭设置', exact: true }).click();
+      await page.locator('.desktop-topbar [data-settings-trigger]').click();
       for (const size of [{ width: 600, height: 450 }, { width: 450, height: 300 }]) {
         await page.setViewportSize(size);
         for (const edge of ['first', 'last']) {
@@ -146,7 +146,7 @@ export async function verifyPopupMotion(page, song, output) {
     if (await assetClose.count()) { await assetClose.first().click(); await page.locator('.desktop-visual-asset-dialog').waitFor({ state: 'detached' }); }
     await closeVisualSettings(page);
     if (await page.locator('.desktop-segmentation-settings').count()) await page.getByRole('button', { name: '关闭分词设置', exact: true }).click();
-    if (await page.getByRole('button', { name: '关闭设置', exact: true }).count()) await page.getByRole('button', { name: '关闭设置', exact: true }).click();
+    if (await page.locator('.control-panel:not(.desktop-visual-settings,.desktop-segmentation-settings)').count()) await page.locator('.desktop-topbar [data-settings-trigger]').click();
     await page.setViewportSize(viewport); await selectDesktopOption(page, '歌词样式', { value: originalMode });
   }
 }

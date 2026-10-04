@@ -27,11 +27,14 @@ import { verifySecondaryUi, verifySecondaryCoverContrast } from './verify-second
 import { verifyCoverFixture } from './verify-cover-fixture.mjs';
 import { installPopupMotionProbe } from './popup-motion-fixture.mjs';
 import { verifyPopupMotion } from './verify-popup-motion.mjs';
+import { verifyDesktopTheme } from './verify-desktop-theme.mjs';
+import { verifySettingsDismiss } from './verify-settings-dismiss.mjs';
+import { verifySettingsTransparency } from './verify-settings-transparency.mjs';
 
 // test/verify-renderers.mjs
 const root = resolve('dist-desktop');
 const singleMode = process.env.FOLIA_MODE_INDEX || undefined;
-const output = resolve(singleMode === undefined ? 'test-results/desktop' : 'test-results/desktop-playback');
+const output = resolve(process.env.FOLIA_UI_OUTPUT || (singleMode === undefined ? 'test-results/desktop' : 'test-results/desktop-playback'));
 await mkdir(output, { recursive: true });
 const mimes = { '.html':'text/html', '.js':'text/javascript', '.css':'text/css', '.json':'application/json', '.png':'image/png', '.svg':'image/svg+xml', '.otf':'font/otf', '.woff2':'font/woff2' };
 const server = createServer(async (req, res) => {
@@ -50,7 +53,7 @@ let page;
 try {
   page = await browser.newPage({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1 });
   if (!process.env.FOLIA_CHECKS_ONLY || process.env.FOLIA_CHECKS_ONLY === 'input') await installPlaybackInputProbe(page);
-  if (!process.env.FOLIA_CHECKS_ONLY || ['parser', 'settings-refresh', 'visual-settings', 'background-topbar', 'selected-controls', 'secondary-ui', 'cover-fixture', 'popup-motion'].includes(process.env.FOLIA_CHECKS_ONLY)) await installDesktopParserProbe(page);
+  if (!process.env.FOLIA_CHECKS_ONLY || ['settings-transparency', 'settings-dismiss', 'theme', 'parser', 'settings-refresh', 'visual-settings', 'background-topbar', 'selected-controls', 'secondary-ui', 'cover-fixture', 'popup-motion'].includes(process.env.FOLIA_CHECKS_ONLY)) await installDesktopParserProbe(page);
   if (process.env.FOLIA_CHECKS_ONLY === 'popup-motion') await installPopupMotionProbe(page);
   if (!process.env.FOLIA_CHECKS_ONLY || process.env.FOLIA_CHECKS_ONLY === 'visual-settings') await installDesktopSegmentationProbe(page);
   page.on('pageerror', e => errors.push(String(e)));
@@ -59,6 +62,8 @@ try {
   if (process.env.FOLIA_CHECKS_ONLY === 'ux-polish-baseline') await page.addInitScript(() => localStorage.setItem('folia.desktop.mode.v1', 'classic'));
   await page.goto(process.env.FOLIA_TEST_URL || `http://127.0.0.1:${server.address().port}/desktop.html`, { waitUntil: 'networkidle' });
   await page.locator('.waiting-screen h1').waitFor();
+  if (process.env.FOLIA_CHECKS_ONLY === 'settings-transparency') assert.equal(await page.locator('.waiting-description').innerText(),
+    '打开支持 Windows 媒体接口的播放器，播放一首歌；也可在设置中选择播放器。');
   assert(await page.getByRole('button', { name: '继续播放音乐', exact: true }).isDisabled());
   await page.screenshot({ path: `${output}/welcome.png` });
   const appearanceChecks = process.env.FOLIA_CHECKS_ONLY === 'ux-polish-baseline' ? [] : await verifyAppearance(page, output);
@@ -74,7 +79,22 @@ try {
     window.__foliaEmit('lyrics', onlinePacket ? { ...onlinePacket, key: song.key } : { key: song.key, title: song.title, artist: song.artist, content: raw, source: '内嵌歌词 · Reborn.flac', cover: '', embedded: true });
   }, { song, raw, onlinePacket });
   await page.locator('.waiting-screen').waitFor({ state: 'detached' });
-  if (process.env.FOLIA_CHECKS_ONLY === 'popup-motion') {
+  if (process.env.FOLIA_CHECKS_ONLY === 'settings-transparency') {
+    const report = await verifySettingsTransparency(page, song, output);
+    await writeFile(`${output}/settings-transparency-results.json`, JSON.stringify({ ...report, appearanceChecks, errors }, null, 2));
+    assert.equal(errors.length, 0, errors.join('\n'));
+    console.log(`PASS focused settings transparency: ${report.checks.length} checks`);
+  } else if (process.env.FOLIA_CHECKS_ONLY === 'settings-dismiss') {
+    const report = await verifySettingsDismiss(page, song, output);
+    await writeFile(`${output}/settings-dismiss-results.json`, JSON.stringify({ ...report, appearanceChecks, errors }, null, 2));
+    assert.equal(errors.length, 0, errors.join('\n'));
+    console.log(`PASS focused desktop settings dismissal: ${report.checks.length} checks`);
+  } else if (process.env.FOLIA_CHECKS_ONLY === 'theme') {
+    const report = await verifyDesktopTheme(page, song, output);
+    await writeFile(`${output}/desktop-theme-results.json`, JSON.stringify({ ...report, appearanceChecks, errors }, null, 2));
+    assert.equal(errors.length, 0, errors.join('\n'));
+    console.log(`PASS focused desktop theme: ${report.checks.length} checks`);
+  } else if (process.env.FOLIA_CHECKS_ONLY === 'popup-motion') {
     const report = await verifyPopupMotion(page, song, output);
     await writeFile(`${output}/popup-motion-results.json`, JSON.stringify({ ...report, appearanceChecks, errors }, null, 2));
     assert.equal(errors.length, 0, errors.join('\n'));
@@ -196,7 +216,7 @@ try {
   const lumiereChecks = await verifyLumiere(page, song, output);
   // Exercise real frame updates with a mocked external player, then freeze the lyric on pause.
   await clockMode();
-  await page.getByRole('button', { name: '关闭设置' }).click();
+  await page.locator('.desktop-topbar [data-settings-trigger]').click();
   await page.evaluate(song => {
     const start = performance.now();
     window.__foliaEmit('session', { ...song, playing: true });
@@ -208,9 +228,9 @@ try {
   await page.waitForTimeout(1800);
   await page.screenshot({ path: `${output}/desktop-playing.png` });
   await page.evaluate(song => { clearInterval(window.__foliaClockTimer); window.__foliaEmit('session', song); }, song);
-  await page.getByRole('button', { name: '打开歌词设置' }).click();
   // Use the lightweight renderer for clock assertions: software WebGL can stall animation frames.
   await clockMode();
+  await page.getByRole('button', { name: '打开歌词设置' }).click();
   await page.locator('.lyric-source-settings > summary').click();
   assert.equal(await page.locator('.lyric-source-settings').getAttribute('open'), '', 'expand provider settings before exercising their switches');
   await page.getByRole('checkbox', { name: '自动匹配在线歌词', exact: true }).uncheck();
@@ -235,7 +255,7 @@ try {
   await page.getByRole('button', { name: '重置歌词偏移' }).click();
   await page.getByRole('checkbox', { name: '窗口置顶' }).check();
   await page.getByRole('checkbox', { name: '跟随系统声音变化' }).uncheck();
-  await page.getByRole('button', { name: '关闭设置' }).click();
+  await page.locator('.desktop-topbar [data-settings-trigger]').click();
   const emitClock = async position => page.evaluate(({ song, position }) => window.__foliaEmit('clock', { ...song, position }), { song, position });
   await emitClock(70);
   await page.waitForFunction(() => document.querySelector('.clock-readout')?.textContent?.startsWith('1:10'), null, { timeout: 10000 });

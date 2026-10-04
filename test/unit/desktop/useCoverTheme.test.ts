@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useCoverTheme } from '../../../src/desktopLyrics/useCoverTheme';
 import { extractRepresentativeColors } from '../../../src/utils/colorExtractor';
 import { buildCoverTheme } from '../../../src/desktopLyrics/coverTheme';
-import { DEFAULT_THEME } from '../../../src/services/baseThemes';
+import { DESKTOP_DEFAULT_THEME } from '../../../src/desktopLyrics/desktopTheme';
 
 // test/unit/desktop/useCoverTheme.test.ts — exercise real hook callbacks and async guards with persistent hook slots.
 type Slot = { value?: unknown; deps?: readonly unknown[]; cleanup?: (() => void) | void };
@@ -45,7 +45,7 @@ const colors = ['#246edc', '#dc5432'];
 const extract = vi.mocked(extractRepresentativeColors);
 let cleanup: (() => void) | undefined;
 beforeEach(() => { hooks.slots = []; hooks.cursor = 0; hooks.pending = []; hooks.writes = 0; extract.mockReset(); });
-afterEach(() => { cleanup?.(); cleanup = undefined; vi.restoreAllMocks(); });
+afterEach(() => { cleanup?.(); cleanup = undefined; vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 // Commit dependency-aware effects and state updates; async resolutions are flushed explicitly by each test.
 function mount(initialCover = 'A', initialEnabled = true) {
@@ -69,6 +69,17 @@ function deferred() {
 }
 
 describe('desktop cover theme refresh', () => {
+  it.each([
+    ['luotianyi-ado', true], ['cover', true], ['luotianyi-ado', false], ['cover', false],
+  ] as const)('ignores obsolete saved preset %s and follows the native cover toggle enabled=%s', async (preset, enabled) => {
+    const getItem = vi.fn(key => key === 'folia.desktop.themePreset.v1' ? preset : null);
+    vi.stubGlobal('localStorage', { getItem });
+    extract.mockResolvedValue(colors);
+    const mounted = mount('A', enabled); mounted.render(); const result = await mounted.settle();
+    expect(result.theme).toEqual(enabled ? buildCoverTheme(colors) : DESKTOP_DEFAULT_THEME);
+    expect(result.active).toBe(enabled); expect(result.canRefresh).toBe(enabled);
+    expect(extract).toHaveBeenCalledTimes(enabled ? 1 : 0); expect(getItem).not.toHaveBeenCalled();
+  });
   it('keeps the automatic and refreshed palettes stable across pause-like renders without reading the image again', async () => {
     extract.mockResolvedValue(colors); vi.spyOn(Math, 'random').mockReturnValue(.5);
     const mounted = mount(); expect(mounted.render().refreshUnavailableReason).toBe('loading');
@@ -95,7 +106,7 @@ describe('desktop cover theme refresh', () => {
     const mounted = mount(); mounted.render(); mounted.update('B');
     b.resolve(['#dc5432']); const current = await mounted.settle();
     a.resolve(['#246edc']); expect((await mounted.settle()).theme).toBe(current.theme);
-    expect(mounted.update('A').theme).toBe(DEFAULT_THEME); await mounted.settle(); expect(extract).toHaveBeenCalledTimes(3);
+    expect(mounted.update('A').theme).toBe(DESKTOP_DEFAULT_THEME); await mounted.settle(); expect(extract).toHaveBeenCalledTimes(3);
   });
   it('cancels a refresh when the current artwork changes and restores the prior palette when returning', async () => {
     extract.mockResolvedValue(colors);
@@ -108,7 +119,7 @@ describe('desktop cover theme refresh', () => {
   it('ignores pending extraction after disabling and re-extracts when enabled again', async () => {
     const pending = deferred(); extract.mockReturnValueOnce(pending.promise).mockResolvedValue(colors);
     const mounted = mount(); mounted.render(); expect(mounted.update('A', false).refreshUnavailableReason).toBe('disabled');
-    pending.resolve(colors); expect((await mounted.settle()).theme).toBe(DEFAULT_THEME);
+    pending.resolve(colors); expect((await mounted.settle()).theme).toBe(DESKTOP_DEFAULT_THEME);
     mounted.update('A', true); expect((await mounted.settle()).canRefresh).toBe(true); expect(extract).toHaveBeenCalledTimes(2);
   });
   it('cancels manual refresh on disabling but retains completed session palettes when re-enabled', async () => {
@@ -131,7 +142,7 @@ describe('desktop cover theme refresh', () => {
   it.each([['', true, 'missing-cover'], ['A', false, 'disabled']] as const)('does not load or refresh %s with enabled=%s', async (cover, enabled, reason) => {
     const mounted = mount(cover, enabled), result = mounted.render();
     expect(result.canRefresh).toBe(false); expect(result.refreshUnavailableReason).toBe(reason);
-    expect(await result.refresh()).toBe(false); expect(result.theme).toBe(DEFAULT_THEME); expect(extract).not.toHaveBeenCalled();
+    expect(await result.refresh()).toBe(false); expect(result.theme).toBe(DESKTOP_DEFAULT_THEME); expect(extract).not.toHaveBeenCalled();
   });
   it('keeps black-and-white artwork neutral and disables refresh without random generation', async () => {
     extract.mockResolvedValue(['#000000', '#ffffff', '#888888']); const random = vi.spyOn(Math, 'random');
@@ -144,7 +155,7 @@ describe('desktop cover theme refresh', () => {
     if (failure === 'rejected') extract.mockRejectedValue(new Error('unreadable'));
     else extract.mockResolvedValue(failure === 'invalid' ? ['invalid'] : []);
     const mounted = mount(); mounted.render(); const result = await mounted.settle();
-    expect(result.theme).toBe(DEFAULT_THEME); expect(result.refreshUnavailableReason).toBe('unreadable');
+    expect(result.theme).toBe(DESKTOP_DEFAULT_THEME); expect(result.refreshUnavailableReason).toBe('unreadable');
     expect(result.canRefresh).toBe(false); expect(await result.refresh()).toBe(false);
   });
   it('remembers manual palettes when returning and bounds cover URL retention to four entries', async () => {

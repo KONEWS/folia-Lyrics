@@ -5,6 +5,7 @@ import { applyTypographyPatch } from '@/desktopLyrics/desktopVisualFields';
 import { useVisualizerSettingsStore } from '@/stores/useVisualizerSettingsStore';
 import { useTypographySettingsStore } from '@/stores/useTypographySettingsStore';
 import { useThemeSettingsStore } from '@/stores/useThemeSettingsStore';
+import { useDesktopPanelSettingsStore, DEFAULT_SETTINGS_TRANSPARENCY, DESKTOP_SETTINGS_TRANSPARENCY_KEY } from '@/stores/useDesktopPanelSettingsStore';
 
 // test/unit/desktop/desktopVisualSettingsCodec.test.ts — verify portable desktop visual settings at the original store boundary.
 vi.mock('@/services/customLyricsFont', async original => ({ ...await original<typeof import('@/services/customLyricsFont')>(), clearUploadedLyricsFont: vi.fn(async () => undefined) }));
@@ -30,6 +31,7 @@ const encode = (format: 'json' | 'code', config: object) => format === 'code' ? 
 beforeEach(() => {
   storage = makeStorage(); vi.stubGlobal('localStorage', storage); vi.stubGlobal('window', { localStorage: storage });
   useVisualizerSettingsStore.setState(originalVisualizer); useTypographySettingsStore.setState(originalTypography); useThemeSettingsStore.setState(originalTheme);
+  useDesktopPanelSettingsStore.setState({ settingsTransparency: DEFAULT_SETTINGS_TRANSPARENCY });
 });
 afterEach(() => {
   useVisualizerSettingsStore.setState(originalVisualizer); useTypographySettingsStore.setState(originalTypography); useThemeSettingsStore.setState(originalTheme);
@@ -37,6 +39,42 @@ afterEach(() => {
 });
 
 describe('desktop appearance codec', () => {
+  it.each(['json', 'code'] as const)('roundtrips settings transparency through %s, clamps finite values and preserves missing or invalid values', format => {
+    const store = useDesktopPanelSettingsStore.getState();
+    store.setSettingsTransparency(32);
+    const exported = exportDesktopVisualConfig(format, makeOptions());
+    expect(decompressConfig(exported).desktopSettingsTransparency).toBe(32);
+    store.setSettingsTransparency(75);
+    expect(importDesktopVisualConfig(exported, makeOptions()).ok).toBe(true);
+    expect(useDesktopPanelSettingsStore.getState().settingsTransparency).toBe(32);
+    expect(storage.getItem(DESKTOP_SETTINGS_TRANSPARENCY_KEY)).toBe('32');
+    for (const value of ['bad', null, false]) {
+      importDesktopVisualConfig(encode(format, { desktopSettingsTransparency: value }), makeOptions());
+      expect(useDesktopPanelSettingsStore.getState().settingsTransparency).toBe(32);
+    }
+    importDesktopVisualConfig(encode(format, { lyricsFontStyle: 'sans' }), makeOptions());
+    expect(useDesktopPanelSettingsStore.getState().settingsTransparency).toBe(32);
+    for (const [value, expected] of [[-10, 0], [120, 100], [23.7, 24]]) {
+      importDesktopVisualConfig(encode(format, { desktopSettingsTransparency: value }), makeOptions());
+      expect(useDesktopPanelSettingsStore.getState().settingsTransparency).toBe(expected);
+    }
+    store.setSettingsTransparency(NaN); store.setSettingsTransparency(Infinity);
+    expect(useDesktopPanelSettingsStore.getState().settingsTransparency).toBe(24);
+  });
+  it.each(['json', 'code'] as const)('ignores obsolete theme presets when importing %s and does not export them again', format => {
+    const key = 'folia.desktop.themePreset.v1'; storage.setItem(key, 'cover');
+    for (const preset of ['luotianyi-ado', 'cover', 'custom']) {
+      const legacy = format === 'json'
+        ? JSON.stringify({ visualizerMode: 'classic', lyricsFontStyle: 'mono', desktopThemePreset: preset })
+        : `folia-theme://${btoa(JSON.stringify({ vm: 'classic', lfs: 'mono', dtp: preset }))}`;
+      expect(importDesktopVisualConfig(legacy, makeOptions())).toEqual({ ok: true, mode: 'classic' });
+      expect(useTypographySettingsStore.getState().lyricsFontStyle).toBe('mono');
+      expect(storage.getItem(key)).toBe('cover');
+      const exported = decompressConfig(exportDesktopVisualConfig(format, makeOptions(), 'classic'));
+      expect(exported).not.toHaveProperty('desktopThemePreset'); expect(exported).not.toHaveProperty('dtp');
+      expect(storage.getItem('custom_dual_theme')).toBeNull();
+    }
+  });
   it.each([true, false])('keeps standalone desktop background enabled=%s in the original JSON and shortcode codec', enabled => {
     expect(decompressConfig(compressConfig({ desktopBackgroundEnabled: enabled }))).toEqual({ desktopBackgroundEnabled: enabled });
     expect(decompressConfig(JSON.stringify({ desktopBackgroundEnabled: enabled }))).toEqual({ desktopBackgroundEnabled: enabled });

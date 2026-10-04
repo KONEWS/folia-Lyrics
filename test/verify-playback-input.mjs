@@ -110,7 +110,7 @@ export async function verifyPlaybackInput(page, song, output) {
       `${context}: native volume steps remain bounded nonzero integers`);
   };
   const openSettings = () => page.getByRole('button', { name: '打开歌词设置', exact: true }).click();
-  const closeSettings = () => page.getByRole('button', { name: '关闭设置', exact: true }).click();
+  const closeSettings = () => page.locator('.desktop-topbar [data-settings-trigger]').click();
   await page.setViewportSize({ width: 1280, height: 800 });
   await emit('windowState', { maximized: false, fullscreen: false, clickThrough: false }); await emit('restore', {});
   if (await page.locator('.control-panel').count()) await closeSettings();
@@ -220,7 +220,9 @@ export async function verifyPlaybackInput(page, song, output) {
   await title.fill('AB'); await title.focus();
   await quiet(async () => { await page.keyboard.press('Home'); await page.keyboard.press('ArrowRight'); await page.keyboard.press('Space'); await page.keyboard.press('ArrowLeft'); }, 'editing search input');
   assert.equal(await title.inputValue(), 'A B', 'Space and cursor navigation must edit the input normally');
-  await quiet(async () => { await keyEvent('Space'); await sideEvents(4); await wheelEvent(-120); }, 'settings opened even when input targets the lyric stage');
+  await quiet(async () => { await keyEvent('Space'); await wheelEvent(-120); }, 'settings opened even when input targets the lyric stage');
+  await quiet(() => sideEvents(4), 'outside side-button dismissal does not trigger playback or volume');
+  await panel.waitFor({ state: 'detached' }); await openSettings();
   await panel.evaluate(el => { el.scrollTop = 0; }); await panel.hover(); const scrollBefore = await panel.evaluate(el => el.scrollTop);
   await quiet(async () => { await page.mouse.wheel(0, 120); await page.waitForFunction(before => document.querySelector('.control-panel')?.scrollTop > before, scrollBefore); }, 'settings wheel scrolls normally');
   const player = desktopSelect(page, '选择播放器'); await player.scrollIntoViewIfNeeded();

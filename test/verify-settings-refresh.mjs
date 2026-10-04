@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import { writeFile } from 'node:fs/promises';
-import { selectDesktopOption } from './desktop-select.mjs';
+import { selectDesktopOption, setDesktopCoverTheme } from './desktop-select.mjs';
 import { clickTopbarAction } from './desktop-topbar-actions.mjs';
 
 // test/verify-settings-refresh.mjs — reordered settings, folded provider controls and original-renderer theme refresh.
 const themeKeys = ['--cover-background', '--cover-foreground', '--cover-accent', '--cover-secondary'];
-// Measure circular hue distance so a refresh cannot pass merely by changing a few rounded RGB units.
+// Refresh preserves hue; measure both hue and luminance so brightness variation remains visible.
 function hue(color) {
   assert.match(color, /^#[\da-f]{6}$/i, 'cover accent uses an opaque generated hex color');
   const [r, g, b] = [1, 3, 5].map(start => parseInt(color.slice(start, start + 2), 16) / 255);
@@ -14,13 +14,20 @@ function hue(color) {
   const sector = high === r ? ((g - b) / delta) % 6 : high === g ? (b - r) / delta + 2 : (r - g) / delta + 4;
   return (sector * 60 + 360) % 360;
 }
+function contrast(first, second) {
+  const luminance = color => [1, 3, 5].map(start => parseInt(color.slice(start, start + 2), 16) / 255)
+    .map(channel => channel <= .04045 ? channel / 12.92 : ((channel + .055) / 1.055) ** 2.4)
+    .reduce((sum, channel, index) => sum + channel * [.2126, .7152, .0722][index], 0);
+  const a = luminance(first), b = luminance(second);
+  return (Math.max(a, b) + .05) / (Math.min(a, b) + .05);
+}
 export async function verifySettingsRefresh(page, song, output) {
   const checks = [], samples = [];
   const saved = await page.evaluate(() => ({ prefs: window.__foliaMockPreferences(), mode: localStorage.getItem('folia.desktop.mode.v1') }));
   const viewport = page.viewportSize();
   const emit = (type, data) => page.evaluate(({ type, data }) => window.__foliaEmit(type, data), { type, data });
   const open = () => page.getByRole('button', { name: '打开歌词设置', exact: true }).click();
-  const close = () => page.getByRole('button', { name: '关闭设置', exact: true }).click();
+  const close = () => page.locator('.desktop-topbar [data-settings-trigger]').click();
   const refresh = page.getByRole('button', { name: '刷新主题色', exact: true });
   const available = () => page.waitForFunction(() => { const button = document.querySelector('[aria-label="刷新主题色"]'); return button && !button.disabled; });
   const sources = page.locator('.lyric-source-settings'), summary = sources.locator(':scope > summary');
@@ -66,7 +73,9 @@ export async function verifySettingsRefresh(page, song, output) {
     assert.equal(after.caption, before.caption); assert.equal(after.mediaRequests, before.mediaRequests, 'refresh sends no playback request');
     const difference = Math.abs(hue(after.colors[2]) - hue(before.colors[2]));
     after.hueDelta = Math.min(difference, 360 - difference);
-    assert(after.hueDelta >= 20, `${context}: a colorful cover produces a visibly different accent hue`);
+    assert(after.hueDelta < 3, `${context}: refresh keeps the dominant cover hue`);
+    assert(Math.max(contrast(after.colors[0], before.colors[0]), contrast(after.colors[2], before.colors[2])) >= 1.12,
+      `${context}: refresh visibly changes depth or accent brightness`);
   };
   // Check real hit testing and pairwise bounds, including the single Eye at the far right.
   const geometry = async context => {
@@ -92,16 +101,17 @@ export async function verifySettingsRefresh(page, song, output) {
     await page.setViewportSize({ width: 1280, height: 800 });
     await emit('windowState', { maximized: false, fullscreen: false, clickThrough: false }); await emit('restore', {});
     if (await page.locator('.control-panel').count()) await close();
+    await setDesktopCoverTheme(page);
     await setPreferences({ coverTheme: true, autoImmersive: false, immersiveDelay: 30, onlineEnabled: true, onlineProviders: ['kugou', 'qq', 'netease', 'lrclib'] });
     await selectDesktopOption(page, '歌词样式', { value: 'classic' });
     await open();
-    const first = await page.locator('.panel-heading').evaluate(heading => ({ tag: heading.nextElementSibling?.tagName,
-      text: heading.nextElementSibling?.querySelector('label')?.textContent.trim() }));
+    const first = await page.locator('.control-panel').evaluate(panel => ({ tag: panel.firstElementChild?.tagName,
+      text: panel.firstElementChild?.querySelector('label')?.textContent.trim() }));
     assert.deepEqual(first, { tag: 'SECTION', text: '播放页面透明背景' });
     assert.equal(await page.locator('.control-panel .section-label').filter({ hasText: '歌词样式' }).count(), 0);
     assert.equal(await page.locator('.control-panel [role="combobox"][aria-label="歌词样式"]').count(), 0);
     assert.equal(await page.getByRole('checkbox', { name: '播放页面透明背景', exact: true }).count(), 1);
-    checks.push('transparent background first after heading, duplicate style explanation removed');
+    checks.push('playback background controls appear first without a redundant heading or style explanation');
     assert.equal(await sources.getAttribute('open'), null); assert.equal(await sources.locator('input').count(), 4);
     assert.match(await summary.innerText(), /歌词来源/); await sourceCount(4);
     for (const input of await sources.locator('input').all()) assert.equal(await input.isVisible(), false);

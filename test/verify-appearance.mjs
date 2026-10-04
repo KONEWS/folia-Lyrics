@@ -25,7 +25,7 @@ export async function verifyAppearance(page, output) {
   assert.equal(solid.actual, solid.expected, 'solid floating settings follow the cover theme or default background');
   assert.equal(solid.alpha, 255, 'solid floating settings must stay opaque');
   assert.equal(await style('.control-panel','backdropFilter'),'none');
-  await page.getByRole('button',{name:'关闭设置',exact:true}).click();
+  await page.locator('.desktop-topbar [data-settings-trigger]').click();
   await emit({acrylic:false,solid:true,highContrast:true}); await page.locator('.high-contrast').waitFor();
   await emit({acrylic:false,solid:false,highContrast:false}); await page.locator('.solid-surfaces').waitFor({state:'detached'});
   assert.equal(await style('.window-chrome','backgroundColor'),'rgba(0, 0, 0, 0)');
@@ -63,7 +63,7 @@ export async function verifyAppearance(page, output) {
   const last=page.getByRole('button',{name:'启用鼠标穿透',exact:true}); await last.scrollIntoViewIfNeeded();
   const c=await last.boundingBox(); assert(c&&c.y>=a.y&&c.y+c.height<=a.y+a.height);
   await page.screenshot({path:`${output}/settings-small.png`});
-  await page.getByRole('button',{name:'关闭设置'}).click(); await page.setViewportSize({width:1280,height:800});
+  await page.locator('.desktop-topbar [data-settings-trigger]').click(); await page.setViewportSize({width:1280,height:800});
   console.log('PASS acrylic / glass / minimum-window checks');
   return ['transparent document','native acrylic handshake','solid fallback','high contrast handshake','pointer cleanup','reduced motion','664x411 layout','settings scroll without covering transport','transparent title and icon','native caption and resize commands','fullscreen hides window buttons'];
 }

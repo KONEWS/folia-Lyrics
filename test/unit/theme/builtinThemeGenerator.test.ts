@@ -25,6 +25,18 @@ const expectReadableTheme = (theme: Theme) => {
 };
 
 describe('generateBuiltinDualTheme', () => {
+    it('offers population-ordered cover hue preservation without changing normal harmony generation', () => {
+        const coverColors = ['#eeeff1', '#e5c99c', '#223f8e'];
+        const normal = generateBuiltinDualTheme({ coverColors, random: () => .5 });
+        expect(normal).toEqual(generateBuiltinDualTheme({ coverColors, random: () => .5, preserveCoverHue: false }));
+        for (let seed = 1; seed <= 25; seed++) {
+            const dual = generateBuiltinDualTheme({ coverColors, random: createSequenceRandom(seed * 977), preserveCoverHue: true });
+            for (const theme of [dual.light, dual.dark]) {
+                expectReadableTheme(theme);
+                expect(getHueDistance(hexToHsl(theme.accentColor)!.h, hexToHsl('#e5c99c')!.h)).toBeLessThan(2);
+            }
+        }
+    });
     // Sweep many seeds and cover shapes: the contrast floors are solved iteratively, so a single
     // sample would not prove the solver never gives up short of the floor.
     const coverSamples: string[][] = [

@@ -1,6 +1,6 @@
-import { useLayoutEffect, useRef, type Dispatch, type SetStateAction } from 'react';
+import { useEffect, useLayoutEffect, useRef, type Dispatch, type SetStateAction } from 'react';
 import { useMotionValueEvent, type MotionValue } from 'framer-motion';
-import { FolderPlus, FileUp, RefreshCw, Minus, Plus, RotateCcw, X } from 'lucide-react';
+import { FolderPlus, FileUp, RefreshCw, Minus, Plus, RotateCcw } from 'lucide-react';
 import type { VisualizerMode } from '../types';
 import { EMPTY, send, type LibrarySummary, type Preferences, type Session, type OnlineState } from './bridge';
 import { clockPosition, timeLabel, type ManualClock } from './clock';
@@ -9,6 +9,7 @@ import i18n from '../i18n/config';
 import ImmersiveSettings from './ImmersiveSettings';
 import { MODES } from './desktopModes';
 import DesktopSelect from './DesktopSelect';
+import { useDesktopSettingsDismiss } from './useDesktopSettingsDismiss';
 
 // src/desktopLyrics/ControlPanel.tsx
 export { MODES };
@@ -24,18 +25,21 @@ type Props = { mode: VisualizerMode; onMode: (mode: VisualizerMode) => void; ses
   focusSection?: 'player' | 'online'; lyricSource?: string; onVisualSettings?: () => void };
 export default function ControlPanel(p: Props) {
   const panelRef = useRef<HTMLElement>(null);
+  useDesktopSettingsDismiss(panelRef, p.onClose);
   // Waiting-page actions reveal their section by scrolling only this panel, once per requested target.
   useLayoutEffect(() => {
     const panel = panelRef.current;
     if (!panel || !p.focusSection) return;
     const section = panel.querySelector<HTMLElement>(`[data-settings-section="${p.focusSection}"]`);
     const target = p.focusSection === 'online' ? section?.querySelector<HTMLElement>('.online-search') ?? section : section;
-    const headingHeight = panel.querySelector('.panel-heading')?.getBoundingClientRect().height ?? 0;
-    if (target) panel.scrollTop += target.getBoundingClientRect().top - panel.getBoundingClientRect().top - panel.clientTop - headingHeight - 8;
+    if (target) panel.scrollTop += target.getBoundingClientRect().top - panel.getBoundingClientRect().top - panel.clientTop - 8;
   }, [p.focusSection]);
+  useEffect(() => {
+    const opener = document.activeElement;
+    return () => { if (opener instanceof HTMLElement && opener.isConnected) opener.focus({ preventScroll: true }); };
+  }, []);
   const toggleClock = () => p.setManual(old => ({ ...old, playing: !old.playing, position: clockPosition(EMPTY, performance.now(), old), received: performance.now() }));
   return <aside ref={panelRef} className="control-panel" aria-label="歌词设置">
-    <div className="panel-heading"><span>歌词设置</span><button aria-label="关闭设置" onClick={p.onClose}><X size={18}/></button></div>
     <section data-settings-section="transparency" aria-label={i18n.t('desktopLyrics.transparentBackground', { lng: 'zh-CN' })}>
       <label className="toggle"><span>{i18n.t('desktopLyrics.transparentBackground', { lng: 'zh-CN' })}</span><input type="checkbox" checked={p.preferences.transparentBackground} onChange={e => send('transparentBackground', e.target.checked)}/></label>
       <button className="wide-button" onClick={() => send('clickThrough')}>启用鼠标穿透</button>
@@ -83,6 +87,6 @@ export default function ControlPanel(p: Props) {
       {p.library.folders.length ? <details><summary>{p.library.folders.length} 个已添加目录</summary><ul>{p.library.folders.map(f => <li key={f}>{f}</li>)}</ul></details> : null}
       <details className="settings-help local-formats-help"><summary>{text('settings.localFormatsHelp')}</summary>
         <p className="hint">可读取音乐内嵌歌词，以及 LRC、TTML、YRC、QRC、FIA 文件。普通逐行歌词不会自动变成精准逐字歌词。</p></details></section>
-    <footer className="panel-footer">Folia 桌面歌词 · 0.4.25<br/>基于 Folia Major 原版动效 · AGPL-3.0</footer>
+    <footer className="panel-footer">Folia 桌面歌词 · 0.4.26<br/>基于 Folia Major 原版动效 · AGPL-3.0</footer>
   </aside>;
 }
