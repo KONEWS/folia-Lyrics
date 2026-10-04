@@ -12,6 +12,8 @@ folia-Lyrics 基于 [Folia](https://github.com/chthollyphile/folia-major) 的歌
 
 界面会从歌曲封面中取色，让玻璃控制栏、进度频谱和歌词动效使用同一套配色。想换个感觉，可以点顶栏的“刷新主题色”。底部频谱跟随 Windows 默认输出设备的声音变化。
 
+0.4.26 把设置面板收拾得更轻：普通歌词设置不再重复显示标题和关闭按钮，点击面板外的空白区域或再次点击顶栏设置按钮就能关闭；小窗口也会避开顶栏入口。设置面板、播放器选单和滑块操作各自保持独立，不会因为点击浮层而误关。
+
 歌词会优先从本地查找，也可以在线匹配网易云、QQ 音乐、酷狗和 LRCLIB。没找到合适的版本时，可以手动选择搜索结果，或加载自己的歌词文件。
 
 - 支持音乐内嵌歌词和本地 `.lrc`、`.yrc`、`.qrc`、`.ttml`、`.fia` 文件。在线酷狗 KRC 由适配层解码，本地加密容器需要先转换。
@@ -23,7 +25,7 @@ folia-Lyrics 基于 [Folia](https://github.com/chthollyphile/folia-major) 的歌
 
 面向 Windows 11 x64。原生亚克力效果需要 Windows 11 22H2（22621）或更新版本，并开启系统透明效果；不满足条件时，界面会使用回退效果。
 
-如果 [Releases](https://github.com/KONEWS/folia-Lyrics/releases) 中有对应的 Windows 发布包，解压后运行 `FoliaLyrics.exe`，再打开播放器播放一首歌。运行界面需要 Microsoft Edge WebView2 Runtime，发布包自带 .NET 运行时。
+当前版本是 [0.4.26](https://github.com/KONEWS/folia-Lyrics/releases/tag/desktop-v0.4.26)。从 Releases 下载 Windows x64 包，解压后运行 `FoliaLyrics.exe`，再打开播放器播放一首歌。运行界面需要 Microsoft Edge WebView2 Runtime，发布包自带 .NET 运行时。
 
 窗口没显示歌词时，先确认选中了正在播放的播放器，再尝试重新匹配或加载本地歌词。某些播放器没有公开媒体会话，或没有提供完整进度，这种情况下自动同步会受到限制。
 
@@ -93,6 +95,6 @@ dotnet run --project test/transport-smoke/TransportSmoke.csproj
 
 这是从 [chthollyphile/folia-major](https://github.com/chthollyphile/folia-major) 派生的独立项目。感谢上游提供歌词渲染器和视觉效果；这个分支主要加入 Windows 桌面宿主、外部播放器连接、在线歌词匹配，以及围绕桌面使用的界面和操作。
 
-当前桌面宿主版本为 **0.4.17**，上游源码基线为 **v0.7.11**（`6fe68d89abb7031eb266d71fda01b36a0fa0573e`）。两套版本号独立，本项目不是上游官方发行版。
+当前桌面宿主版本为 **0.4.26**，上游源码基线为 **v0.7.11**（`6fe68d89abb7031eb266d71fda01b36a0fa0573e`）。两套版本号独立，本项目不是上游官方发行版。
 
 项目继续使用 [AGPL-3.0](LICENSE) 许可证。第三方许可证见 [licenses/](licenses/)，在线资源来源见 [ONLINE-SOURCES.md](ONLINE-SOURCES.md)。使用在线歌词、封面和音乐资源时，请遵守对应服务条款与版权要求。
