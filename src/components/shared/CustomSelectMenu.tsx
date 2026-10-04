@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Check } from 'lucide-react';
 import { List, useListRef, type RowComponentProps } from 'react-window';
@@ -17,6 +17,7 @@ import { useCustomSelectOptionFocus, type CustomSelectMenuNavigation } from './u
 export interface CustomSelectOption {
     value: string;
     label: string;
+    icon?: React.ReactNode;
 }
 
 export interface CustomSelectMenuPosition {
@@ -41,8 +42,10 @@ interface CustomSelectMenuProps {
     onSelect: (value: string) => void;
     id?: string;
     className?: string;
+    menuMotion?: 'default' | 'css';
     keyboardNavigation?: boolean;
     navigationRef?: React.RefObject<CustomSelectMenuNavigation | null>;
+    menuAction?: { label: string; onAction: () => void };
 }
 
 const VIRTUALIZE_THRESHOLD = 24;
@@ -108,7 +111,12 @@ const OptionButton: React.FC<{
             }
         }}
     >
-        <span className="truncate mr-2">{option.label}</span>
+        {option.icon ? (
+            <span className="custom-select-option-content min-w-0 flex flex-1 items-center gap-2 mr-2">
+                <span className="custom-select-option-icon w-4 h-4 shrink-0 flex items-center justify-center" aria-hidden="true">{option.icon}</span>
+                <span className="custom-select-option-label truncate">{option.label}</span>
+            </span>
+        ) : <span className="truncate mr-2">{option.label}</span>}
         {isSelected && (
             <Check
                 size={14}
@@ -166,14 +174,19 @@ export const CustomSelectMenu: React.FC<CustomSelectMenuProps> = ({
     onSelect,
     id,
     className,
+    menuMotion = 'default',
     keyboardNavigation,
     navigationRef,
+    menuAction,
 }) => {
     const reducedMotion = useReducedMotion();
+    const useCssMotion = menuMotion === 'css';
     const isVirtualized = options.length >= VIRTUALIZE_THRESHOLD;
     const listRef = useListRef(null);
+    const optionsRef = useRef<HTMLDivElement>(null);
     const focusMountedOption = useCustomSelectOptionFocus({ enabled: Boolean(keyboardNavigation), count: options.length,
-        virtualized: isVirtualized, menu: menuRef, list: listRef, navigation: navigationRef });
+        virtualized: isVirtualized, viewportHeight: position.maxHeight, menu: menuAction ? optionsRef : menuRef,
+        list: listRef, navigation: navigationRef });
 
     const rowProps = useMemo(() => ({
         options,
@@ -188,7 +201,7 @@ export const CustomSelectMenu: React.FC<CustomSelectMenuProps> = ({
     const listHeight = Math.max(
         OPTION_ROW_HEIGHT,
         Math.min(
-            position.maxHeight - MENU_PADDING,
+            position.maxHeight - MENU_PADDING - (menuAction ? 48 : 0),
             options.length * (OPTION_ROW_HEIGHT + OPTION_ROW_GAP) - OPTION_ROW_GAP,
         ),
     );
@@ -196,22 +209,23 @@ export const CustomSelectMenu: React.FC<CustomSelectMenuProps> = ({
     return (
         <motion.div
             ref={menuRef}
-            id={id}
-            initial={reducedMotion ? false : {
+            id={menuAction ? undefined : id}
+            initial={useCssMotion || reducedMotion ? false : {
                 opacity: 0,
                 y: position.placement === 'top' ? 8 : -8,
                 scale: 0.96,
             }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{
+            animate={useCssMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
+            exit={useCssMotion ? undefined : {
                 opacity: 0,
                 y: position.placement === 'top' ? 8 : -8,
                 scale: 0.96,
             }}
-            transition={{ duration: reducedMotion ? 0 : 0.15, ease: 'easeOut' }}
-            className={`fixed z-[200] rounded-xl border shadow-xl overscroll-contain backdrop-blur-md custom-scrollbar${isVirtualized ? '' : ' overflow-y-auto'} ${className ?? ''}`}
+            transition={useCssMotion ? undefined : { duration: reducedMotion ? 0 : 0.15, ease: 'easeOut' }}
+            data-menu-placement={position.placement}
+            className={`fixed z-[200] rounded-xl border shadow-xl overscroll-contain backdrop-blur-md custom-scrollbar${menuAction ? ' custom-select-with-action overflow-hidden' : isVirtualized ? '' : ' overflow-y-auto'} ${className ?? ''}`}
             data-wheel-scroll-region
-            role="listbox"
+            role={menuAction ? 'group' : 'listbox'}
             aria-label={ariaLabel}
             style={{
                 left: position.left,
@@ -224,6 +238,10 @@ export const CustomSelectMenu: React.FC<CustomSelectMenuProps> = ({
                 color: textColor,
             }}
         >
+            <div ref={optionsRef} id={menuAction ? id : undefined} role={menuAction ? 'listbox' : undefined}
+                aria-label={menuAction ? ariaLabel : undefined} data-wheel-scroll-region={menuAction ? true : undefined}
+                className={menuAction ? 'custom-select-options-scroll overflow-y-auto overscroll-contain' : undefined}
+                style={menuAction ? { maxHeight: Math.max(40, position.maxHeight - 48) } : undefined}>
             {isVirtualized ? (
                 <div className="p-1.5">
                     <List
@@ -256,6 +274,9 @@ export const CustomSelectMenu: React.FC<CustomSelectMenuProps> = ({
                     ))}
                 </div>
             )}
+            </div>
+            {menuAction && <button type="button" data-custom-select-footer className="custom-select-footer"
+                onClick={menuAction.onAction}>{menuAction.label}<span aria-hidden="true">›</span></button>}
         </motion.div>
     );
 };

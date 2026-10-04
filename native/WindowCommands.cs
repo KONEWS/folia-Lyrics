@@ -10,7 +10,7 @@ internal sealed partial class MainWindow
     {
         switch (cmd.GetProperty("type").GetString())
         {
-            case "ready": ready = true; FocusLyricsIfActive(); SendWindowState(); statusKey = ""; SendAppearance(); Send("preferences", preferences); Send("library", library.Summary());
+            case "ready": ready = true; FocusLyricsIfActive(); SendWindowState(); presentedSong = null; SendAppearance(); Send("preferences", preferences); Send("library", library.Summary());
                 if (song is not null) Send("session", song); if (lyrics is not null) Send("lyrics", lyrics); Send("online", onlineState); mediaTimer.Start(); audioTimer.Start(); await Poll(); break;
             case "import":
                 using (var dialog = new OpenFileDialog { Title = "读取音乐文件中的歌词或独立歌词（不会播放）", Filter = "音乐或歌词|*.flac;*.mp3;*.m4a;*.mp4;*.ogg;*.opus;*.wav;*.ape;*.wma;*.aiff;*.lrc;*.ttml;*.yrc;*.qrc;*.fia|所有文件|*.*" })
@@ -18,7 +18,7 @@ internal sealed partial class MainWindow
                     if (dialog.ShowDialog(this) != DialogResult.OK) return; var target = song; var work = StartWork(); automaticLookup = false;
                     var imported = await Task.Run(() => library.Import(dialog.FileName, target));
                     if (song?.Key != target?.Key || work.Revision != lyricRevision) { Send("notice", new { text = "歌词已保存，播放器已切歌，未覆盖当前歌曲。" }); return; }
-                    if (target is not null) onlineCache.Forget(target); OnlineStatus(new(song?.Key ?? "", false, "已使用导入的本地歌词", [], []));
+                    if (target is not null) onlineCache.Forget(target); OnlineStatus(new(song?.Key ?? "", false, "已使用导入的本地歌词", [], [], Phase: "ready"));
                     lyrics = imported; lyricKey = song?.Key ?? ""; Send("lyrics", imported); Send("library", library.Summary());
                 }
                 break;
@@ -31,7 +31,7 @@ internal sealed partial class MainWindow
                 StartWork(); sourceRevision++; media.Invalidate();
                 song = new("", "", "", "", "", false, 0, 0, 1, false, song?.Sources ?? []);
                 Send("session", song); preferences.Source = cmd.GetProperty("value").GetString() ?? "";
-                lyricKey = "\0"; statusKey = ""; SavePreferences(); await Poll(); break;
+                lyricKey = "\0"; presentedSong = null; SavePreferences(); await Poll(); break;
             case "window": WindowCommand(cmd.GetProperty("value")); break;
             case "mediaControl": await ControlMedia(cmd.GetProperty("value")); break;
             case "systemVolume": ChangeSystemVolume(cmd); break;

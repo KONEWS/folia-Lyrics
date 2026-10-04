@@ -14,7 +14,7 @@ internal sealed record LyricCandidate(string Provider, string Id, string Title, 
     [JsonIgnore] public string InlineContent { get; init; } = "";
 }
 internal sealed record OnlineSearchResult(LyricCandidate[] Candidates, string[] Errors);
-internal sealed record OnlineState(string Key, bool Busy, string Message, LyricCandidate[] Candidates, string[] Errors, string SelectedKey = "");
+internal sealed record OnlineState(string Key, bool Busy, string Message, LyricCandidate[] Candidates, string[] Errors, string SelectedKey = "", string Phase = "idle");
 internal interface IOnlineLyricProvider
 {
     string Id { get; }

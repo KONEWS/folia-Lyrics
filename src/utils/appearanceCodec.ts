@@ -502,8 +502,9 @@ export const compressConfig = (config: any): string => {
     }
     if (config.visualizerMode) minified.vm = config.visualizerMode;
     if (config.randomVisualizerModePerSong !== undefined) minified.rvms = config.randomVisualizerModePerSong;
-    if (config.visualizerBackgroundMode) minified.vbm = config.visualizerBackgroundMode;
+    if (config.visualizerBackgroundMode !== undefined) minified.vbm = config.visualizerBackgroundMode;
     if (config.backgroundOpacity !== undefined) minified.bo = config.backgroundOpacity;
+    if (config.desktopBackgroundEnabled !== undefined) minified.dbe = config.desktopBackgroundEnabled;
     if (config.useCoverColorBg !== undefined) minified.ccb = config.useCoverColorBg;
     if (config.disableVisualizerGeometricBackground !== undefined) minified.dvgb = config.disableVisualizerGeometricBackground;
     if (config.disableVisualizerVignette !== undefined) minified.dvv = config.disableVisualizerVignette;
@@ -520,14 +521,14 @@ export const compressConfig = (config: any): string => {
     if (config.lyricsFontStyle) minified.lfs = config.lyricsFontStyle;
     if (config.lyricsFontScale !== undefined) minified.lfn = config.lyricsFontScale;
     if (config.lyricsFontWeight !== undefined) minified.lfw = config.lyricsFontWeight;
-    if (config.lyricsFontFallbackFamilies?.length) minified.lff = config.lyricsFontFallbackFamilies;
-    if (config.lyricsCustomFontFamily) minified.lcf = config.lyricsCustomFontFamily;
+    if (config.lyricsFontFallbackFamilies !== undefined) minified.lff = config.lyricsFontFallbackFamilies;
+    if (config.lyricsCustomFontFamily !== undefined) minified.lcf = config.lyricsCustomFontFamily;
     if (config.subtitleFontInheritsLyrics !== undefined) minified.sfi = config.subtitleFontInheritsLyrics;
     if (config.subtitleFontScale !== undefined) minified.sfsz = config.subtitleFontScale;
     if (config.subtitleFontStyle) minified.sfs = config.subtitleFontStyle;
     if (config.subtitleFontWeight !== undefined) minified.sfw = config.subtitleFontWeight;
-    if (config.subtitleFontFamily) minified.sff = config.subtitleFontFamily;
-    if (config.subtitleFontFallbackFamilies?.length) minified.sfff = config.subtitleFontFallbackFamilies;
+    if (config.subtitleFontFamily !== undefined) minified.sff = config.subtitleFontFamily;
+    if (config.subtitleFontFallbackFamilies !== undefined) minified.sfff = config.subtitleFontFallbackFamilies;
 
     if (config.visualizerTunings) minified.vt = config.visualizerTunings;
     if (config.classicTuning) minified.ct = compressClassic(config.classicTuning);
@@ -550,7 +551,7 @@ export const compressConfig = (config: any): string => {
     // Folium param values are already plain JSON keyed by scope; stored as-is.
     if (config.foliumParams) minified.fp = config.foliumParams;
     if (config.urlBackgroundList) minified.ubl = config.urlBackgroundList;
-    if (config.urlBackgroundSelectedId) minified.ubid = config.urlBackgroundSelectedId;
+    if (config.urlBackgroundSelectedId !== undefined) minified.ubid = config.urlBackgroundSelectedId;
     if (config.songThemeAutoSwitchEnabled !== undefined) minified.stas = config.songThemeAutoSwitchEnabled;
     if (config.songThemeAutoGenerateEnabled !== undefined) minified.stag = config.songThemeAutoGenerateEnabled;
     if (config.themeGenerationSource !== undefined) minified.tgs = config.themeGenerationSource;
@@ -591,6 +592,8 @@ export const decompressConfig = (str: string): any => {
         || parsed.t !== undefined
         || parsed.vm !== undefined
         || parsed.rvms !== undefined
+        || parsed.vbm !== undefined
+        || parsed.ubid !== undefined
         || parsed.ccb !== undefined
         || parsed.dvgb !== undefined
         || parsed.dvv !== undefined
@@ -609,6 +612,10 @@ export const decompressConfig = (str: string): any => {
         || parsed.lfw !== undefined
         || parsed.sfw !== undefined
         || parsed.lff !== undefined
+        || parsed.lcf !== undefined
+        || parsed.sff !== undefined
+        || parsed.sfff !== undefined
+        || parsed.dbe !== undefined
         || parsed.sfi !== undefined
         || parsed.pdt !== undefined
         || parsed.snt !== undefined
@@ -629,7 +636,8 @@ export const decompressConfig = (str: string): any => {
         }
         if (parsed.vm) decompressed.visualizerMode = parsed.vm;
         if (parsed.rvms !== undefined) decompressed.randomVisualizerModePerSong = parsed.rvms;
-        if (parsed.vbm) decompressed.visualizerBackgroundMode = parsed.vbm;
+        if (parsed.vbm !== undefined) decompressed.visualizerBackgroundMode = parsed.vbm;
+        if (parsed.dbe !== undefined) decompressed.desktopBackgroundEnabled = parsed.dbe;
         if (parsed.bo !== undefined) decompressed.backgroundOpacity = parsed.bo;
         if (parsed.ccb !== undefined) decompressed.useCoverColorBg = parsed.ccb;
         if (parsed.dvgb !== undefined) decompressed.disableVisualizerGeometricBackground = parsed.dvgb;
@@ -647,14 +655,14 @@ export const decompressConfig = (str: string): any => {
         if (parsed.lfs) decompressed.lyricsFontStyle = parsed.lfs;
         if (parsed.lfn !== undefined) decompressed.lyricsFontScale = parsed.lfn;
         if (parsed.lfw !== undefined) decompressed.lyricsFontWeight = parsed.lfw;
-        if (parsed.lff) decompressed.lyricsFontFallbackFamilies = parsed.lff;
-        if (parsed.lcf) decompressed.lyricsCustomFontFamily = parsed.lcf;
+        if (parsed.lff !== undefined) decompressed.lyricsFontFallbackFamilies = parsed.lff;
+        if (parsed.lcf !== undefined) decompressed.lyricsCustomFontFamily = parsed.lcf;
         if (parsed.sfi !== undefined) decompressed.subtitleFontInheritsLyrics = parsed.sfi;
         if (parsed.sfsz !== undefined) decompressed.subtitleFontScale = parsed.sfsz;
         if (parsed.sfs) decompressed.subtitleFontStyle = parsed.sfs;
         if (parsed.sfw !== undefined) decompressed.subtitleFontWeight = parsed.sfw;
-        if (parsed.sff) decompressed.subtitleFontFamily = parsed.sff;
-        if (parsed.sfff) decompressed.subtitleFontFallbackFamilies = parsed.sfff;
+        if (parsed.sff !== undefined) decompressed.subtitleFontFamily = parsed.sff;
+        if (parsed.sfff !== undefined) decompressed.subtitleFontFallbackFamilies = parsed.sfff;
 
         if (parsed.ct) decompressed.classicTuning = decompressClassic(parsed.ct);
         if (parsed.vt) decompressed.visualizerTunings = parsed.vt;
@@ -676,7 +684,7 @@ export const decompressConfig = (str: string): any => {
         if (parsed.lmt) decompressed.lumiereTuning = decompressLumiere(parsed.lmt);
         if (parsed.fp) decompressed.foliumParams = parsed.fp;
         if (parsed.ubl) decompressed.urlBackgroundList = parsed.ubl;
-        if (parsed.ubid) decompressed.urlBackgroundSelectedId = parsed.ubid;
+        if (parsed.ubid !== undefined) decompressed.urlBackgroundSelectedId = parsed.ubid;
         if (parsed.stas !== undefined) decompressed.songThemeAutoSwitchEnabled = parsed.stas;
         if (parsed.stag !== undefined) decompressed.songThemeAutoGenerateEnabled = parsed.stag;
         if (parsed.tgs !== undefined) decompressed.themeGenerationSource = parsed.tgs;
@@ -688,12 +696,12 @@ export const decompressConfig = (str: string): any => {
         return decompressed;
     } else {
         const validKeys = [
-            'theme', 'visualizerMode', 'randomVisualizerModePerSong', 'visualizerBackgroundMode', 'backgroundOpacity',
+            'theme', 'visualizerMode', 'randomVisualizerModePerSong', 'visualizerBackgroundMode', 'backgroundOpacity', 'desktopBackgroundEnabled',
             'useCoverColorBg', 'disableVisualizerGeometricBackground', 'disableVisualizerVignette', 'staticMode',
             'visualizerOpacity', 'hidePlayerTranslationSubtitle', 'showSubtitleTranslation', 'subtitleContentMode',
             'subtitleOverlayBackground', 'subtitleUpcomingLyricsBlur', 'subtitleOverlayOpacity',
             'showHarmonySubtitle', 'harmonySubtitleBackground',
-            'lyricsFontStyle', 'lyricsFontScale', 'lyricsFontWeight', 'lyricsFontFallbackFamilies',
+            'lyricsFontStyle', 'lyricsFontScale', 'lyricsFontWeight', 'lyricsFontFallbackFamilies', 'lyricsCustomFontFamily',
             'subtitleFontInheritsLyrics', 'subtitleFontScale', 'subtitleFontStyle', 'subtitleFontWeight', 'subtitleFontFamily',
             'subtitleFontFallbackFamilies', 'visualizerTunings', 'classicTuning',
             'cadenzaTuning', 'partitaTuning', 'fumeTuning', 'claddaghTuning', 'cappellaTuning',

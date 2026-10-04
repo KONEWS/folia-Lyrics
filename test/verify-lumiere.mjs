@@ -7,7 +7,7 @@ export async function verifyLumiere(page, song, output) {
   const checks = [];
   const emit = (type, data) => page.evaluate(({ type, data }) => window.__foliaEmit(type, data), { type, data });
   const lumiere = () => selectDesktopOption(page, '歌词样式', { label: '绘光' });
-  const classic = () => selectDesktopOption(page, '歌词样式', { label: 'Luminous' });
+  const classic = () => selectDesktopOption(page, '歌词样式', { label: '流光' });
   // Observe cleanup calls without changing the renderer or its resource ownership.
   await page.evaluate(() => {
     window.__lumiereResources = { disconnects: 0, deletes: 0 };

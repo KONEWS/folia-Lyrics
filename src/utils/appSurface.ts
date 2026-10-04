@@ -12,4 +12,6 @@ export const obsSourceKind = searchParams.get('obsSource');
 
 export const isRemoteControlSurface = !isObsBrowserSourceSurface && searchParams.get('remote') === '1';
 
-export const isMainAppSurface = typeof window !== 'undefined' && !isObsBrowserSourceSurface && !isRemoteControlSurface;
+export const isDesktopLyricsSurface = typeof window !== 'undefined' && window.location.pathname.endsWith('/desktop.html');
+
+export const isMainAppSurface = typeof window !== 'undefined' && !isObsBrowserSourceSurface && !isRemoteControlSurface && !isDesktopLyricsSurface;

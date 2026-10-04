@@ -3,7 +3,7 @@ import { desktopSelect, openDesktopMenu, readDesktopOptions, selectDesktopOption
 import { verifyClosePreference } from './verify-close-preference.mjs';
 import { verifyStyleCapsule } from './verify-style-capsule.mjs';
 
-// test/verify-glass-ui.mjs — unified desktop glass, nested selectors, focus, themes and small-window behavior.
+// test/verify-glass-ui.mjs — quiet desktop controls, glass floating panels, focus, themes and small-window behavior.
 export async function verifyGlassUi(page, song, output) {
   const checks = [];
   const emit = (type, data) => page.evaluate(({ type, data }) => window.__foliaEmit(type, data), { type, data });
@@ -11,10 +11,33 @@ export async function verifyGlassUi(page, song, output) {
   const closeSettings = () => page.getByRole('button', { name: '关闭设置', exact: true }).click();
   const mode = desktopSelect(page, '歌词样式'), player = desktopSelect(page, '选择播放器');
   const style = (locator, property) => locator.evaluate((el, property) => getComputedStyle(el)[property], property);
+  const themeColor = property => page.locator('.desktop-lyrics').evaluate((root, property) => {
+    const reference = document.createElement('span'); reference.style.cssText = `display:none;color:var(${property})`;
+    root.append(reference); const color = getComputedStyle(reference).color; reference.remove(); return color;
+  }, property);
+  // Persistent controls leave the lyric canvas visible even when floating panels use an opaque fallback.
+  const quietChrome = async context => {
+    for (const selector of ['.desktop-topbar', '.desktop-statusbar']) {
+      const surface = await page.locator(selector).evaluate(element => {
+        const css = getComputedStyle(element);
+        return { image: css.backgroundImage, background: css.backgroundColor, shadow: css.boxShadow,
+          blur: css.backdropFilter, borders: [css.borderTopWidth, css.borderRightWidth, css.borderBottomWidth, css.borderLeftWidth] };
+      });
+      assert.equal(surface.background, 'rgba(0, 0, 0, 0)', `${context}: ${selector} stays transparent`);
+      assert.equal(surface.image, 'none'); assert.equal(surface.shadow, 'none'); assert.equal(surface.blur, 'none');
+      assert(surface.borders.every(width => width === '0px'), `${context}: ${selector} has no enclosing rim`);
+    }
+  };
   const fullscreenCommands = () => page.evaluate(() => window.__foliaCommands.filter(m => ['fullscreen', 'exitFullscreen'].includes(m.type)).length);
-  const settle = name => page.waitForFunction(name => [...document.querySelectorAll('[role="listbox"]')].some(el =>
-    el.getAttribute('aria-label') === name && getComputedStyle(el).opacity === '1'), name);
-  const menuFor = async name => { const menu = await openDesktopMenu(page, name); await settle(name); return menu; };
+  const settle = name => page.waitForFunction(name => {
+    const el = name === '歌词样式' ? document.querySelector('.desktop-top-menu')
+      : [...document.querySelectorAll('[role="listbox"]')].find(el => el.getAttribute('aria-label') === name);
+    return el && getComputedStyle(el).opacity === '1';
+  }, name);
+  const menuFor = async name => {
+    const list = await openDesktopMenu(page, name); await settle(name);
+    return name === '歌词样式' ? page.locator('.desktop-top-menu') : list;
+  };
   const dismiss = async menu => { await page.keyboard.press('Escape'); await menu.waitFor({ state: 'detached' }); };
   // Match both menu edges to the whole style capsule, allowing only viewport-edge clamping.
   const topbarAlignment = async (menu, context) => {
@@ -45,7 +68,7 @@ export async function verifyGlassUi(page, song, output) {
   // Check the actual rendered label, including the longest names, rather than only its accessible name.
   const readableModeLabel = async (expected, context, control = mode) => {
     const label = await control.evaluate(el => {
-      const label = el.querySelector('span'), box = label?.getBoundingClientRect();
+      const label = el.querySelector('.custom-select-option-label') ?? el.querySelector(':scope > span.truncate'), box = label?.getBoundingClientRect();
       return { text: label?.textContent?.trim(), width: label?.clientWidth, scrollWidth: label?.scrollWidth,
         bounds: box?.toJSON(), font: label && getComputedStyle(label).font };
     });
@@ -62,7 +85,8 @@ export async function verifyGlassUi(page, song, output) {
   const containment = async (menu, width, height) => {
     const name = await menu.getAttribute('aria-label');
     const diagnostics = () => page.evaluate(name => {
-      const el = [...document.querySelectorAll('[role="listbox"]')].find(el => el.getAttribute('aria-label') === name);
+      const el = name === '歌词样式' ? document.querySelector('.desktop-top-menu')
+        : [...document.querySelectorAll('[role="listbox"]')].find(el => el.getAttribute('aria-label') === name);
       if (!el) return { menuAbsent: true, rootClass: document.querySelector('.desktop-lyrics')?.className,
         focus: { tag: document.activeElement?.tagName, role: document.activeElement?.getAttribute('role'), name: document.activeElement?.getAttribute('aria-label') } };
       const box = el.getBoundingClientRect(), css = getComputedStyle(el);
@@ -76,7 +100,8 @@ export async function verifyGlassUi(page, song, output) {
     // An existing menu is already opaque when resize schedules its next animation-frame measurement.
     try {
       await page.waitForFunction(({ name, width, height }) => {
-        const menu = [...document.querySelectorAll('[role="listbox"]')].find(el => el.getAttribute('aria-label') === name);
+        const menu = name === '歌词样式' ? document.querySelector('.desktop-top-menu')
+          : [...document.querySelectorAll('[role="listbox"]')].find(el => el.getAttribute('aria-label') === name);
         const box = menu?.getBoundingClientRect();
         return box && box.x >= 7.5 && box.y >= 7.5 && box.x + box.width <= width - 7.5 && box.y + box.height <= height - 7.5;
       }, { name, width, height }, { timeout: 5000 });
@@ -88,8 +113,10 @@ export async function verifyGlassUi(page, song, output) {
     const bounds = await menu.boundingBox();
     assert(bounds && bounds.x >= 7.5 && bounds.y >= 7.5 && bounds.x + bounds.width <= width - 7.5
       && bounds.y + bounds.height <= height - 7.5, `menu must stay inside ${width}x${height} with a usable edge gutter: ${JSON.stringify(await diagnostics())}`);
-    assert(await menu.evaluate(el => el.scrollHeight > el.clientHeight), 'long selector menus must scroll instead of overflowing');
-    assert(await menu.evaluate(el => ['auto', 'scroll'].includes(getComputedStyle(el).overflowY)));
+    assert(await menu.evaluate(el => { const scroll = el.querySelector('.custom-select-options-scroll[role="listbox"]') || el;
+      return scroll.scrollHeight > scroll.clientHeight; }), 'long selector menus must scroll instead of overflowing');
+    assert(await menu.evaluate(el => { const scroll = el.querySelector('.custom-select-options-scroll[role="listbox"]') || el;
+      return ['auto', 'scroll'].includes(getComputedStyle(scroll).overflowY); }));
   };
   await emit('windowState', { maximized: false, fullscreen: false, clickThrough: false }); await emit('restore', {});
   await page.locator('.immersive').waitFor({ state: 'detached' });
@@ -120,7 +147,7 @@ export async function verifyGlassUi(page, song, output) {
       return root?.classList.contains('cover-theme') && root.style.getPropertyValue('--cover-background') !== previous;
     }, previous);
   };
-  await selectDesktopOption(page, '歌词样式', { label: 'Luminous' });
+  await selectDesktopOption(page, '歌词样式', { label: '流光' });
   const choices = await readDesktopOptions(page, '歌词样式');
   assert.equal(choices.length, 13); assert(!choices.some(choice => choice.value === 'still'));
   assert.equal(await page.locator('.topbar-mode-picker select, .control-panel select').count(), 0);
@@ -130,12 +157,13 @@ export async function verifyGlassUi(page, song, output) {
   assert(await menu.evaluate(el => el.classList.contains('desktop-glass-menu') && el.classList.contains('desktop-top-menu')));
   assert(await menu.evaluate(el => Boolean(el.closest('main.desktop-lyrics'))), 'nested menus must inherit the active cover theme');
   assert.equal(await mode.getAttribute('aria-haspopup'), 'listbox');
-  assert.equal(await mode.getAttribute('aria-controls'), await menu.getAttribute('id'));
+  assert.equal(await mode.getAttribute('aria-controls'), await menu.getByRole('listbox', { name: '歌词样式', exact: true }).getAttribute('id'));
   const selected = menu.locator('[role="option"][aria-selected="true"]');
   assert.equal(await selected.count(), 1); assert.equal(await selected.getAttribute('data-value'), 'classic');
   assert.notEqual(await style(selected, 'backgroundColor'), await style(menu.locator('[role="option"][aria-selected="false"]').first(), 'backgroundColor'));
-  assert(await selected.locator('svg').isVisible(), 'chosen items retain a visible check indicator');
-  assert.equal(await style(menu, 'color'), await style(page.locator('.track-caption strong'), 'color'));
+  assert(await selected.locator('.lucide-check').isVisible(), 'chosen items retain a visible check indicator');
+  assert.equal(await style(menu, 'color'), await themeColor('--glass-text'), 'floating menu text uses the current theme foreground');
+  assert.notEqual(await style(menu, 'color'), await style(page.locator('.track-caption strong'), 'color'), 'song metadata is quieter than floating menu text');
   const red = await style(menu, 'backgroundColor');
   await page.screenshot({ path: `${output}/glass-menu-red.png` });
   await dismiss(menu);
@@ -150,21 +178,43 @@ export async function verifyGlassUi(page, song, output) {
   const panel = page.locator('.control-panel');
   const controls = [page.getByRole('button', { name: '最小化窗口', exact: true }), page.getByRole('button', { name: '沉浸显示', exact: true }),
     page.getByRole('button', { name: '关闭设置', exact: true })];
-  const fills = await Promise.all(controls.map(control => style(control, 'backgroundImage')));
-  assert(fills.every(fill => fill !== 'none' && fill === fills[0]), 'caption, topbar and settings controls share the same glass material');
+  await quietChrome('normal appearance');
+  for (const control of [...controls, player]) {
+    assert.equal(await style(control, 'backgroundImage'), 'none', 'ordinary controls use a flat fill');
+    assert.equal(await style(control, 'boxShadow'), 'none', 'ordinary controls have no inset reflection or elevation');
+    assert.equal(await control.evaluate(el => getComputedStyle(el, '::before').display), 'none', 'ordinary controls have no pointer reflection');
+    assert(parseFloat(await style(control, 'borderTopLeftRadius')) <= 10, 'ordinary controls use a small corner radius');
+  }
+  for (const control of controls.slice(0, 2)) assert.equal(await style(control, 'backgroundColor'), 'rgba(0, 0, 0, 0)', 'toolbar controls gain a local fill only when needed');
+  assert.notEqual(await style(controls[2], 'backgroundColor'), 'rgba(0, 0, 0, 0)', 'settings controls retain a quiet local fill');
+  assert.equal(await panel.locator('.panel-heading small').count(), 0, 'settings heading omits its promotional subtitle');
+  const nestedGroups = await panel.locator('details,.lyric-source,.online-status').evaluateAll(elements => elements.map(element => {
+    const css = getComputedStyle(element);
+    return { image: css.backgroundImage, background: css.backgroundColor, shadow: css.boxShadow, radius: css.borderTopLeftRadius, border: css.borderTopWidth };
+  }));
+  assert(nestedGroups.length > 0, 'settings still expose their functional groups');
+  assert(nestedGroups.every(group => group.image === 'none' && group.background === 'rgba(0, 0, 0, 0)'
+    && group.shadow === 'none' && group.radius === '0px' && group.border === '0px'), 'settings groups use spacing instead of nested glass cards');
   const transport = page.getByRole('button', { name: '下一首', exact: true });
-  assert.equal(await style(transport, 'color'), await style(controls[0], 'color'), 'reference playback icons share the current theme foreground');
+  assert.equal(await style(transport, 'color'), await themeColor('--glass-text'), 'playback icons share the current theme foreground');
   assert.equal(await style(transport, 'backgroundImage'), 'none');
-  assert.equal(await style(transport, 'backgroundColor'), 'rgba(0, 0, 0, 0)', 'playback icons remain transparent inside the glass bar');
-  assert.notEqual(await transport.evaluate(el => getComputedStyle(el, '::before').backgroundImage), 'none');
+  assert.equal(await style(transport, 'backgroundColor'), 'rgba(0, 0, 0, 0)', 'playback icons remain transparent at rest');
+  assert.equal(await style(transport, 'boxShadow'), 'none');
+  assert.equal(await transport.evaluate(el => getComputedStyle(el, '::before').display), 'none');
   await transport.hover();
-  await page.waitForFunction(() => document.querySelector('.transport-buttons button:last-child')?.style.getPropertyValue('--light-opacity') === '1');
-  assert.notEqual(await style(transport, 'backgroundColor'), 'rgba(0, 0, 0, 0)', 'the transparent playback icon retains its hover highlight');
+  await page.waitForFunction(() => {
+    const button = document.querySelector('.transport-buttons button:last-child');
+    return button && getComputedStyle(button).backgroundColor !== 'rgba(0, 0, 0, 0)';
+  });
+  assert.equal(await style(transport, 'backgroundImage'), 'none'); assert.equal(await style(transport, 'boxShadow'), 'none');
+  assert.equal(await transport.evaluate(el => getComputedStyle(el, '::before').display), 'none', 'playback hover uses a local fill without a reflection');
   await page.mouse.move(450, 400);
   menu = await menuFor('选择播放器');
   assert.equal(await style(menu, 'backgroundColor'), await style(panel, 'backgroundColor'));
-  const blurs = await Promise.all([menu, panel, page.locator('.desktop-topbar'), page.locator('.desktop-statusbar')].map(surface => style(surface, 'backdropFilter')));
-  assert(blurs.every(blur => blur !== 'none' && blur === blurs[0]), 'all glass surfaces and second-level menus use the same backdrop treatment');
+  const blurs = await Promise.all([menu, panel].map(surface => style(surface, 'backdropFilter')));
+  assert(blurs.every(blur => blur !== 'none' && blur === blurs[0]), 'settings and floating menus retain the same glass backdrop');
+  assert.notEqual(await style(menu, 'backgroundImage'), 'none'); assert.notEqual(await style(panel, 'boxShadow'), 'none');
+  await quietChrome('floating menu open');
   await dismiss(menu);
   await selectDesktopOption(page, '选择播放器', { label: '椒盐音乐' });
   assert.equal(await player.getAttribute('data-value'), 'glass-salt');
@@ -184,7 +234,9 @@ export async function verifyGlassUi(page, song, output) {
   await menu.waitFor({ state: 'detached' });
   await player.scrollIntoViewIfNeeded(); await selectDesktopOption(page, '选择播放器', { value: originalSource });
   await closeSettings();
-  checks.push('utility controls and nested menus share glass while transparent playback icons retain themed highlights', 'player selection sends native preferences and selected state follows the reply', 'settings scroll repositions the menu and closes it when its trigger is clipped');
+  checks.push('persistent toolbar and playback surfaces stay transparent while floating settings and menus retain glass',
+    'ordinary controls use flat local fills without reflection and settings groups avoid nested cards',
+    'player selection sends native preferences and selected state follows the reply', 'settings scroll repositions the menu and closes it when its trigger is clipped');
 
   await mode.focus(); await page.keyboard.press('ArrowDown');
   menu = page.getByRole('listbox', { name: '歌词样式', exact: true }); await menu.waitFor();
@@ -197,11 +249,15 @@ export async function verifyGlassUi(page, song, output) {
   for (let i = 0; i < choices.findIndex(choice => choice.value === 'classic'); i++) await page.keyboard.press('ArrowDown');
   await page.keyboard.press('Enter'); await menu.waitFor({ state: 'detached' });
   assert.equal(await mode.getAttribute('data-value'), 'classic'); assert(await mode.evaluate(el => el === document.activeElement));
-  menu = await menuFor('歌词样式'); await page.keyboard.press('Tab'); await menu.waitFor({ state: 'detached' });
-  assert(await mode.evaluate(el => el !== document.activeElement), 'Tab closes the dropdown and continues normal focus navigation');
+  menu = await menuFor('歌词样式'); await page.keyboard.press('Tab');
+  assert(await menu.locator('[data-custom-select-footer]').evaluate(el => el === document.activeElement), 'Tab reaches the real more-settings action');
+  await page.keyboard.press('Shift+Tab');
+  assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('data-value')), 'classic');
+  await page.keyboard.press('Tab'); await page.keyboard.press('Tab'); await menu.waitFor({ state: 'detached' });
+  assert(await mode.evaluate(el => el !== document.activeElement), 'a second Tab continues normal focus navigation outside the dropdown');
   menu = await menuFor('歌词样式'); await page.mouse.click(450, 400); await menu.waitFor({ state: 'detached' });
   assert.equal(await mode.getAttribute('aria-expanded'), 'false');
-  checks.push('arrow keys, Home, End and Enter navigate and select with focus restoration', 'Tab moves focus and an outside click dismisses the menu');
+  checks.push('arrow keys, Home, End and Enter navigate and select with focus restoration', 'Tab reaches more settings, Shift+Tab returns to the selected option, and Tab departure/outside click dismiss the menu');
 
   const currentCover = await page.getByRole('img', { name: '专辑封面', exact: true }).getAttribute('src');
   const virtualSources = [...song.sources, ...Array.from({ length: 32 }, (_, index) => ({ id: `glass-virtual-${index}`, label: `长列表播放器 ${index + 1}` }))];
@@ -243,8 +299,13 @@ export async function verifyGlassUi(page, song, output) {
 
   await emit('appearance', { acrylic: false, solid: true, highContrast: false }); menu = await menuFor('歌词样式');
   assert.equal(await style(menu, 'backdropFilter'), 'none');
-  assert.equal(await style(menu, 'backgroundColor'), await style(page.locator('.desktop-topbar'), 'backgroundColor'));
+  assert.equal(await style(menu, 'backgroundColor'), await themeColor('--desktop-glass-base'), 'solid fallback makes the floating menu opaque');
+  assert.equal(await style(menu, 'backgroundImage'), 'none'); await quietChrome('solid appearance');
   await dismiss(menu);
+  await openSettings();
+  assert.equal(await style(panel, 'backgroundColor'), await themeColor('--desktop-glass-base'), 'solid fallback makes settings opaque');
+  assert.equal(await style(panel, 'backdropFilter'), 'none'); assert.equal(await style(panel, 'backgroundImage'), 'none');
+  await quietChrome('solid settings open'); await closeSettings();
   await emit('appearance', { acrylic: false, solid: true, highContrast: true }); menu = await menuFor('歌词样式');
   assert.equal(await style(menu, 'backdropFilter'), 'none'); assert.equal(await style(menu, 'boxShadow'), 'none');
   assert.equal(await style(menu.locator('[aria-selected="true"]'), 'borderTopStyle'), 'double');
@@ -259,19 +320,19 @@ export async function verifyGlassUi(page, song, output) {
   assert.equal(await style(menu, 'transform'), 'none'); assert.equal(await style(menu, 'transitionDuration'), '0s');
   assert.equal(await style(menu.getByRole('option').first(), 'transitionDuration'), '0s');
   await dismiss(menu); await page.emulateMedia({ reducedMotion: 'no-preference' });
-  checks.push('solid fallback removes translucency and blur consistently', 'high contrast keeps menu text and selection distinguishable', 'forced colors preserves selected-state feedback', 'reduced motion disables menu movement and control transitions');
+  checks.push('solid fallback makes floating menus and settings opaque while persistent controls stay transparent', 'high contrast keeps menu text and selection distinguishable', 'forced colors preserves selected-state feedback', 'reduced motion disables menu movement and control transitions');
 
   await openSettings(); await transparent.check(); await closeSettings();
   await page.locator('.transparent-background').waitFor(); menu = await menuFor('歌词样式');
   assert.equal(await page.locator('.acrylic-backdrop').count(), 0);
-  assert(await menu.getByRole('option', { name: 'Luminous', exact: true }).isVisible());
+  assert(await menu.getByRole('option', { name: '流光', exact: true }).isVisible());
   await page.screenshot({ path: `${output}/glass-menu-transparent.png` }); await dismiss(menu);
   await openSettings(); await transparent.uncheck(); await automatic.check(); await delay.fill('2'); await delay.press('Enter'); await automatic.uncheck(); await closeSettings();
   await page.getByRole('button', { name: '沉浸显示', exact: true }).click();
   await page.mouse.move(450, 400); await page.mouse.move(450, 18); await page.locator('.top-controls-revealed').waitFor();
   menu = await menuFor('歌词样式');
   await topbarAlignment(menu, '1280x800 windowed immersion');
-  const deepChoice = menu.getByRole('option', { name: 'Luminous', exact: true }); await deepChoice.hover();
+  const deepChoice = menu.getByRole('option', { name: '流光', exact: true }); await deepChoice.hover();
   const deepBounds = await deepChoice.boundingBox(); assert(deepBounds && deepBounds.y + deepBounds.height / 2 > 128);
   assert.equal(await page.locator('.immersive.top-controls-revealed').count(), 1, 'moving into the second-level menu must keep the immersive topbar usable');
   await deepChoice.click(); await menu.waitFor({ state: 'detached' }); assert.equal(await mode.getAttribute('data-value'), 'classic');
@@ -308,7 +369,7 @@ export async function verifyGlassUi(page, song, output) {
       await page.mouse.move(width / 2, height / 2); await page.mouse.move(width / 2, 18);
       await page.locator('.top-controls-revealed').waitFor(); menu = await menuFor('歌词样式');
       await topbarAlignment(menu, `${width}x${height} windowed immersion`);
-      const choice = menu.getByRole('option', { name: 'Luminous', exact: true }); await choice.hover();
+      const choice = menu.getByRole('option', { name: '流光', exact: true }); await choice.hover();
       const choiceBounds = await choice.boundingBox();
       assert(choiceBounds && choiceBounds.y + choiceBounds.height / 2 >= 200, 'a small-window menu must exercise the same screen area as bottom hover');
       assert.equal(await page.locator('.immersive.top-controls-revealed').count(), 1);
@@ -356,6 +417,6 @@ export async function verifyGlassUi(page, song, output) {
   await openSettings(); await automatic.check(); await delay.fill(originalDelay); await delay.press('Enter'); await automatic.setChecked(originalAutomatic);
   await transparent.setChecked(originalTransparent); await closeSettings();
   await emit('session', song);
-  console.log('PASS unified desktop glass / nested menus / keyboard / viewport checks');
+  console.log('PASS quiet desktop controls / glass floating menus / keyboard / viewport checks');
   return checks;
 }

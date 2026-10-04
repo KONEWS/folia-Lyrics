@@ -26,7 +26,7 @@ const VisualizerPresetGroup = <T,>({
     isDaylight,
     theme,
 }: VisualizerPresetGroupProps<T>) => (
-    <div className="space-y-2.5">
+    <div role="group" aria-label={label} className="space-y-2.5">
         <div className="text-xs font-medium uppercase tracking-[0.24em] opacity-45" style={{ color: theme.secondaryColor }}>
             {label}
         </div>
@@ -38,6 +38,7 @@ const VisualizerPresetGroup = <T,>({
                     <button
                         key={String(option.value)}
                         type="button"
+                        aria-pressed={isActive}
                         onClick={() => onChange(option.value)}
                         className="px-3 py-2 rounded-full text-sm transition-all border"
                         style={{

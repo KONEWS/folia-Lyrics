@@ -1,4 +1,6 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using FoliaLyrics;
@@ -13,6 +15,9 @@ string WriteLyric(string name, string title, string artist, string line = "local
     File.WriteAllText(path, $"[ti:{title}]\n[ar:{artist}]\n[00:01.00]{line}"); return path;
 }
 void Seed(params Entry[] entries) => DataFiles.Save("library.json", new LibraryState { Entries = entries.ToList() });
+// Exercise private production entry points without changing the existing isolated MainWindow fixture.
+void InvokeHost(MainWindow host, string method, params object[] values) => typeof(MainWindow)
+    .GetMethod(method, BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(host, values);
 var measurements = new Dictionary<string, object>();
 measurements["processorCount"] = Environment.ProcessorCount;
 measurements["runtimeVersion"] = Environment.Version.ToString();
@@ -90,6 +95,7 @@ try
         measurements["manualCacheResolveMs"] = elapsed.Elapsed.TotalMilliseconds;
         Check(host.Packets.Single().Content.Contains("manual") && host.Packets.Single().Key == target.Key, "manual online cache beats local and receives the current song key");
         Check(TestProviders.Searches.IsEmpty, "manual cache avoids all provider requests");
+        if (!baseline) Check(host.Status.Phase == "ready" && !host.Status.Busy, "manual cached lyrics publish ready without changing Busy");
     }
     DataFiles.Reset(); Seed(new Entry(localPath, target.Title, target.Artist)); cache.Save(target, Cached("automatic"), "qq:auto", false);
     using (var host = new MainWindow())
@@ -98,6 +104,7 @@ try
         measurements["localResolveMs"] = elapsed.Elapsed.TotalMilliseconds;
         Check(host.Packets.Single().Content.Contains("local"), "local lyrics beat automatic online cache");
         Check(TestProviders.Searches.IsEmpty, "local lyrics avoid all provider requests");
+        if (!baseline) Check(host.Status.Phase == "ready" && !host.Status.Busy, "local lyrics publish ready without changing Busy");
     }
     DataFiles.Reset(); Seed();
     using (var host = new MainWindow(new Preferences { OnlineEnabled = false }))
@@ -106,6 +113,41 @@ try
         measurements["automaticCacheResolveMs"] = elapsed.Elapsed.TotalMilliseconds;
         Check(host.Packets.Single().Content.Contains("automatic"), "automatic online cache works when networking is disabled");
         Check(TestProviders.Searches.IsEmpty, "disabled networking never invokes providers");
+        if (!baseline) Check(host.Status.Phase == "ready" && !host.Status.Busy, "automatic cache publishes ready even when networking is disabled");
+    }
+    if (!baseline)
+    {
+        Check(new OnlineState("legacy", false, "legacy", [], []).Phase == "idle", "old OnlineState construction defaults to idle");
+        DataFiles.Reset(); Seed();
+        var phasePreferences = new Preferences();
+        using (var host = new MainWindow(phasePreferences))
+        {
+            var precheck = new PausedResolverContext();
+            var previousContext = SynchronizationContext.Current;
+            typeof(MainWindow).GetField("song", BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(host, SongOf("PhasePrecheck", key: "phase-precheck"));
+            try
+            {
+                SynchronizationContext.SetSynchronizationContext(precheck);
+                InvokeHost(host, "BeginResolve", SongOf("PhasePrecheck", key: "phase-precheck"), false);
+            }
+            finally { SynchronizationContext.SetSynchronizationContext(previousContext); }
+            Check(host.Status.Phase == "matching" && !host.Status.Busy && host.LookupSnapshot.Automatic,
+                "BeginResolve exposes local precheck as matching while Busy remains false");
+            phasePreferences.OnlineEnabled = false; InvokeHost(host, "OnlinePreferenceChanged");
+            await precheck.Posted.Task.WaitAsync(TimeSpan.FromSeconds(3)); precheck.Drain();
+            Check(host.Status.Phase == "idle" && !host.Status.Busy && TestProviders.Searches.IsEmpty && host.Packets.IsEmpty,
+                "disabling online matching cancels the precheck without retaining matching or publishing late lyrics");
+        }
+        DataFiles.Reset(); Seed();
+        using (var host = new MainWindow())
+        {
+            await host.Resolve(SongOf("NoPhaseResults", key: "no-phase-results"));
+            Check(host.Status.Phase == "failed" && !host.Status.Busy && host.Status.Candidates.Length == 0 && host.Status.Errors.Length == 0,
+                "automatic search with no candidates and no errors still publishes failed");
+            await host.Search("NoPhaseResults", "Test");
+            Check(host.Status.Phase == "failed" && !host.Status.Busy && host.Status.Candidates.Length == 0 && host.Status.Errors.Length == 0,
+                "manual search with no candidates and no errors still publishes failed");
+        }
     }
     cache.Forget(target); DataFiles.Reset(); Seed(new Entry(localPath, target.Title, target.Artist));
     using (var host = new MainWindow())
@@ -196,6 +238,7 @@ try
     {
         await host.Resolve(SongOf("Strict", key: "strict"));
         Check(host.Packets.IsEmpty && TestProviders.Fetches.IsEmpty && host.Status.Candidates.All(candidate => !candidate.AutoEligible), "progressive automatic matching retains strict duration eligibility");
+        if (!baseline) Check(host.Status.Phase == "choice" && !host.Status.Busy, "ineligible automatic candidates publish choice without fetching them");
     }
 
     // Hold the low-priority source explicitly to prove early display and both supersession paths without timing thresholds.
@@ -233,6 +276,7 @@ try
                 await host.FirstPacket.Task.WaitAsync(TimeSpan.FromSeconds(3));
                 await host.FirstSelection.Task.WaitAsync(TimeSpan.FromSeconds(3));
                 Check(!pending.IsCompleted && host.Status.SelectedKey == "kugou:early", "preferred lyrics appear while a lower-priority result is held: manual=" + manual);
+                Check(host.Status.Phase == "ready" && !host.Status.Busy, "early automatic lyrics remain ready while lower-priority results are pending: manual=" + manual);
                 if (manual)
                 {
                     await host.Select("kugou:alternative", progressiveSong.Key);
@@ -260,8 +304,25 @@ try
         var pending = host.Search("ManualSearch", "Test");
         await manualStarted.Task.WaitAsync(TimeSpan.FromSeconds(3));
         Check(!pending.IsCompleted && host.Packets.IsEmpty && TestProviders.Fetches.IsEmpty, "manual search continues waiting for the complete result set");
+        if (!baseline) Check(host.Status.Phase == "matching" && host.Status.Busy, "manual search publishes matching while Busy remains true");
         manualGate.SetResult(); await pending;
         Check(host.Status.Candidates.Length == 4 && TestProviders.Fetches.IsEmpty, "manual search retains all four sources without automatic fetching");
+        if (!baseline)
+        {
+            Check(host.Status.Phase == "choice" && !host.Status.Busy, "complete manual results publish choice without automatic selection");
+            var fetchGate = new TaskCompletionSource<Lyrics?>(TaskCreationOptions.RunContinuationsAsynchronously);
+            TestProviders.FetchHandler = (_, _, _) => fetchGate.Task;
+            var selected = host.Select("kugou:manual-result", "");
+            Check(host.Status.Phase == "matching" && host.Status.Busy && host.Status.Candidates.Length == 4,
+                "manual selection publishes matching while fetching and retains the candidate list");
+            fetchGate.SetResult(new("", "ManualSearch", "Test", "[00:01.00]selected", "kugou", "", false)); await selected;
+            Check(host.Status.Phase == "ready" && !host.Status.Busy && host.Status.SelectedKey == "kugou:manual-result" && host.Packets.Single().Content.Contains("selected"),
+                "successful manual selection publishes ready with the selected identity and lyrics");
+            TestProviders.FetchHandler = (_, _, _) => Task.FromResult<Lyrics?>(null);
+            await host.Select("qq:manual-result", "");
+            Check(host.Status.Phase == "failed" && !host.Status.Busy && host.Status.Candidates.Length == 4 && host.Status.SelectedKey == "kugou:manual-result" && host.Packets.Count == 1,
+                "failed manual selection publishes failed while preserving prior lyrics and candidates");
+        }
     }
 
     // Measure lookup work separately; --logic-only preserves the previously recorded baseline and optimized data.
@@ -291,9 +352,19 @@ try
     File.WriteAllText(output, JsonSerializer.Serialize(new { checks, measurements }, new JsonSerializerOptions { WriteIndented = true }));
     Console.WriteLine(JsonSerializer.Serialize(measurements)); Console.WriteLine($"{checks.Count} lyric checks passed");
 }
+
 finally
 {
     var cleanup = Path.GetFullPath(DataFiles.Root);
     if (!cleanup.StartsWith(Path.GetFullPath(Path.GetTempPath()), StringComparison.OrdinalIgnoreCase) || !Path.GetFileName(cleanup).StartsWith("FoliaLyricsLyricPerf_", StringComparison.Ordinal)) throw new IOException("Unexpected test cleanup path");
     Directory.Delete(cleanup, true);
+}
+
+// Hold production async continuations until the precheck status and preference cancellation are inspected.
+sealed class PausedResolverContext : SynchronizationContext
+{
+    private readonly ConcurrentQueue<(SendOrPostCallback Callback, object? State)> pending = new();
+    public readonly TaskCompletionSource Posted = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    public override void Post(SendOrPostCallback callback, object? state) { pending.Enqueue((callback, state)); Posted.TrySetResult(); }
+    public void Drain() { while (pending.TryDequeue(out var item)) item.Callback(item.State); }
 }

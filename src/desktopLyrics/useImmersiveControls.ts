@@ -19,10 +19,22 @@ export function useImmersiveControls({ root, immersive, setImmersive, panel, has
     const footerFocused = () => Boolean(surface.querySelector('.desktop-statusbar')?.contains(document.activeElement));
     const topFocused = () => Boolean(surface.querySelector('.desktop-topbar-shell')?.contains(document.activeElement) || surface.querySelector('.window-chrome')?.contains(document.activeElement)
       || surface.querySelector('.desktop-top-menu')?.contains(document.activeElement));
+    // Keep the small gap between the trigger and its portaled menu inside the immersive hover area.
+    const menuBridge = (event: PointerEvent) => {
+      const button = surface.querySelector('.desktop-topbar-shell button[aria-expanded="true"][aria-controls]');
+      const trigger = button?.closest('.topbar-mode-picker,.topbar-more-control') ?? button;
+      const controlled = button ? document.getElementById(button.getAttribute('aria-controls') || '') : null;
+      const menu = controlled?.closest('.desktop-top-menu') ?? controlled;
+      if (!trigger || !menu || !surface.contains(menu) || !menu.classList.contains('desktop-top-menu')) return false;
+      const anchor = trigger.getBoundingClientRect(), bounds = menu.getBoundingClientRect();
+      const between = bounds.top >= anchor.bottom ? event.clientY >= anchor.bottom && event.clientY <= bounds.top
+        : bounds.bottom <= anchor.top && event.clientY >= bounds.bottom && event.clientY <= anchor.top;
+      return between && event.clientX >= Math.min(anchor.left, bounds.left) && event.clientX <= Math.max(anchor.right, bounds.right);
+    };
     const blurChrome = () => { if (footerFocused() || topFocused()) (document.activeElement as HTMLElement).blur(); };
     if (!immersive) { cursor(false); controls(false); topControls(false); }
     if (panel || !hasLyrics || clickThrough) { blurChrome(); cursor(false); controls(false); topControls(false); return; }
-    if (fullscreen) { if (topFocused()) (document.activeElement as HTMLElement).blur(); topControls(false); }
+    if (fullscreen) { if (immersive && topFocused()) (document.activeElement as HTMLElement).blur(); topControls(false); }
     if (!bottomHoverControls) controls(false);
     const arm = () => {
       window.clearTimeout(timer);
@@ -37,10 +49,11 @@ export function useImmersiveControls({ root, immersive, setImmersive, panel, has
     const pointer = (event: PointerEvent) => {
       cursor(false);
       const menu = event.target instanceof Element && Boolean(event.target.closest('.desktop-top-menu'));
+      const topChrome = event.target instanceof Element && Boolean(event.target.closest('.desktop-topbar-shell,.window-chrome,.desktop-top-menu'));
       const bottom = !menu && event.clientY >= window.innerHeight - Math.min(160, window.innerHeight / 3);
-      const top = !fullscreen && (menu || event.clientY <= Math.min(128, window.innerHeight / 3));
-      if (!bottom && footerFocused()) (document.activeElement as HTMLElement).blur();
-      if (!top && topFocused()) (document.activeElement as HTMLElement).blur();
+      const top = !fullscreen && (topChrome || event.clientY <= Math.min(128, window.innerHeight / 3) || immersive && menuBridge(event));
+      if (immersive && !bottom && footerFocused()) (document.activeElement as HTMLElement).blur();
+      if (immersive && !top && !menu && topFocused()) (document.activeElement as HTMLElement).blur();
       controls(immersive && bottomHoverControls && bottom);
       topControls(immersive && top);
       arm();

@@ -3,10 +3,10 @@ import type { ListImperativeAPI } from 'react-window';
 
 // src/components/shared/useCustomSelectOptionFocus.ts — focus full-list indices after virtual rows mount.
 export type CustomSelectMenuNavigation = { focusOption: (index: number) => void; cancelFocus: () => void };
-type Options = { enabled: boolean; count: number; virtualized: boolean; menu: RefObject<HTMLDivElement | null>;
+type Options = { enabled: boolean; count: number; virtualized: boolean; viewportHeight: number; menu: RefObject<HTMLDivElement | null>;
     list: RefObject<ListImperativeAPI | null>; navigation: RefObject<CustomSelectMenuNavigation | null> | undefined };
 
-export function useCustomSelectOptionFocus({ enabled, count, virtualized, menu, list, navigation }: Options) {
+export function useCustomSelectOptionFocus({ enabled, count, virtualized, viewportHeight, menu, list, navigation }: Options) {
     const pending = useRef<number | null>(null), frame = useRef(0);
     const cancelFocus = useCallback(() => {
         cancelAnimationFrame(frame.current); frame.current = 0; pending.current = null;
@@ -39,6 +39,17 @@ export function useCustomSelectOptionFocus({ enabled, count, virtualized, menu, 
             scheduleFocus();
         },
     }), [enabled, count, virtualized, list, cancelFocus, focusPending, scheduleFocus]);
+    // Keep the focused row complete when an open menu's viewport shrinks, without moving panel focus.
+    useLayoutEffect(() => {
+        const active = document.activeElement;
+        if (!enabled || !(active instanceof HTMLButtonElement) || active.getAttribute('role') !== 'option'
+            || !menu.current?.contains(active)) return;
+        const index = Number(active.dataset.optionIndex);
+        if (!Number.isInteger(index) || index < 0 || index >= count) return;
+        cancelFocus(); pending.current = index;
+        if (virtualized) list.current?.scrollToRow({ index, align: 'smart', behavior: 'instant' });
+        focusPending(); scheduleFocus();
+    }, [viewportHeight, enabled, count, virtualized, menu, list, cancelFocus, focusPending, scheduleFocus]);
     useLayoutEffect(() => cancelFocus, [cancelFocus, enabled, count, virtualized]);
     return scheduleFocus;
 }

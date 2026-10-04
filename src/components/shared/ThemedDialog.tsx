@@ -1,6 +1,9 @@
 import React, { useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
+import { isDesktopLyricsSurface } from '../../utils/appSurface';
+
+// src/components/shared/ThemedDialog.tsx — shared dialog behavior with host-specific entry motion.
 
 interface ThemedDialogProps {
     isOpen: boolean;
@@ -56,19 +59,19 @@ const ThemedDialog: React.FC<ThemedDialogProps> = ({
         <AnimatePresence>
             {isOpen && (
                 <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
+                    initial={isDesktopLyricsSurface ? false : { opacity: 0 }}
+                    animate={isDesktopLyricsSurface ? undefined : { opacity: 1 }}
+                    exit={isDesktopLyricsSurface ? undefined : { opacity: 0 }}
                     data-folia-keyboard-window="true"
                     className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-md p-4"
                     onMouseDown={handleOverlayMouseDown}
                     onClick={handleBackdropClick}
                 >
                     <motion.div
-                        initial={{ scale: 0.94, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0.94, opacity: 0 }}
-                        transition={{ type: 'spring', stiffness: 280, damping: 24 }}
+                        initial={isDesktopLyricsSurface ? false : { scale: 0.94, opacity: 0 }}
+                        animate={isDesktopLyricsSurface ? undefined : { scale: 1, opacity: 1 }}
+                        exit={isDesktopLyricsSurface ? undefined : { scale: 0.94, opacity: 0 }}
+                        transition={isDesktopLyricsSurface ? undefined : { type: 'spring', stiffness: 280, damping: 24 }}
                         onClick={(event) => event.stopPropagation()}
                         className={`relative w-full ${maxWidthClass} rounded-3xl border ${bgClass} p-6 shadow-2xl backdrop-blur-sm`}
                     >

@@ -592,6 +592,7 @@ export const CappellaSettingsPanel: React.FC<VisualizerSettingsPanelProps> = ({
                             <button
                                 key={option.value}
                                 type="button"
+                                aria-pressed={isActive}
                                 disabled={isDisabled}
                                 onClick={() => onCappellaTuningChange?.({ avatarSource: option.value })}
                                 className="px-3 py-2 rounded-full text-sm transition-all border disabled:cursor-not-allowed disabled:opacity-45"
@@ -699,6 +700,7 @@ export const CappellaSettingsPanel: React.FC<VisualizerSettingsPanelProps> = ({
                             <button
                                 key={option.value}
                                 type="button"
+                                aria-pressed={isActive}
                                 disabled={isDisabled}
                                 onClick={() => onCappellaTuningChange?.({ emojiPackSource: option.value })}
                                 className="px-3 py-2 rounded-full text-sm transition-all border disabled:cursor-not-allowed disabled:opacity-45"

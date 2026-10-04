@@ -33,8 +33,13 @@ export function useCustomSelectPosition({ open, container, menu, minWidth, getCl
             if (event.target instanceof Node && menu.current?.contains(event.target)) return;
             if (!frame) frame = requestAnimationFrame(() => { frame = 0; update(); });
         };
+        const clipElement = getClipElement?.();
+        // A menu opened during its panel's entrance follows the panel's settled anchor once.
+        const finishEntrance = (event: AnimationEvent) => { if (event.target === clipElement) schedule(event); };
+        clipElement?.addEventListener('animationend', finishEntrance);
         update(); window.addEventListener('resize', schedule); window.addEventListener('scroll', schedule, true);
-        return () => { cancelAnimationFrame(frame); window.removeEventListener('resize', schedule); window.removeEventListener('scroll', schedule, true); };
+        return () => { cancelAnimationFrame(frame); clipElement?.removeEventListener('animationend', finishEntrance);
+            window.removeEventListener('resize', schedule); window.removeEventListener('scroll', schedule, true); };
     }, [open, container, menu, minWidth, getClipElement, getAnchorElement, close]);
     return position;
 }

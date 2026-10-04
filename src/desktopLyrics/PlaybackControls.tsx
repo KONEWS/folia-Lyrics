@@ -16,8 +16,6 @@ export default function PlaybackControls({ session, controls }: { session: Sessi
         {pending ? <LoaderCircle size={20} className="transport-spinner"/> : session.playing ? <Pause size={20}/> : <Play size={20}/>}</button>
       <button aria-label="下一首" title={title(Boolean(caps?.next), '下一首')} disabled={unavailable || !caps?.next} onClick={() => control('next')}><SkipForward size={17}/></button>
     </div>
-    <span className={`transport-caption ${feedback?.error ? 'error' : ''}`} role="status" title={feedback?.text || session.source}>
-      {feedback?.text || (pending ? '正在等待播放器响应…' : !connected ? '等待连接播放器' : !canPlayPause && !caps?.previous && !caps?.next ? '播放器未开放媒体控制' : '控制外部播放器')}
-    </span>
+    {feedback?.error ? <span className="transport-caption error" role="alert" title={feedback.text}>{feedback.text}</span> : null}
   </div>;
 }

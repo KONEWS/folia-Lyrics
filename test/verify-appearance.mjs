@@ -9,17 +9,23 @@ export async function verifyAppearance(page, output) {
   assert.equal(await style('.acrylic-backdrop','backgroundImage'),'none');
   assert.equal(await style('.acrylic-backdrop','backgroundColor'),'rgba(0, 0, 0, 0)');
   await emit({acrylic:false,solid:true,highContrast:false}); await page.locator('.solid-surfaces').waitFor();
-  assert.equal(await style('.desktop-topbar','backdropFilter'),'none');
+  for (const selector of ['.desktop-topbar', '.desktop-statusbar']) {
+    assert.equal(await style(selector,'backdropFilter'),'none');
+    assert.equal(await style(selector,'backgroundColor'),'rgba(0, 0, 0, 0)', 'everyday toolbar stays transparent on the opaque backdrop');
+  }
+  await page.getByRole('button',{name:'打开歌词设置',exact:true}).click();
   const solid = await page.locator('.desktop-lyrics').evaluate(el => {
     const probe = document.createElement('i'); probe.style.backgroundColor = 'var(--desktop-glass-base)'; el.append(probe);
     const expected = getComputedStyle(probe).backgroundColor; probe.remove();
-    const actual = getComputedStyle(el.querySelector('.desktop-topbar')).backgroundColor;
+    const actual = getComputedStyle(el.querySelector('.control-panel')).backgroundColor;
     const canvas = document.createElement('canvas'); canvas.width = canvas.height = 1;
     const context = canvas.getContext('2d'); context.fillStyle = actual; context.fillRect(0, 0, 1, 1);
     return { actual, expected, alpha: context.getImageData(0, 0, 1, 1).data[3] };
   });
-  assert.equal(solid.actual, solid.expected, 'solid fallback follows the cover theme or default background');
-  assert.equal(solid.alpha, 255, 'solid fallback must stay opaque');
+  assert.equal(solid.actual, solid.expected, 'solid floating settings follow the cover theme or default background');
+  assert.equal(solid.alpha, 255, 'solid floating settings must stay opaque');
+  assert.equal(await style('.control-panel','backdropFilter'),'none');
+  await page.getByRole('button',{name:'关闭设置',exact:true}).click();
   await emit({acrylic:false,solid:true,highContrast:true}); await page.locator('.high-contrast').waitFor();
   await emit({acrylic:false,solid:false,highContrast:false}); await page.locator('.solid-surfaces').waitFor({state:'detached'});
   assert.equal(await style('.window-chrome','backgroundColor'),'rgba(0, 0, 0, 0)');
@@ -41,8 +47,8 @@ export async function verifyAppearance(page, output) {
   await page.locator('.window-buttons').waitFor({state:'detached'});
   assert.equal(await page.locator('.window-buttons').count(),0);
   await page.evaluate(()=>window.__foliaEmit('windowState',{maximized:false,fullscreen:false}));
-  const button=page.getByRole('button',{name:'在线歌词设置',exact:true});
-  await button.hover(); await page.waitForFunction(()=>document.querySelector('.waiting-actions button')?.style.getPropertyValue('--light-opacity')==='1');
+  const button=page.locator('.waiting-primary-action');
+  await button.hover(); await page.waitForFunction(()=>document.querySelector('.waiting-primary-action')?.style.getPropertyValue('--light-opacity')==='1');
   await page.mouse.move(5,5); assert.equal(await button.evaluate(el=>el.style.getPropertyValue('--light-opacity')),'');
   await page.emulateMedia({reducedMotion:'reduce'}); await button.hover();
   assert.equal(await button.evaluate(el=>el.style.getPropertyValue('--light-opacity')),'');
@@ -52,7 +58,7 @@ export async function verifyAppearance(page, output) {
   await page.getByRole('button',{name:'打开歌词设置'}).click(); await page.waitForTimeout(280);
   const panel=page.locator('.control-panel');
   const [a,b]=await Promise.all([panel.boundingBox(),page.locator('.desktop-statusbar').boundingBox()]);
-  assert(a&&b&&a.y+a.height<b.y,'Settings must not cover transport at minimum client size');
+  assert(a&&b&&a.y+a.height<b.y,`Settings must not cover transport at minimum client size: ${JSON.stringify({panel:a,transport:b})}`);
   assert(await panel.evaluate(el=>el.scrollHeight>el.clientHeight));
   const last=page.getByRole('button',{name:'启用鼠标穿透',exact:true}); await last.scrollIntoViewIfNeeded();
   const c=await last.boundingBox(); assert(c&&c.y>=a.y&&c.y+c.height<=a.y+a.height);

@@ -10,7 +10,7 @@ export function useMediaControls(session: Session, disconnected: boolean) {
     const unsubscribe = listen(message => {
       if (message.type !== 'transport' || !request.current || message.data.requestId !== request.current) return;
       request.current = ''; clearTimeout(deadline.current); setPending(false);
-      setFeedback({ text: message.data.message, error: !message.data.success });
+      setFeedback(message.data.success ? null : { text: message.data.message, error: true });
     });
     return () => { unsubscribe(); clearTimeout(deadline.current); request.current = ''; };
   }, [session.sessionId, session.key]);

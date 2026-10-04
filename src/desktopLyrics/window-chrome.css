@@ -4,6 +4,8 @@
 .window-buttons{display:flex;gap:6px}.window-buttons button{display:grid;place-items:center;width:36px;height:27px;padding:0;border-radius:9px;font-size:11px}.window-buttons .window-close:hover{background-color:#ca476366;border-color:#ffb0c39e}
 .window-edge{position:absolute;z-index:80}.edge-n,.edge-s{left:9px;right:9px;height:5px;cursor:ns-resize}.edge-n{top:0}.edge-s{bottom:0}.edge-w,.edge-e{top:9px;bottom:9px;width:5px;cursor:ew-resize}.edge-w{left:0}.edge-e{right:0}.edge-nw,.edge-ne,.edge-sw,.edge-se{width:9px;height:9px}.edge-nw{top:0;left:0;cursor:nwse-resize}.edge-ne{top:0;right:0;cursor:nesw-resize}.edge-sw{bottom:0;left:0;cursor:nesw-resize}.edge-se{bottom:0;right:0;cursor:nwse-resize}
 .window-fullscreen .window-drag{pointer-events:none}.high-contrast .window-drag{color:CanvasText}
-.desktop-topbar{top:48px;height:66px}.control-panel{top:127px}.restore-controls{top:48px}.waiting-screen{padding-top:145px}
-@media(max-width:850px){.desktop-topbar{top:44px;height:60px}.control-panel{top:116px}.waiting-screen{padding-top:120px}}
+/* Fullscreen's compact controls use the caption area; the inactive caption must not cover their hit targets. */
+.native-fullscreen .window-chrome{opacity:0;visibility:hidden;pointer-events:none}
+.desktop-topbar{top:48px;height:66px}.control-panel{top:104px}.restore-controls{top:48px}.waiting-screen{padding-top:145px}
+@media(max-width:850px){.desktop-topbar{top:44px;height:60px}.control-panel{top:96px}.waiting-screen{padding-top:120px}}
 @media(max-height:600px){.waiting-screen{padding-top:120px}.waiting-screen .compatibility-note{margin-top:8px}.waiting-actions button{min-height:34px;padding:8px 12px}}

@@ -1,0 +1,112 @@
+/* src/desktopLyrics/desktop-visual-settings.css — desktop glass for original visual settings and their asset dialogs. */
+.desktop-lyrics .desktop-visual-settings{--visual-card-gap:24px;--visual-item-gap:14px;--visual-field-gap:6px;z-index:150;top:45px;bottom:12px;right:14px;width:min(590px,calc(100% - 28px));padding:0;display:flex;flex-direction:column;overflow:hidden;border-radius:var(--desktop-surface-radius);animation:none;color:var(--glass-text)}
+.desktop-visual-heading{display:flex;flex:none;align-items:center;justify-content:space-between;gap:12px;padding:18px 22px 14px;border-bottom:1px solid var(--glass-line)}
+.desktop-visual-heading h2{margin:0;font-size:17px;font-weight:600;line-height:1.4}
+.desktop-visual-heading p{margin:5px 0 0;font-size:11px;line-height:1.5;color:var(--glass-muted)}
+.desktop-lyrics .desktop-visual-heading>button{display:grid;place-items:center;width:34px;height:34px;flex:none;padding:0}
+.desktop-visual-tabs{display:flex;flex:none;gap:8px;padding:10px 22px;border-bottom:1px solid var(--glass-line)}
+.desktop-lyrics .desktop-visual-tabs>button{flex:1;padding:var(--desktop-control-padding);min-width:0;border-radius:var(--desktop-control-radius);font-size:var(--desktop-control-font-size);line-height:var(--desktop-control-line-height);white-space:nowrap}
+.desktop-visual-content{min-height:0;flex:1;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--glass-line) transparent;padding:20px 22px;display:flex;flex-direction:column;gap:var(--visual-card-gap)}
+.desktop-visual-content>*{flex-shrink:0}
+.desktop-visual-content::-webkit-scrollbar{width:7px}
+.desktop-visual-content::-webkit-scrollbar-thumb{background:var(--glass-line);border-radius:99px;border:2px solid transparent;background-clip:padding-box}
+.desktop-lyrics .desktop-visual-card{display:flex;flex-direction:column;gap:var(--visual-item-gap);border:0;border-radius:0;background:transparent;padding:0;margin:0}
+.desktop-lyrics .desktop-visual-content>:is(.desktop-visual-card,.desktop-visual-original-panel,.desktop-visual-config):not(:first-child){padding-block-start:var(--visual-card-gap);border-top:1px solid var(--glass-line)}
+.desktop-visual-card h3{margin:0;font-size:13px;font-weight:600;line-height:1.5}
+.desktop-visual-hint,.desktop-visual-feedback{margin:0;font-size:11px;line-height:1.7;color:var(--glass-muted);overflow-wrap:anywhere}
+.desktop-visual-feedback{color:var(--glass-text)}
+.desktop-visual-service-feedback{flex:none;margin:0;padding:9px 18px;border-top:1px solid var(--glass-line);font-size:11px;line-height:1.6;color:var(--glass-text);overflow-wrap:anywhere}
+.desktop-visual-field,.desktop-visual-range,.desktop-visual-font{display:flex;flex-direction:column;gap:var(--visual-field-gap);min-width:0;font-size:12px}
+.desktop-visual-font{gap:var(--visual-item-gap)}
+/* Keep explanations close to their own control, while separating independent settings. */
+.desktop-visual-card>:is(.desktop-visual-toggle,.desktop-visual-field,.desktop-visual-size,.desktop-visual-range,button)+.desktop-visual-hint,.desktop-visual-font>.desktop-visual-field+.desktop-visual-hint{margin-block-start:calc(var(--visual-field-gap) - var(--visual-item-gap))}
+.desktop-visual-field>span,.desktop-visual-range>span{color:var(--glass-text);line-height:1.5}
+.desktop-visual-range>span{display:flex;justify-content:space-between;gap:10px}
+.desktop-visual-range output{color:var(--glass-muted);font-variant-numeric:tabular-nums}
+.desktop-lyrics .desktop-visual-settings :is(input[type=text],textarea){width:100%;font:inherit;min-width:0;padding:var(--desktop-control-padding);border:1px solid var(--desktop-control-border);border-radius:var(--desktop-control-radius);background:var(--desktop-glass-control)!important;color:var(--glass-text)!important;box-shadow:none;resize:vertical}
+.desktop-lyrics .desktop-visual-settings textarea::placeholder,.desktop-lyrics .desktop-visual-settings input::placeholder{color:var(--glass-muted);opacity:.75}
+.desktop-lyrics .desktop-visual-settings .desktop-glass-select button{min-height:var(--desktop-control-height);padding:var(--desktop-control-padding);font-size:var(--desktop-control-font-size)}
+.desktop-visual-toggle{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:12px;line-height:1.5}
+.desktop-lyrics .desktop-visual-toggle>button{min-width:62px;flex:none;padding:var(--desktop-control-padding);font-size:var(--desktop-control-font-size);line-height:var(--desktop-control-line-height)}
+.desktop-lyrics .desktop-visual-settings button.desktop-visual-reset{align-self:flex-start;padding:var(--desktop-control-padding);font-size:var(--desktop-control-font-size);line-height:var(--desktop-control-line-height)}
+.desktop-visual-size{border:0;margin:0;padding:0;min-width:0}
+.desktop-visual-size:disabled{opacity:.45}
+.desktop-visual-mode-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.desktop-lyrics .desktop-visual-mode-grid>button{font-size:var(--desktop-control-font-size);line-height:var(--desktop-control-line-height);padding:8px 5px;min-width:0;overflow-wrap:anywhere}
+.desktop-visual-still{display:flex;align-items:center;gap:12px;font-size:11px;color:var(--glass-muted)}
+.desktop-visual-still p{margin:0;line-height:1.6}
+.desktop-lyrics .desktop-visual-still>button{padding:var(--desktop-control-padding);flex:none;font-size:var(--desktop-control-font-size);line-height:var(--desktop-control-line-height)}
+.desktop-visual-original-panel{display:flex;flex-direction:column;gap:var(--visual-card-gap);color:var(--glass-text);min-width:0}
+/* Only original vertical setting groups are normalized; their rows, grids and disabled states remain intact. */
+.desktop-visual-original-panel :is(.space-y-1,.space-y-1\.5,.space-y-2,.space-y-2\.5,.space-y-3,.space-y-3\.5,.space-y-4,.space-y-5){display:flex;flex-direction:column;row-gap:var(--visual-item-gap)}
+.desktop-visual-original-panel :is(.space-y-1,.space-y-1\.5,.space-y-2,.space-y-2\.5,.space-y-3,.space-y-3\.5,.space-y-4,.space-y-5)>*{margin-block:0!important}
+.desktop-visual-original-panel .space-y-1{row-gap:4px}
+.desktop-visual-original-panel :is(.space-y-1\.5,.space-y-2,.space-y-2\.5){row-gap:var(--visual-field-gap)}
+.desktop-visual-original-panel>div{display:flex;flex-direction:column;gap:var(--visual-item-gap);background:transparent!important;border:0!important;border-radius:0;box-shadow:none!important;padding:0;margin:0}
+.desktop-visual-original-panel>div+div{padding-block-start:var(--visual-card-gap);border-top:1px solid var(--glass-line)!important}
+.desktop-visual-original-panel div.border:is(.space-y-3,.space-y-3\.5,.space-y-4,.space-y-5){padding:0;border:0!important;border-radius:0;background:transparent!important;box-shadow:none!important}
+.desktop-visual-original-panel>div>div.border:is(.space-y-3,.space-y-3\.5,.space-y-4,.space-y-5){padding-block-start:var(--visual-item-gap);border-top:1px solid var(--glass-line)!important}
+.desktop-visual-original-panel section{padding:var(--visual-item-gap) 0 0}
+.desktop-visual-original-panel .text-sm{font-size:12px;line-height:1.5}
+.desktop-visual-settings .desktop-visual-font .text-sm{font-size:var(--desktop-control-font-size);line-height:1.5}
+.desktop-visual-original-panel>div>.space-y-1>.font-medium{font-size:13px;font-weight:600}
+/* Original preview panels use inline theme colors and low-opacity headings; desktop labels follow glass contrast. */
+.desktop-visual-original-panel :is(h2,h3,label,span,div,p):not(.font-mono[style*="background-color"]){color:var(--glass-text)!important}
+.desktop-visual-original-panel div.uppercase{opacity:1}
+.desktop-visual-original-panel :is(p,div.text-xs:not(.uppercase):not(.font-mono)){color:var(--glass-muted)!important;opacity:1}
+.desktop-lyrics .desktop-visual-original-panel button{background:var(--desktop-glass-control)!important;color:var(--glass-text)!important;border-color:var(--desktop-control-border)!important;border-radius:var(--desktop-control-radius);padding:var(--desktop-control-padding);box-shadow:none!important;font-size:var(--desktop-control-font-size);line-height:var(--desktop-control-line-height)}
+.desktop-lyrics .desktop-visual-original-panel button:hover:not(:disabled,[aria-pressed=true],[aria-checked=true],[aria-selected=true]){background-color:var(--desktop-glass-hover)!important;border-color:var(--desktop-control-border)!important}
+.desktop-lyrics .desktop-visual-settings input[type=range]{appearance:auto;width:100%;height:22px;padding:0;border:0;border-radius:0;background:transparent!important;box-shadow:none;accent-color:var(--desktop-glass-accent);cursor:pointer}
+.desktop-lyrics .desktop-visual-config{padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;font-size:12px;line-height:1.5}
+.desktop-visual-config>summary{color:var(--glass-text);font-size:12px;cursor:pointer}
+.desktop-lyrics .desktop-visual-config{margin:0}
+.desktop-visual-config[open]{display:flex;flex-direction:column;gap:var(--visual-item-gap)}
+.desktop-lyrics .desktop-visual-config[open]>summary{margin:0}
+.desktop-visual-actions{display:flex;flex-wrap:wrap;gap:7px}
+.desktop-lyrics .desktop-visual-config button{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:var(--desktop-control-padding);font-size:var(--desktop-control-font-size);line-height:var(--desktop-control-line-height)}
+.desktop-lyrics .desktop-visual-config>.hidden{display:none}
+.desktop-visual-dialogs .desktop-visual-asset-dialog{background:color-mix(in srgb,var(--desktop-glass-base) 42%,transparent)!important;color:var(--glass-text);padding:14px;overscroll-behavior:contain}
+.desktop-visual-dialogs .desktop-visual-asset-dialog>[role=dialog]{max-height:calc(100dvh - 28px);overflow-y:auto;background:var(--desktop-glass-panel)!important;border:1px solid var(--glass-line)!important;border-radius:var(--desktop-surface-radius);box-shadow:var(--glass-shadow)!important;backdrop-filter:var(--desktop-glass-backdrop);padding:20px}
+.desktop-visual-dialogs .desktop-visual-asset-dialog :is(h2,p,label,span,div){color:var(--glass-text)!important}
+.desktop-visual-dialogs .desktop-visual-asset-dialog h2{font-size:17px;font-weight:600;line-height:1.4}
+.desktop-visual-dialogs .desktop-visual-asset-dialog p{font-size:11px;line-height:1.7;color:var(--glass-muted)!important;opacity:1}
+.desktop-visual-dialogs .desktop-visual-asset-dialog .text-sm:where(:not(button,input,select,textarea,button *)){font-size:var(--desktop-control-font-size);line-height:1.5}
+.desktop-visual-dialogs .desktop-visual-asset-dialog .text-xs:where(:not(button,input,select,textarea,button *)){font-size:11px;line-height:1.6}
+.desktop-visual-dialogs .desktop-visual-asset-dialog :is(button,input,select,textarea){font:inherit;font-size:var(--desktop-control-font-size);line-height:var(--desktop-control-line-height);accent-color:var(--desktop-glass-accent)}
+.desktop-visual-dialogs .desktop-visual-asset-dialog button:where(:not([role=menuitem],[role=option],[role=menuitemcheckbox])){color:var(--glass-text)!important;border:1px solid var(--desktop-control-border)!important;background:var(--desktop-glass-control)!important;border-radius:var(--desktop-control-radius);padding:var(--desktop-control-padding);box-shadow:none!important}
+.desktop-visual-dialogs .desktop-visual-asset-dialog>[role=dialog]>button{display:grid;place-items:center;width:var(--desktop-control-height);height:var(--desktop-control-height);padding:0;border-color:transparent!important;background:transparent!important}
+.desktop-visual-dialogs .desktop-visual-asset-dialog button::before{display:none}
+.desktop-visual-dialogs .desktop-visual-asset-dialog :is(input:not([type=range],[type=checkbox],[type=file]),textarea,select){padding:var(--desktop-control-padding);border-radius:var(--desktop-control-radius);background:var(--desktop-glass-control)!important;box-shadow:none!important}
+.desktop-visual-dialogs .desktop-visual-asset-dialog div.border:is(.space-y-3,.space-y-3\.5,.space-y-4){padding:0;border:0!important;border-radius:0;background:transparent!important;box-shadow:none!important}
+.desktop-visual-dialogs:not(.desktop-visual-high-contrast) .desktop-visual-asset-dialog button:hover:where(:not(:disabled,[aria-pressed=true],[aria-checked=true],[aria-selected=true],[role=menuitem],[role=option],[role=menuitemcheckbox])){background-color:var(--desktop-glass-hover)!important}
+.desktop-visual-dialogs .desktop-visual-asset-dialog :is(button,input,textarea,select):focus-visible{outline:2px solid var(--desktop-glass-accent);outline-offset:2px}
+.desktop-visual-dialogs .desktop-visual-asset-dialog input[type=range]{appearance:auto;width:100%;height:22px;padding:0;background:transparent!important;box-shadow:none}
+.desktop-visual-solid .desktop-visual-asset-dialog>[role=dialog]{background:var(--desktop-glass-base)!important;backdrop-filter:none}
+/* Read explicit selection state rather than serialized inline shadows, and keep it visible on hover. */
+.desktop-lyrics .desktop-visual-settings button:is([aria-pressed=true],[aria-checked=true],[aria-selected=true]),.desktop-visual-dialogs .desktop-visual-asset-dialog button:is([aria-pressed=true],[aria-checked=true],[aria-selected=true]){background:var(--desktop-glass-selected)!important;border-color:var(--desktop-control-selected-border)!important;color:var(--glass-text)!important;font-weight:600;box-shadow:none!important}
+.desktop-lyrics .desktop-visual-settings button[aria-pressed=false],.desktop-visual-dialogs .desktop-visual-asset-dialog button[aria-pressed=false]{font-weight:400}
+.desktop-lyrics.high-contrast .desktop-visual-settings button:is([aria-pressed=true],[aria-checked=true],[aria-selected=true]),.desktop-visual-high-contrast .desktop-visual-asset-dialog button:is([aria-pressed=true],[aria-checked=true],[aria-selected=true]){background:ButtonFace!important;border:3px double ButtonText!important;color:ButtonText!important;box-shadow:none!important}
+.desktop-lyrics.high-contrast .desktop-visual-settings,.desktop-visual-high-contrast .desktop-visual-asset-dialog>[role=dialog]{background:Canvas!important;color:CanvasText!important;border:1px solid CanvasText!important;box-shadow:none!important;backdrop-filter:none}
+.desktop-lyrics.high-contrast .desktop-visual-settings :is(section,div,button,input,textarea,span,p,h2,h3,label,output),.desktop-visual-high-contrast .desktop-visual-asset-dialog :is(div,button,input,textarea,span,p,h2,h3,label){background:Canvas!important;color:CanvasText!important;box-shadow:none!important;border-color:CanvasText!important}
+.desktop-lyrics.high-contrast .desktop-visual-settings button:is([aria-pressed=true],[aria-selected=true],[aria-checked=true]),.desktop-visual-high-contrast .desktop-visual-asset-dialog button[aria-pressed=true]{border:3px double Highlight!important}
+.desktop-visual-high-contrast .desktop-visual-asset-dialog>[role=dialog] :is(button,input,textarea,select){background:ButtonFace!important;color:ButtonText!important;border:1px solid ButtonText!important;box-shadow:none!important}
+.desktop-visual-high-contrast .desktop-visual-asset-dialog>[role=dialog]>button{background:ButtonFace!important;color:ButtonText!important;border:1px solid ButtonText!important}
+.desktop-visual-high-contrast .desktop-visual-asset-dialog>[role=dialog] button:is([aria-pressed=true],[aria-selected=true],[aria-checked=true]){border:3px double Highlight!important}
+@media(max-width:640px){
+  .desktop-lyrics .desktop-visual-settings{--visual-card-gap:20px;--visual-item-gap:12px;top:40px;bottom:9px;right:9px;width:calc(100% - 18px)}
+  .desktop-visual-heading{padding:14px 18px 12px}.desktop-visual-tabs{padding:10px 18px;gap:6px}.desktop-visual-content{padding:18px}
+  .desktop-visual-mode-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-height:400px){
+  .desktop-lyrics .desktop-visual-settings{top:38px;bottom:7px}.desktop-visual-heading{padding-block:8px}.desktop-visual-heading p{display:none}
+  .desktop-visual-tabs{padding-block:6px}.desktop-lyrics .desktop-visual-tabs>button{padding-block:6px}.desktop-visual-content{padding-block:9px}
+  .desktop-visual-dialogs .desktop-visual-asset-dialog{padding:8px}.desktop-visual-dialogs .desktop-visual-asset-dialog>[role=dialog]{padding:14px;max-height:calc(100dvh - 16px)}
+}
+@media(forced-colors:active){
+  .desktop-lyrics .desktop-visual-settings,.desktop-visual-dialogs .desktop-visual-asset-dialog>[role=dialog]{background:Canvas!important;color:CanvasText!important;border:1px solid CanvasText!important;box-shadow:none!important;backdrop-filter:none}
+  .desktop-visual-settings :is(div,section,p,span,label,h2,h3,output),.desktop-visual-dialogs .desktop-visual-asset-dialog :is(div,p,span,label,h2){background:Canvas!important;color:CanvasText!important;border-color:CanvasText!important}
+  .desktop-visual-settings :is(button,input,textarea),.desktop-visual-dialogs .desktop-visual-asset-dialog :is(button,input,textarea){background:ButtonFace!important;color:ButtonText!important;box-shadow:none!important;border-color:ButtonText!important}
+  .desktop-visual-dialogs .desktop-visual-asset-dialog>[role=dialog] :is(button,input,textarea,select){background:ButtonFace!important;color:ButtonText!important;border:1px solid ButtonText!important;box-shadow:none!important}
+  .desktop-visual-dialogs .desktop-visual-asset-dialog>[role=dialog]>button{background:ButtonFace!important;color:ButtonText!important;border:1px solid ButtonText!important}
+  .desktop-lyrics .desktop-visual-settings button:is([aria-selected=true],[aria-checked=true],[aria-pressed=true]),.desktop-visual-dialogs .desktop-visual-asset-dialog button:is([aria-selected=true],[aria-checked=true],[aria-pressed=true]){background:ButtonFace!important;color:ButtonText!important;border:3px double Highlight!important;box-shadow:none!important}
+}

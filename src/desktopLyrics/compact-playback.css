@@ -1,0 +1,17 @@
+/* src/desktopLyrics/compact-playback.css — time, transport and meaningful feedback without duplicate track details. */
+.desktop-playback-bar{bottom:24px;width:min(400px,calc(100% - 24px));min-height:46px;padding:4px 12px;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px;border-radius:0}
+.desktop-playback-bar .status-left{gap:0}
+.desktop-playback-bar .status-left .clock-readout{font-size:11px;color:var(--glass-muted);letter-spacing:0}
+.desktop-playback-bar .clock-readout>span+span{color:inherit;opacity:.7}
+.desktop-playback-bar .playback-controls{position:relative;width:128px;gap:2px}
+.desktop-playback-bar .transport-buttons{gap:8px}
+.desktop-playback-bar .transport-buttons button{width:32px;height:32px;border-radius:8px}
+.desktop-playback-bar .transport-buttons .transport-primary{width:38px;height:38px}
+.desktop-playback-bar .transport-primary svg:not(.transport-spinner){width:23px;height:23px}
+.desktop-playback-bar .transport-caption.error{position:absolute;bottom:calc(100% + 10px);left:50%;transform:translateX(-50%);width:max-content;max-width:min(360px,calc(100vw - 40px));overflow:visible;white-space:normal;overflow-wrap:anywhere;text-align:center;padding:10px 12px;border:1px solid var(--glass-line);border-radius:var(--desktop-surface-radius);background:var(--desktop-glass-panel);box-shadow:var(--glass-shadow);backdrop-filter:var(--desktop-glass-backdrop);color:var(--glass-text);font-size:var(--desktop-control-font-size);line-height:1.6;opacity:1}
+.desktop-playback-bar .transport-caption.idle{display:none}
+.solid-surfaces .desktop-playback-bar .transport-caption.error{background:var(--desktop-glass-base);backdrop-filter:none}
+.high-contrast .desktop-playback-bar .transport-caption.error{background:Canvas;color:CanvasText;border-color:CanvasText;box-shadow:none;backdrop-filter:none}
+@media(forced-colors:active){.desktop-playback-bar .transport-caption.error{background:Canvas;color:CanvasText;border-color:CanvasText;box-shadow:none;backdrop-filter:none}}
+@media(max-width:640px){.desktop-playback-bar{bottom:18px;width:min(340px,calc(100% - 20px));min-height:44px;padding:4px 8px;gap:6px}.desktop-playback-bar .status-left .clock-readout{font-size:10px}.desktop-playback-bar .playback-controls{width:120px}.desktop-playback-bar .transport-buttons{gap:6px}.desktop-playback-bar .transport-buttons button{width:28px;height:28px}.desktop-playback-bar .transport-buttons .transport-primary{width:34px;height:34px}.desktop-notice{bottom:90px;max-width:calc(100% - 32px);padding:8px 12px}}
+@media(max-height:400px){.desktop-playback-bar{bottom:16px;min-height:42px;padding-top:4px;padding-bottom:4px}.desktop-playback-bar .transport-buttons button{width:28px;height:28px}.desktop-playback-bar .transport-buttons .transport-primary{width:34px;height:34px}.desktop-notice{bottom:85px}.desktop-lyrics .control-panel{top:38px;bottom:14px}}

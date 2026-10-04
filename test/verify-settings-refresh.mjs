@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { writeFile } from 'node:fs/promises';
 import { selectDesktopOption } from './desktop-select.mjs';
+import { clickTopbarAction } from './desktop-topbar-actions.mjs';
 
 // test/verify-settings-refresh.mjs — reordered settings, folded provider controls and original-renderer theme refresh.
 const themeKeys = ['--cover-background', '--cover-foreground', '--cover-accent', '--cover-secondary'];
@@ -54,10 +55,10 @@ export async function verifySettingsRefresh(page, song, output) {
   };
   const changeTheme = async context => {
     const before = await snapshot(`${context}-before`);
-    await refresh.click();
+    await clickTopbarAction(page, '刷新主题色');
     await page.waitForFunction(({ themeKeys, before }) => {
       const root = document.querySelector('.desktop-lyrics'), button = document.querySelector('[aria-label="刷新主题色"]');
-      return button && !button.disabled && themeKeys.some((key, index) => root.style.getPropertyValue(key).trim() !== before[index]);
+      return (!button || !button.disabled) && themeKeys.some((key, index) => root.style.getPropertyValue(key).trim() !== before[index]);
     }, { themeKeys, before: before.colors });
     const after = await snapshot(`${context}-after`);
     assert.notDeepEqual(after.colors, before.colors, `${context}: the displayed palette actually changes`);
