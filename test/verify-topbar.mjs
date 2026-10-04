@@ -7,7 +7,7 @@ export async function verifyTopbar(page, song, output) {
   const checks = [];
   const emit = (type, data) => page.evaluate(({ type, data }) => window.__foliaEmit(type, data), { type, data });
   const open = () => page.getByRole('button', { name: '打开歌词设置', exact: true }).click();
-  const close = () => page.getByRole('button', { name: '关闭设置', exact: true }).click();
+  const close = () => page.locator('.desktop-topbar [data-settings-trigger]').click();
   const countCommands = () => page.evaluate(() => window.__foliaCommands.filter(m => ['fullscreen', 'exitFullscreen'].includes(m.type)).length);
   const waitVisibility = (selector, visible) => page.waitForFunction(({ selector, visible }) =>
     getComputedStyle(document.querySelector(selector)).visibility === (visible ? 'visible' : 'hidden'), { selector, visible });
@@ -22,6 +22,22 @@ export async function verifyTopbar(page, song, output) {
   await page.getByRole('checkbox', { name: '闲置时自动进入沉浸模式', exact: true }).uncheck();
   await page.getByRole('checkbox', { name: '沉浸时移到底部呼出播放控件', exact: true }).check();
   await close();
+  const settingsPanel = page.locator('.control-panel');
+  const settingsTrigger = page.locator('.desktop-topbar [data-settings-trigger]');
+  await open();
+  assert.equal(await settingsPanel.getAttribute('aria-label'), '歌词设置');
+  assert.equal(await settingsPanel.locator('.panel-heading').count(), 0, 'the settings title row is removed');
+  assert.equal(await settingsTrigger.getAttribute('aria-expanded'), 'true');
+  await settingsTrigger.click(); await settingsPanel.waitFor({ state: 'detached' });
+  assert.equal(await settingsTrigger.getAttribute('aria-expanded'), 'false');
+  await open(); await settingsPanel.locator('[data-settings-section="sync"] .section-label').click();
+  assert(await settingsPanel.isVisible(), 'clicking within settings keeps the panel open');
+  const playerSelect = settingsPanel.getByRole('combobox', { name: '选择播放器', exact: true });
+  await playerSelect.click();
+  await page.getByRole('listbox', { name: '选择播放器', exact: true }).getByRole('option').first().click();
+  assert(await settingsPanel.isVisible(), 'choosing an option from the portaled menu keeps settings open');
+  await page.mouse.click(20, 420); await settingsPanel.waitFor({ state: 'detached' });
+  checks.push('ordinary settings have no title row and close by outside click or the same topbar trigger while portaled choices remain usable');
   assert.equal(await page.locator('.desktop-brand').count(), 0, 'the playback bar no longer reserves space for the software name');
   const [header, caption, image] = await Promise.all([
     page.locator('.desktop-topbar').boundingBox(), page.locator('.track-caption').boundingBox(),

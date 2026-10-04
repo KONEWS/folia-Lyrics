@@ -11,6 +11,7 @@ import DesktopVisualLanguage from './DesktopVisualLanguage';
 import { useVisualTranslation } from './DesktopVisualControls';
 import { useDesktopVisualDialogSkin } from './useDesktopVisualDialogSkin';
 import { getDesktopVisualFocusableElements, useDesktopVisualDialogFocus } from './useDesktopVisualDialogFocus';
+import { useDesktopSettingsDismiss } from './useDesktopSettingsDismiss';
 import type { DesktopVisualSettingsModel } from './useDesktopVisualSettings';
 import './desktop-visual-settings.css';
 
@@ -37,6 +38,7 @@ function DesktopVisualSettingsSurface({ mode, onMode, model, onClose, initialSec
   const title = t(backgroundOnly ? 'desktopVisual.backgroundTitle' : 'desktopVisual.title');
   useDesktopVisualDialogSkin(panel, model.mergedTheme, t('desktopVisual.closeImages'));
   useDesktopVisualDialogFocus(panel);
+  useDesktopSettingsDismiss(panel, () => { model.commitSlider(); onClose(); });
   useEffect(() => {
     const previous = returnFocus ?? document.activeElement;
     closeButton.current?.focus();

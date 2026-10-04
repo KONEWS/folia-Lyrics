@@ -35,3 +35,17 @@ export async function selectDesktopOption(page, name, { label, value }) {
   assert.equal(await trigger.getAttribute('data-value'), expected);
   return expected;
 }
+
+// Cover cases use the existing native preference checkbox and retain its previous value.
+export async function setDesktopCoverTheme(page, enabled = true) {
+  const toggle = page.getByRole('checkbox', { name: '主题跟随歌曲封面', exact: true });
+  const alreadyOpen = await toggle.count() > 0;
+  if (!alreadyOpen) await page.getByRole('button', { name: '打开歌词设置', exact: true }).click();
+  assert.equal(await toggle.isDisabled(), false, 'the original cover-theme preference stays directly usable');
+  const previous = await toggle.isChecked();
+  await toggle.setChecked(enabled);
+  await page.waitForFunction(enabled => [...document.querySelectorAll('input[type="checkbox"]')].find(input =>
+    input.closest('label')?.textContent.trim() === '主题跟随歌曲封面')?.checked === enabled, enabled);
+  if (!alreadyOpen) await page.locator('.desktop-topbar [data-settings-trigger]').click();
+  return previous;
+}

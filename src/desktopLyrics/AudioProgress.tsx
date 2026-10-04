@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, type RefObject } from 'react';
+import { useEffect, useId, useRef, type CSSProperties, type RefObject } from 'react';
 import { useMotionValueEvent, type MotionValue } from 'framer-motion';
 import i18n from '../i18n/config';
 import { timeLabel } from './clock';
@@ -42,10 +42,12 @@ export default function AudioProgress({ time, duration, spectrum, input, playing
     root.current?.setAttribute('data-energy', Math.max(...levels.current).toFixed(3));
   });
   const label = i18n.t('desktopLyrics.audioProgress', { lng: 'zh-CN' });
-  return <div ref={root} className={`audio-progress ${known ? '' : 'unknown-progress'}`} role="progressbar" aria-label={label} data-energy="0.000"
+  return <div ref={root} style={{ '--desktop-progress-gradient': `url(#${id}-gradient)` } as CSSProperties} className={`audio-progress ${known ? '' : 'unknown-progress'}`} role="progressbar" aria-label={label} data-energy="0.000"
     aria-valuemin={0} aria-valuemax={known ? duration : undefined} title={i18n.t('desktopLyrics.audioProgressHint', { lng: 'zh-CN' })}>
     <svg viewBox="0 0 1000 50" preserveAspectRatio="none" aria-hidden="true">
-      <defs><clipPath id={`${id}-clip`}><rect ref={clip} x="0" y="0" width="0" height="50"/></clipPath>
+      <defs><linearGradient id={`${id}-gradient`} gradientUnits="userSpaceOnUse" x1="0" x2="1000" y1="0" y2="0">
+          <stop className="progress-gradient-light" offset="0%"/><stop className="progress-gradient-deep" offset="100%"/>
+        </linearGradient><clipPath id={`${id}-clip`}><rect ref={clip} x="0" y="0" width="0" height="50"/></clipPath>
         <path ref={bars} id={`${id}-bars`} d={spectrumPath(new Float32Array(AUDIO_PROGRESS_BARS))}/></defs>
       <use className="spectrum-remaining" href={`#${id}-bars`}/><use className="spectrum-played" href={`#${id}-bars`} clipPath={`url(#${id}-clip)`}/>
       <line className="progress-track" x1="0" x2="1000" y1="49" y2="49"/>

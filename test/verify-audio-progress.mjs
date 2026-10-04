@@ -15,13 +15,13 @@ export async function verifyAudioProgress(page, song, output) {
   await page.getByRole('button',{name:'重置歌词偏移'}).click();
   await page.getByRole('checkbox',{name:'跟随系统声音变化'}).check();
   const toggle=page.getByRole('checkbox',{name:'沉浸模式显示进度条'});
-  await toggle.uncheck(); await page.getByRole('button',{name:'关闭设置'}).click();
+  await toggle.uncheck(); await page.locator('.desktop-topbar [data-settings-trigger]').click();
   await page.getByRole('button',{name:'沉浸显示'}).click();
   assert.equal(await page.getByRole('progressbar').count(),0);
   await page.getByRole('button',{name:'显示控制栏'}).click();
   await page.getByRole('button',{name:'打开歌词设置'}).click(); await toggle.check();
   assert.equal(await page.evaluate(()=>localStorage.getItem('folia.desktop.immersiveProgress.v1')),'true');
-  await page.getByRole('button',{name:'关闭设置'}).click();
+  await page.locator('.desktop-topbar [data-settings-trigger]').click();
   await emit('session',{...song,playing:true,position:36});
   await page.evaluate(()=>{
     const bins=Uint8Array.from({length:1024},(_,i)=> Math.round(240*Math.exp(-i/430)));
@@ -36,7 +36,7 @@ export async function verifyAudioProgress(page, song, output) {
   await page.getByRole('button',{name:'打开歌词设置'}).click();
   await page.getByRole('checkbox',{name:'跟随系统声音变化'}).uncheck(); await flat();
   await page.getByRole('checkbox',{name:'跟随系统声音变化'}).check(); await raised();
-  await page.getByRole('button',{name:'关闭设置'}).click();
+  await page.locator('.desktop-topbar [data-settings-trigger]').click();
   await page.getByRole('button',{name:'沉浸显示'}).click(); await raised();
   await page.screenshot({path:`${output}/immersive-audio-progress.png`});
   await page.evaluate(()=>clearInterval(window.__foliaSpectrumTimer)); await flat();

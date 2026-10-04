@@ -98,7 +98,7 @@ export async function verifyImmersiveToggleIdle(page, song, output) {
     await page.getByRole('button', { name: '打开歌词设置', exact: true }).click({ force: true }); await frame();
     assert.equal(await page.getByRole('spinbutton', { name: '无操作等待时间', exact: true }).inputValue(), '30');
     assert.equal(await page.getByRole('checkbox', { name: '闲置时自动进入沉浸模式', exact: true }).isChecked(), false);
-    await page.getByRole('button', { name: '关闭设置', exact: true }).click({ force: true }); await frame();
+    await page.locator('.desktop-topbar [data-settings-trigger]').click({ force: true }); await frame();
     await writeFile(`${output}/immersive-eye-idle-results.json`, JSON.stringify({ checks, samples }, null, 2));
     console.log('PASS independent five-second immersive Eye deadline checks');
     return checks;

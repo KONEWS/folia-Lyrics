@@ -80,11 +80,11 @@ export async function verifySecondaryUi(page, song, output) {
     await action.focus(); await action.press('Enter'); await notice.waitFor({ state: 'detached' });
     const settings = page.locator('.control-panel'); await settings.waitFor();
     phase = 'settings-readability'; assert.equal((await record(settings, 'settings-panel')).radius, '15px');
-    await secondaryStrongBackground(page, [[settings.locator('.panel-heading > span'), 'primary'],
+    await secondaryStrongBackground(page, [[settings.locator('[data-settings-section="transparency"] .toggle > span'), 'primary'],
       [settings.locator('.settings-recovery-hint').first(), 'secondary']], 'settings', output, samples);
     await secondaryScrollbars(page, settings, 'settings-scrollbar', samples, { scroll: true });
     checks.push('ordinary settings primary and explanatory text retain 4.5 composited contrast on strong backgrounds; its 7px scrollbar hides only arrow buttons and responds to wheel input');
-    await page.getByRole('button', { name: '关闭设置', exact: true }).click();
+    await page.locator('.desktop-topbar [data-settings-trigger]').click();
     checks.push('primary menus and notices share the glass surface and 12px/8px flat controls; keyboard activation opens settings and clears the notice');
 
     phase = 'font-menu'; await openVisualSettings(page, 'common'); const font = desktopSelect(page, '字体');

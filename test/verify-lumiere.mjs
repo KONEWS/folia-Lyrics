@@ -51,7 +51,7 @@ export async function verifyLumiere(page, song, output) {
   assert(frozen.equals(nextFrozen), 'paused Lumiere canvas should not advance');
   assert.match(await page.locator('.clock-readout').innerText(), /^0:36/);
   checks.push('paused mount creates a nonzero canvas and freezes its pixels and lyric clock');
-  await page.getByRole('button', { name: '关闭设置' }).click();
+  await page.locator('.desktop-topbar [data-settings-trigger]').click();
   await emit('session', { ...song, playing: true });
   await emit('clock', { ...song, playing: true, position: 37 });
   await page.waitForFunction(() => document.querySelector('.clock-readout')?.textContent?.startsWith('0:37'));

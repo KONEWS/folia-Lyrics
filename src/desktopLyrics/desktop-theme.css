@@ -1,0 +1,92 @@
+/* src/desktopLyrics/desktop-theme.css — semantic default/cover colours; renderer animation stays upstream. */
+.desktop-lyrics{
+  --theme-primary-light:var(--color-luotianyi);
+  --theme-primary:var(--color-ado);
+  --theme-primary-dark:var(--color-ado-dark);
+  --theme-accent:var(--color-highlight);
+  --theme-bg:var(--color-bg);
+  --theme-text:var(--color-text);
+  --theme-muted:var(--color-muted);
+  --theme-glass-border:color-mix(in srgb,var(--theme-primary-light) 15%,transparent);
+  --theme-glass-highlight:color-mix(in srgb,var(--theme-primary-light) 8%,transparent);
+  --theme-active:color-mix(in srgb,var(--theme-primary) 52%,transparent);
+  --theme-action-hover:color-mix(in srgb,var(--theme-primary) 65%,transparent);
+  --theme-active-border:color-mix(in srgb,var(--theme-primary) 65%,var(--theme-primary-light));
+  --theme-danger-background:#ca476366;
+  --theme-danger-border:#ffb0c39e;
+  --theme-danger-text:#ecc6d0;
+}
+/* A chosen cover palette keeps its own identity; unreadable or missing artwork uses the default preset. */
+.desktop-lyrics.cover-theme{
+  --theme-primary-light:var(--cover-accent);
+  --theme-primary:var(--cover-accent);
+  --theme-primary-dark:var(--cover-background);
+  --theme-accent:var(--cover-accent);
+  --theme-bg:var(--cover-background);
+  --theme-text:var(--cover-foreground);
+  --theme-muted:var(--cover-secondary);
+  --theme-active:color-mix(in srgb,var(--theme-primary) 17%,transparent);
+  --theme-action-hover:color-mix(in srgb,var(--theme-primary) 24%,transparent);
+}
+/* System high contrast owns all colours when requested. Native acrylic keeps its transparent backing. */
+@media(forced-colors:none){
+  .desktop-lyrics:not(.high-contrast){
+    --bg-color:var(--theme-bg);
+    --text-primary:var(--theme-text);
+    --text-secondary:var(--theme-muted);
+    --text-accent:var(--theme-primary-light);
+    --glass-text:var(--theme-text);
+    --glass-muted:var(--theme-muted);
+    --glass-line:var(--theme-glass-border);
+    --glass-fill:linear-gradient(150deg,var(--theme-glass-highlight),transparent 60%),color-mix(in srgb,var(--theme-bg) 28%,transparent);
+    --glass-shadow:inset 0 1px 0 var(--theme-glass-border),inset 0 -1px 0 color-mix(in srgb,var(--theme-primary) 10%,transparent),0 12px 32px color-mix(in srgb,var(--theme-primary-dark) 20%,transparent);
+    --desktop-glass-base:var(--theme-bg);
+    --desktop-glass-accent:var(--theme-primary-light);
+    --desktop-glass-rim:var(--theme-glass-border);
+    --desktop-glass-hover:var(--theme-glass-highlight);
+    --desktop-glass-selected:var(--theme-active);
+    --desktop-control-selected-border:color-mix(in srgb,var(--theme-active-border) 65%,transparent);
+    --desktop-glass-panel:color-mix(in srgb,var(--theme-bg) calc(100% - var(--desktop-settings-transparency,15%)),transparent);
+  }
+  .desktop-lyrics:not(.high-contrast):not(.solid-surfaces):not(.native-acrylic) .acrylic-backdrop{
+    background:radial-gradient(ellipse at 18% 8%,color-mix(in srgb,var(--theme-primary-dark) 20%,transparent),transparent 58%),radial-gradient(ellipse at 85% 92%,color-mix(in srgb,var(--theme-primary-light) 4%,transparent),transparent 60%),var(--theme-bg);
+  }
+  .desktop-lyrics:not(.high-contrast):not(.solid-surfaces):not(.native-acrylic) .acrylic-wash{
+    background:linear-gradient(135deg,color-mix(in srgb,var(--theme-primary-dark) 10%,transparent),color-mix(in srgb,var(--theme-bg) 24%,transparent));
+  }
+  .desktop-lyrics.native-acrylic:not(.high-contrast):not(.solid-surfaces) .acrylic-backdrop{background:transparent}
+  .desktop-lyrics.native-acrylic:not(.high-contrast):not(.solid-surfaces) .acrylic-wash{
+    background:linear-gradient(145deg,color-mix(in srgb,var(--theme-primary-light) 4%,transparent),color-mix(in srgb,var(--theme-bg) 18%,transparent));
+  }
+  .desktop-lyrics:not(.high-contrast) .ribbon-one{border-color:var(--theme-glass-border);box-shadow:inset 0 0 50px color-mix(in srgb,var(--theme-primary-light) 5%,transparent),0 0 90px color-mix(in srgb,var(--theme-primary-light) 3%,transparent);opacity:.25}
+  .desktop-lyrics:not(.high-contrast) .ribbon-two{border-color:color-mix(in srgb,var(--theme-primary) 12%,transparent);box-shadow:inset 0 0 60px color-mix(in srgb,var(--theme-primary) 8%,transparent);opacity:.3}
+  .desktop-lyrics.native-acrylic:not(.high-contrast) .ambient-ribbon{opacity:.12}
+  .desktop-lyrics:not(.cover-theme):not(.high-contrast) .ambient-cover{opacity:.045}
+  .desktop-lyrics.solid-surfaces:not(.high-contrast) .acrylic-backdrop{background:var(--theme-bg)}
+  .desktop-lyrics:not(.high-contrast) .transparent-veil{background:color-mix(in srgb,var(--theme-bg) 20%,transparent)}
+  .desktop-lyrics:not(.high-contrast) :is(.window-chrome,.desktop-topbar,.waiting-screen,.control-panel,.desktop-notice,.desktop-statusbar) button:hover:not(:disabled,.window-close){color:var(--theme-primary-light)}
+  .desktop-lyrics:not(.high-contrast) :is(.window-chrome,.desktop-topbar,.waiting-screen,.control-panel,.desktop-notice,.desktop-statusbar) button:active:not(:disabled,.window-close){background-color:var(--theme-active);color:var(--glass-text)}
+  .desktop-lyrics:not(.high-contrast) :is(.waiting-actions .primary-button,.desktop-statusbar .transport-buttons .transport-primary){background:var(--theme-active);border-color:var(--desktop-control-selected-border);color:var(--glass-text);box-shadow:inset 0 1px 0 var(--theme-glass-border)}
+  .desktop-lyrics:not(.high-contrast) .desktop-statusbar .transport-buttons .transport-primary:hover:not(:disabled){background:var(--theme-action-hover);border-color:var(--desktop-control-selected-border);color:var(--glass-text)}
+  .desktop-lyrics:not(.high-contrast) .desktop-statusbar .transport-buttons :is(button,.transport-primary):active:not(:disabled){background:var(--theme-active);color:var(--glass-text)}
+  .desktop-lyrics:not(.high-contrast) .control-panel input[type=checkbox]:checked{background:var(--theme-active);border-color:var(--desktop-control-selected-border)}
+  .desktop-lyrics:not(.high-contrast) .control-panel input[type=checkbox]:checked::before{background:var(--theme-primary-light)}
+  .desktop-lyrics:not(.high-contrast) :is(.waiting-symbol,.desktop-brand>span){color:var(--theme-primary-light)}
+  .desktop-lyrics:not(.high-contrast) .effect-grid .effect.active{background:var(--theme-active);border-color:var(--desktop-control-selected-border)}
+  /* Preserve the established red warning/close palette even though generic hover rules use blue. */
+  .desktop-lyrics:not(.high-contrast) .window-chrome button.window-close:is(:hover,:active):not(:disabled){background:var(--theme-danger-background);border-color:var(--theme-danger-border);color:var(--glass-text)}
+  .desktop-lyrics:not(.high-contrast) .online-errors{color:var(--theme-danger-text)!important}
+  .desktop-lyrics:not(.high-contrast) .audio-progress{color:var(--theme-primary-light);opacity:.65}
+  .desktop-lyrics.immersive:not(.high-contrast) .audio-progress{opacity:.35}
+  .desktop-lyrics:not(.high-contrast) .progress-track{stroke:color-mix(in srgb,var(--theme-muted) 45%,var(--theme-primary-dark));opacity:.35}
+  .desktop-lyrics:not(.high-contrast) .progress-gradient-light{stop-color:var(--theme-primary-light)}
+  .desktop-lyrics:not(.high-contrast) .progress-gradient-deep{stop-color:var(--theme-primary)}
+  .desktop-lyrics:not(.high-contrast) .audio-progress .progress-played{stroke:var(--desktop-progress-gradient);opacity:1}
+  .desktop-lyrics:not(.high-contrast) .audio-progress .spectrum-played{stroke:var(--desktop-progress-gradient)}
+  .desktop-lyrics:not(.high-contrast) .control-panel input[type=range],.desktop-visual-dialogs:not(.desktop-visual-high-contrast) input[type=range]{accent-color:var(--desktop-glass-accent)}
+}
+.desktop-settings-transparency{--visual-field-gap:8px;margin-block:10px 16px;font-size:12px}
+.desktop-settings-transparency .desktop-visual-range{display:flex;flex-direction:column;gap:8px}
+.desktop-settings-transparency .desktop-visual-range>span{display:flex;justify-content:space-between;gap:10px;color:var(--glass-text)}
+.desktop-settings-transparency output{color:var(--glass-muted);font-variant-numeric:tabular-nums}
+.desktop-lyrics .desktop-settings-transparency input[type=range]{width:100%;height:24px;padding:0;box-shadow:none}

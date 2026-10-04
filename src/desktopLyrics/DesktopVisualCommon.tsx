@@ -3,6 +3,7 @@ import DesktopSelect from './DesktopSelect';
 import DesktopVisualFont from './DesktopVisualFont';
 import { useVisualTranslation, VisualCard, VisualRange, VisualToggle } from './DesktopVisualControls';
 import type { DesktopVisualSettingsModel } from './useDesktopVisualSettings';
+import DesktopSettingsTransparency from './DesktopSettingsTransparency';
 
 // src/desktopLyrics/DesktopVisualCommon.tsx — global typography and motion controls for the original renderer.
 export default function DesktopVisualCommon({ model, mode, onSegmentation, canSegment = false }: {
@@ -15,6 +16,7 @@ export default function DesktopVisualCommon({ model, mode, onSegmentation, canSe
   return <>
     <VisualCard title={t('options.previewCommonSettings')}>
       <button type="button" className="desktop-visual-reset" onClick={model.resetCommon}>{t('ui.default')}</button>
+      <DesktopSettingsTransparency/>
       <label className="desktop-visual-field"><span>{t('ui.animationIntensity')}</span><DesktopSelect
         value={model.animationIntensity} label={t('ui.animationIntensity')} onChange={value => model.setAnimationIntensity(value as 'calm' | 'normal' | 'chaotic')}
         options={['calm', 'normal', 'chaotic'].map(value => ({ value, label: t(`animation.${value}`) }))}/></label>

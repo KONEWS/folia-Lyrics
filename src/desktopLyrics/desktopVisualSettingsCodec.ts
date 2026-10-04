@@ -6,6 +6,7 @@ import { collectVisualizerTunings } from '../components/visualizer/tuningRegistr
 import { useVisualizerSettingsStore } from '../stores/useVisualizerSettingsStore';
 import { useTypographySettingsStore } from '../stores/useTypographySettingsStore';
 import { useThemeSettingsStore } from '../stores/useThemeSettingsStore';
+import { useDesktopPanelSettingsStore } from '../stores/useDesktopPanelSettingsStore';
 import { applyTypographyPatch, applyVisualizerPatch, typographySetters, visualizerSetters, type DesktopTypographyPatch, type DesktopVisualizerPatch } from './desktopVisualFields';
 
 // src/desktopLyrics/desktopVisualSettingsCodec.ts — original shortcode/JSON format with a desktop field whitelist; never import song colours or asset URLs.
@@ -44,6 +45,7 @@ export function exportDesktopVisualConfig(format: 'json' | 'code', options: Opti
   const metadata = { name: 'Desktop typography', fontStyle: t.lyricsFontStyle, animationIntensity: options.animationIntensity };
   const config = { ...visualizer, ...typography, visualizerTunings: collectVisualizerTunings(v as unknown as Record<string, unknown>),
     visualizerMode: mode, theme: { light: metadata, dark: metadata }, desktopBackgroundEnabled: options.backgroundEnabled,
+    desktopSettingsTransparency: useDesktopPanelSettingsStore.getState().settingsTransparency,
     useCoverColorBg: theme.useCoverColorBg, staticMode: theme.staticMode,
     showSubtitleTranslation: t.showSubtitleTranslation, subtitleContentMode: t.subtitleContentMode,
     lyricsCustomFontFamily: t.lyricsCustomFont?.source === 'system' ? t.lyricsCustomFont.family : null };
@@ -91,6 +93,7 @@ export function importDesktopVisualConfig(text: string, options: Options): Deskt
     else if (typeof typography.showSubtitleTranslation === 'boolean') options.setTranslated(typography.showSubtitleTranslation);
     applyVisualizerPatch(visualizer); applyTypographyPatch(typography);
     if (typeof config.desktopBackgroundEnabled === 'boolean') options.setBackgroundEnabled(config.desktopBackgroundEnabled);
+    if (typeof config.desktopSettingsTransparency === 'number' && Number.isFinite(config.desktopSettingsTransparency)) useDesktopPanelSettingsStore.getState().setSettingsTransparency(config.desktopSettingsTransparency);
     if (typeof config.useCoverColorBg === 'boolean') useThemeSettingsStore.getState().handleToggleCoverColorBg(config.useCoverColorBg);
     if (typeof config.staticMode === 'boolean') useThemeSettingsStore.getState().handleToggleStaticMode(config.staticMode);
     return { ok: true, ...(hasVisualizerMode(String(config.visualizerMode)) ? { mode: config.visualizerMode as VisualizerMode } : {}) };

@@ -3,11 +3,13 @@ import type { Theme } from '../types';
 
 // src/desktopLyrics/useDesktopVisualDialogSkin.ts — theme original body-portalled asset dialogs only while desktop settings are open.
 const TOKENS = ['--glass-text', '--glass-muted', '--glass-line', '--glass-shadow', '--desktop-glass-base',
-  '--desktop-glass-panel', '--desktop-glass-backdrop', '--desktop-glass-control', '--desktop-glass-rim', '--desktop-glass-inner',
+  '--desktop-glass-panel', '--desktop-settings-transparency', '--desktop-glass-backdrop', '--desktop-glass-control', '--desktop-glass-rim', '--desktop-glass-inner',
   '--desktop-glass-hover', '--desktop-glass-selected', '--desktop-glass-accent', '--desktop-control-radius',
   '--desktop-control-font-size', '--desktop-control-line-height', '--desktop-control-padding',
   '--desktop-control-height', '--desktop-control-border', '--desktop-control-selected-border',
-  '--desktop-surface-radius'] as const;
+  '--desktop-surface-radius', '--theme-primary-light', '--theme-primary', '--theme-primary-dark', '--theme-accent',
+  '--theme-bg', '--theme-text', '--theme-muted', '--theme-glass-border', '--theme-glass-highlight', '--theme-active',
+  '--theme-active-border'] as const;
 
 export function useDesktopVisualDialogSkin(panel: RefObject<HTMLElement | null>, theme: Theme, closeLabel: string) {
   useLayoutEffect(() => {
@@ -62,7 +64,7 @@ export function useDesktopVisualDialogSkin(panel: RefObject<HTMLElement | null>,
     Array.from(body.children).forEach(decorate);
     observer.observe(body, { childList: true });
     const appearanceObserver = new MutationObserver(syncSkin);
-    appearanceObserver.observe(root, { attributes: true, attributeFilter: ['class'] });
+    appearanceObserver.observe(root, { attributes: true, attributeFilter: ['class', 'style'] });
     return () => {
       observer.disconnect(); appearanceObserver.disconnect();
       previousClasses.forEach(([value, present]) => body.classList.toggle(value, present));

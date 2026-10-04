@@ -26,7 +26,7 @@ export async function captureUxBaseline(page, song, output) {
     await page.setViewportSize({ width, height }); await snapshot(`playback-${width}x${height}`);
     await page.getByRole('button', { name: '打开歌词设置', exact: true }).click();
     await page.waitForFunction(() => document.querySelector('.control-panel')?.getAnimations().every(animation => animation.playState === 'finished'));
-    await snapshot(`settings-${width}x${height}`); await page.getByRole('button', { name: '关闭设置', exact: true }).click();
+    await snapshot(`settings-${width}x${height}`); await page.locator('.desktop-topbar [data-settings-trigger]').click();
   }
   await emit(page, 'session', { ...song, key: '', title: '', artist: '', source: '', sources: [], sessionId: '', playing: false, position: 0, duration: 0, hasTimeline: false, controls: null });
   await page.locator('.waiting-screen').waitFor();
@@ -85,7 +85,8 @@ export async function verifyUxPolish(page, song, output) {
 
     await page.setViewportSize({ width: 1280, height: 800 }); await open();
     assert.deepEqual(await page.locator('.control-panel [data-settings-section]').evaluateAll(elements => elements.map(element => element.dataset.settingsSection)), ['transparency', 'sync', 'player', 'immersion', 'window-sound', 'online', 'local']);
-    assert.equal(await page.locator('.panel-heading').evaluate(element => element.nextElementSibling.dataset.settingsSection), 'transparency');
+    assert.equal(await page.locator('.control-panel').evaluate(element => element.firstElementChild.dataset.settingsSection), 'transparency');
+    assert.equal(await page.locator('.control-panel .panel-heading').count(), 0);
     assert.equal(await page.locator('.control-panel [aria-label="歌词样式"]').count(), 0);
     await hit(page.getByRole('checkbox', { name: '播放页面透明背景', exact: true }), 'first transparent setting', true);
     await hit(page.getByRole('button', { name: '歌词提前 0.2 秒', exact: true }), 'early lyric synchronization', true);
@@ -176,9 +177,9 @@ export async function verifyUxPolish(page, song, output) {
       await page.setViewportSize({ width, height });
       await fixture(noPlayer, empty); let primary = await waiting('no-player', `waiting-no-player-${width}x${height}`); await primary.click();
       await hit(page.getByRole('combobox', { name: '选择播放器', exact: true }), 'no-player action scrolls to player');
-      await hit(page.getByRole('button', { name: '关闭设置', exact: true }), 'focused player panel keeps close reachable'); await close();
+      await hit(page.locator('.desktop-topbar [data-settings-trigger]'), 'focused player panel keeps its topbar toggle reachable'); await close();
       await fixture(waitingSong, { ...empty, key: waitingSong.key }); primary = await waiting('connected-empty', `waiting-connected-${width}x${height}`); await primary.click();
-      for (const control of [page.getByLabel('在线搜索歌名'), page.getByLabel('在线搜索歌手'), page.locator('.control-panel').getByRole('button', { name: '搜索在线歌词', exact: true }), page.getByRole('button', { name: '关闭设置', exact: true })]) await hit(control, 'connected action reveals online form and sticky close'); await close();
+      for (const control of [page.getByLabel('在线搜索歌名'), page.getByLabel('在线搜索歌手'), page.locator('.control-panel').getByRole('button', { name: '搜索在线歌词', exact: true }), page.locator('.desktop-topbar [data-settings-trigger]')]) await hit(control, 'connected action reveals online form and topbar toggle'); await close();
       await fixture(waitingSong, { ...empty, key: waitingSong.key, busy: true, phase: 'matching', message: '正在匹配在线歌词' }); primary = await waiting('matching', `waiting-matching-${width}x${height}`); await primary.click();
       assert.equal(await page.locator('.online-status.busy').count(), 1); await close();
       await fixture(waitingSong, { ...empty, key: waitingSong.key, phase: 'failed' }); primary = await waiting('failed', `waiting-failed-${width}x${height}`);

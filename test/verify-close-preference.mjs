@@ -8,7 +8,7 @@ export async function verifyClosePreference(page, song, output) {
   const emit = (type, data) => page.evaluate(({ type, data }) => window.__foliaEmit(type, data), { type, data });
   const setting = page.getByRole('checkbox', { name: '关闭按钮最小化到任务栏', exact: true });
   const open = () => page.getByRole('button', { name: '打开歌词设置', exact: true }).click();
-  const close = () => page.getByRole('button', { name: '关闭设置', exact: true }).click();
+  const close = () => page.locator('.desktop-topbar [data-settings-trigger]').click();
   const messages = () => page.evaluate(() => window.__foliaCommands.filter(command => command.type === 'closeToTaskbar'));
   const checked = value => page.waitForFunction(value => [...document.querySelectorAll('label.toggle')]
     .find(label => label.textContent.includes('关闭按钮最小化到任务栏'))?.querySelector('input')?.checked === value, value);

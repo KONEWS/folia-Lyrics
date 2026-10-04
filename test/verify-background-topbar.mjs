@@ -24,6 +24,10 @@ export async function verifyBackgroundTopbar(page, song, output) {
   };
   // Check hit targets and pinned header after scrolling, rather than asserting specific CSS padding numbers.
   const geometry = async context => {
+    await backgroundDialog(page).evaluate(async element => {
+      await Promise.allSettled(element.getAnimations({ subtree: true })
+        .filter(animation => Number.isFinite(animation.effect?.getComputedTiming().endTime)).map(animation => animation.finished));
+    });
     const content = backgroundDialog(page).locator('[data-visual-section="background"]');
     await content.evaluate(element => { element.scrollTop = 0; }); await visualFrame(page);
     const initial = await backgroundDialog(page).evaluate(element => {

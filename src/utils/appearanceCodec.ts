@@ -505,6 +505,7 @@ export const compressConfig = (config: any): string => {
     if (config.visualizerBackgroundMode !== undefined) minified.vbm = config.visualizerBackgroundMode;
     if (config.backgroundOpacity !== undefined) minified.bo = config.backgroundOpacity;
     if (config.desktopBackgroundEnabled !== undefined) minified.dbe = config.desktopBackgroundEnabled;
+    if (config.desktopSettingsTransparency !== undefined) minified.dst = config.desktopSettingsTransparency;
     if (config.useCoverColorBg !== undefined) minified.ccb = config.useCoverColorBg;
     if (config.disableVisualizerGeometricBackground !== undefined) minified.dvgb = config.disableVisualizerGeometricBackground;
     if (config.disableVisualizerVignette !== undefined) minified.dvv = config.disableVisualizerVignette;
@@ -616,6 +617,7 @@ export const decompressConfig = (str: string): any => {
         || parsed.sff !== undefined
         || parsed.sfff !== undefined
         || parsed.dbe !== undefined
+        || parsed.dst !== undefined
         || parsed.sfi !== undefined
         || parsed.pdt !== undefined
         || parsed.snt !== undefined
@@ -638,6 +640,7 @@ export const decompressConfig = (str: string): any => {
         if (parsed.rvms !== undefined) decompressed.randomVisualizerModePerSong = parsed.rvms;
         if (parsed.vbm !== undefined) decompressed.visualizerBackgroundMode = parsed.vbm;
         if (parsed.dbe !== undefined) decompressed.desktopBackgroundEnabled = parsed.dbe;
+        if (parsed.dst !== undefined) decompressed.desktopSettingsTransparency = parsed.dst;
         if (parsed.bo !== undefined) decompressed.backgroundOpacity = parsed.bo;
         if (parsed.ccb !== undefined) decompressed.useCoverColorBg = parsed.ccb;
         if (parsed.dvgb !== undefined) decompressed.disableVisualizerGeometricBackground = parsed.dvgb;
@@ -696,7 +699,7 @@ export const decompressConfig = (str: string): any => {
         return decompressed;
     } else {
         const validKeys = [
-            'theme', 'visualizerMode', 'randomVisualizerModePerSong', 'visualizerBackgroundMode', 'backgroundOpacity', 'desktopBackgroundEnabled',
+            'theme', 'visualizerMode', 'randomVisualizerModePerSong', 'visualizerBackgroundMode', 'backgroundOpacity', 'desktopBackgroundEnabled', 'desktopSettingsTransparency',
             'useCoverColorBg', 'disableVisualizerGeometricBackground', 'disableVisualizerVignette', 'staticMode',
             'visualizerOpacity', 'hidePlayerTranslationSubtitle', 'showSubtitleTranslation', 'subtitleContentMode',
             'subtitleOverlayBackground', 'subtitleUpcomingLyricsBlur', 'subtitleOverlayOpacity',

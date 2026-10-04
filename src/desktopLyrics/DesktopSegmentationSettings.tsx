@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import i18n from '../i18n/config';
 import { buildSegmentationExportText, countAppliedSegmentationLines, parseSegmentationImport, SegmentationImportError } from '../utils/lyrics/lyricSegmentationRecord';
 import type { useDesktopSegmentation } from './useDesktopSegmentation';
+import { useDesktopSettingsDismiss } from './useDesktopSettingsDismiss';
 
 // src/desktopLyrics/DesktopSegmentationSettings.tsx — a local editor for the original Folia word-grouping format.
 type Props = { model: ReturnType<typeof useDesktopSegmentation>; returnFocus?: HTMLElement | null; onClose: () => void };
@@ -12,6 +13,7 @@ export default function DesktopSegmentationSettings({ model, returnFocus, onClos
   const [draft, setDraft] = useState(() => buildSegmentationExportText(model.lyrics));
   const [busy, setBusy] = useState(false), [notice, setNotice] = useState('');
   const panel = useRef<HTMLElement>(null), close = useRef<HTMLButtonElement>(null), mounted = useRef(false);
+  useDesktopSettingsDismiss(panel, onClose);
   useEffect(() => {
     const previous = returnFocus ?? document.activeElement;
     mounted.current = true; close.current?.focus({ preventScroll: true });

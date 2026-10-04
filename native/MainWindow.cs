@@ -6,6 +6,8 @@ using System.Text.Json;
 namespace FoliaLyrics;
 internal sealed partial class MainWindow : Form
 {
+    // Match the desktop theme while WebView starts or the system disables transparent materials.
+    private static readonly Color DesktopBackground = Color.FromArgb(11, 13, 23);
     private readonly UiDispatcher dispatcher;
     private readonly WebView2 web = new() { Dock = DockStyle.Fill, DefaultBackgroundColor = Color.Transparent };
     private readonly Preferences preferences = DataFiles.Load("preferences.json", new Preferences());
@@ -22,7 +24,7 @@ internal sealed partial class MainWindow : Form
     {
         dispatcher = new(Environment.CurrentManagedThreadId, action => BeginInvoke(action), () => !IsDisposed && !Disposing && IsHandleCreated);
         Text = "Folia 桌面歌词"; ClientSize = new Size(1200, 760); MinimumSize = new Size(680, 450); FormBorderStyle = FormBorderStyle.None;
-        StartPosition = FormStartPosition.CenterScreen; BackColor = Color.FromArgb(9, 11, 18);
+        StartPosition = FormStartPosition.CenterScreen; BackColor = DesktopBackground;
         Icon = Icon.ExtractAssociatedIcon(Environment.ProcessPath!) ?? SystemIcons.Application;
         Controls.Add(web); TopMost = preferences.Topmost;
         tray.Icon = Icon; tray.Text = "Folia 桌面歌词 · Ctrl+Alt+L 恢复操作";

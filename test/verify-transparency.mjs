@@ -7,9 +7,15 @@ export async function verifyTransparency(page, output) {
   const toggle=page.getByRole('checkbox',{name:'播放页面透明背景'});
   await toggle.check(); await page.locator('.transparent-background').waitFor();
   assert.equal(await page.locator('.acrylic-backdrop').count(),0,'remove all desktop backdrop layers');
-  assert.equal(await page.locator('.transparent-veil').evaluate(el=>getComputedStyle(el).backgroundColor),'rgba(0, 0, 0, 0.2)');
+  const veil = await page.locator('.transparent-veil').evaluate(el => {
+    const reference = document.createElement('span'); reference.style.background = 'color-mix(in srgb,var(--theme-bg) 20%,transparent)';
+    el.append(reference); const expected = getComputedStyle(reference).backgroundColor; reference.remove();
+    return { actual: getComputedStyle(el).backgroundColor, expected };
+  });
+  assert.equal(veil.actual, veil.expected, 'the readability veil follows the active theme background');
+  assert.match(veil.actual, /(?:,\s*0\.2\)|\/\s*0\.2\))$/, 'the readability veil retains exactly 20% alpha');
   assert.equal(await page.locator('.desktop-stage').evaluate(el=>getComputedStyle(el).opacity),'1','do not fade the lyric foreground');
-  await page.getByRole('button',{name:'关闭设置'}).click();
+  await page.locator('.desktop-topbar [data-settings-trigger]').click();
   await emit('windowState',{maximized:false,fullscreen:true,clickThrough:false});
   await page.locator('.window-buttons').waitFor({state:'detached'});
   assert.equal(await page.locator('.transparent-background').count(),1);
@@ -24,7 +30,7 @@ export async function verifyTransparency(page, output) {
   assert(await toggle.isChecked()); await toggle.uncheck();
   await page.locator('.transparent-background').waitFor({state:'detached'});
   assert.equal(await page.locator('.acrylic-backdrop').count(),1);
-  await page.getByRole('button',{name:'关闭设置'}).click();
+  await page.locator('.desktop-topbar [data-settings-trigger]').click();
   const commands=await page.evaluate(()=>window.__foliaCommands);
   assert(commands.some(m=>m.type==='transparentBackground'&&m.value===true));
   assert(commands.some(m=>m.type==='transparentBackground'&&m.value===false));

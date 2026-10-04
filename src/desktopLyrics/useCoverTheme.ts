@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
-import { DEFAULT_THEME } from '../services/baseThemes';
 import { extractRepresentativeColors } from '../utils/colorExtractor';
 import { buildCoverTheme, canRefreshCoverTheme, refreshCoverTheme } from './coverTheme';
+import { DESKTOP_DEFAULT_THEME, DESKTOP_THEME_COLORS } from './desktopTheme';
 import type { Theme } from '../types';
 
 // src/desktopLyrics/useCoverTheme.ts — discard late cover extraction after a song or setting change.
@@ -51,13 +51,17 @@ export function useCoverTheme(cover: string, enabled: boolean) {
     return true;
   }, [cover, enabled]);
   const palette = result?.cover === cover ? result.palette : null;
-  const theme = enabled && cover && palette ? palette.theme : DEFAULT_THEME;
+  const theme = enabled && cover && palette ? palette.theme : DESKTOP_DEFAULT_THEME;
   const refreshUnavailableReason: CoverThemeRefreshUnavailableReason = !enabled ? 'disabled'
-    : !cover ? 'missing-cover' : !palette ? 'loading' : !canRefreshCoverTheme(palette.colors) ? (palette.theme === DEFAULT_THEME ? 'unreadable' : 'neutral') : null;
+    : !cover ? 'missing-cover' : !palette ? 'loading' : !canRefreshCoverTheme(palette.colors) ? (palette.theme === DESKTOP_DEFAULT_THEME ? 'unreadable' : 'neutral') : null;
   const style = useMemo(() => ({
+    '--color-luotianyi': DESKTOP_THEME_COLORS.light, '--color-ado': DESKTOP_THEME_COLORS.primary,
+    '--color-ado-dark': DESKTOP_THEME_COLORS.dark, '--color-highlight': DESKTOP_THEME_COLORS.highlight,
+    '--color-bg': DESKTOP_THEME_COLORS.background, '--color-text': DESKTOP_THEME_COLORS.text,
+    '--color-muted': DESKTOP_THEME_COLORS.secondary,
     '--cover-background': theme.backgroundColor, '--cover-foreground': theme.primaryColor,
     '--cover-accent': theme.accentColor, '--cover-secondary': theme.secondaryColor,
   }) as CSSProperties, [theme]);
-  return { theme, style, active: theme !== DEFAULT_THEME, refresh, refreshing: enabled && !!cover && result?.cover === cover && refreshing,
+  return { theme, style, active: theme !== DESKTOP_DEFAULT_THEME, refresh, refreshing: enabled && !!cover && result?.cover === cover && refreshing,
     canRefresh: refreshUnavailableReason === null, refreshUnavailableReason };
 }

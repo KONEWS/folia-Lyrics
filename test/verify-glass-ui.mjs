@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { desktopSelect, openDesktopMenu, readDesktopOptions, selectDesktopOption } from './desktop-select.mjs';
+import { desktopSelect, openDesktopMenu, readDesktopOptions, selectDesktopOption, setDesktopCoverTheme } from './desktop-select.mjs';
 import { verifyClosePreference } from './verify-close-preference.mjs';
 import { verifyStyleCapsule } from './verify-style-capsule.mjs';
 
@@ -8,7 +8,7 @@ export async function verifyGlassUi(page, song, output) {
   const checks = [];
   const emit = (type, data) => page.evaluate(({ type, data }) => window.__foliaEmit(type, data), { type, data });
   const openSettings = () => page.getByRole('button', { name: '打开歌词设置', exact: true }).click();
-  const closeSettings = () => page.getByRole('button', { name: '关闭设置', exact: true }).click();
+  const closeSettings = () => page.locator('.desktop-topbar [data-settings-trigger]').click();
   const mode = desktopSelect(page, '歌词样式'), player = desktopSelect(page, '选择播放器');
   const style = (locator, property) => locator.evaluate((el, property) => getComputedStyle(el)[property], property);
   const themeColor = property => page.locator('.desktop-lyrics').evaluate((root, property) => {
@@ -121,6 +121,7 @@ export async function verifyGlassUi(page, song, output) {
   await emit('windowState', { maximized: false, fullscreen: false, clickThrough: false }); await emit('restore', {});
   await page.locator('.immersive').waitFor({ state: 'detached' });
   await page.setViewportSize({ width: 1280, height: 800 });
+  const previousCoverTheme = await setDesktopCoverTheme(page);
   checks.push(...await verifyClosePreference(page, song, output));
   await openSettings();
   const automatic = page.getByRole('checkbox', { name: '闲置时自动进入沉浸模式', exact: true });
@@ -177,7 +178,7 @@ export async function verifyGlassUi(page, song, output) {
   await openSettings();
   const panel = page.locator('.control-panel');
   const controls = [page.getByRole('button', { name: '最小化窗口', exact: true }), page.getByRole('button', { name: '沉浸显示', exact: true }),
-    page.getByRole('button', { name: '关闭设置', exact: true })];
+    page.locator('.desktop-topbar [data-settings-trigger]')];
   await quietChrome('normal appearance');
   for (const control of [...controls, player]) {
     assert.equal(await style(control, 'backgroundImage'), 'none', 'ordinary controls use a flat fill');
@@ -187,7 +188,7 @@ export async function verifyGlassUi(page, song, output) {
   }
   for (const control of controls.slice(0, 2)) assert.equal(await style(control, 'backgroundColor'), 'rgba(0, 0, 0, 0)', 'toolbar controls gain a local fill only when needed');
   assert.notEqual(await style(controls[2], 'backgroundColor'), 'rgba(0, 0, 0, 0)', 'settings controls retain a quiet local fill');
-  assert.equal(await panel.locator('.panel-heading small').count(), 0, 'settings heading omits its promotional subtitle');
+  assert.equal(await panel.locator('.panel-heading').count(), 0, 'ordinary settings have no redundant title row');
   const nestedGroups = await panel.locator('details,.lyric-source,.online-status').evaluateAll(elements => elements.map(element => {
     const css = getComputedStyle(element);
     return { image: css.backgroundImage, background: css.backgroundColor, shadow: css.boxShadow, radius: css.borderTopLeftRadius, border: css.borderTopWidth };
@@ -381,16 +382,16 @@ export async function verifyGlassUi(page, song, output) {
     }
     await openSettings();
     if (height === 300) {
-      const panelBounds = await panel.boundingBox(), closeButton = page.getByRole('button', { name: '关闭设置', exact: true });
-      const closeBounds = await closeButton.boundingBox();
+      const panelBounds = await panel.boundingBox(), settingsTrigger = page.locator('.desktop-topbar [data-settings-trigger]');
+      const triggerBounds = await settingsTrigger.boundingBox();
       assert(panelBounds && panelBounds.height >= 120, 'minimum-window settings must remain tall enough to use');
-      assert(closeBounds && closeBounds.y >= panelBounds.y && closeBounds.y + closeBounds.height <= panelBounds.y + panelBounds.height,
-        'settings close must be visible immediately without scrolling');
-      assert(await closeButton.evaluate(el => {
+      assert(triggerBounds && triggerBounds.y >= 0 && triggerBounds.y + triggerBounds.height <= height,
+        'settings trigger must remain visible outside the short panel');
+      assert(await settingsTrigger.evaluate(el => {
         const box = el.getBoundingClientRect(), target = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
         return target === el || el.contains(target);
-      }), 'the initial close button must be reachable at the native minimum size');
-      checks.push('minimum-window settings remain at least 120px tall with an immediately usable close button');
+      }), 'the settings trigger must remain reachable at the native minimum size');
+      checks.push('minimum-window settings remain at least 120px tall with an immediately usable topbar toggle');
     }
     await player.scrollIntoViewIfNeeded(); menu = await menuFor('选择播放器'); await containment(menu, width, height);
     await page.keyboard.press('End'); await page.keyboard.press('Enter'); await menu.waitFor({ state: 'detached' });
@@ -417,6 +418,7 @@ export async function verifyGlassUi(page, song, output) {
   await openSettings(); await automatic.check(); await delay.fill(originalDelay); await delay.press('Enter'); await automatic.setChecked(originalAutomatic);
   await transparent.setChecked(originalTransparent); await closeSettings();
   await emit('session', song);
+  await setDesktopCoverTheme(page, previousCoverTheme);
   console.log('PASS quiet desktop controls / glass floating menus / keyboard / viewport checks');
   return checks;
 }

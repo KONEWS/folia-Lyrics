@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { writeFile } from 'node:fs/promises';
-import { selectDesktopOption } from './desktop-select.mjs';
+import { selectDesktopOption, setDesktopCoverTheme } from './desktop-select.mjs';
 import { visualDialog, backgroundDialog, visualFrame, emitVisual, openVisualSettings, closeVisualSettings,
   openBackgroundSettings, readVisual, waitVisual, reloadVisualSong } from './desktop-visual-fixture.mjs';
 
@@ -79,6 +79,7 @@ export async function verifySelectedControls(page, song, output) {
     await reloadVisualSong(page, { ...song, playing: false, position: 36 }, packet); await windowState();
     await emitVisual(page, 'appearance', { acrylic: true, transparent: false, solid: false, highContrast: false });
     await page.setViewportSize({ width: 1280, height: 800 });
+    await setDesktopCoverTheme(page);
     stage = 'lumiere-keyword-and-quality';
     let card = await setMode('lumiere'), keyword = group(card, '关键字着色');
     for (const [label, value] of [['关闭', false], ['开启', true]]) {
