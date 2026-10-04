@@ -17,10 +17,20 @@ import { verifyLyricsChromeLayout } from './verify-lyrics-chrome-layout.mjs';
 import { desktopSelect, readDesktopOptions, selectDesktopOption } from './desktop-select.mjs';
 import { installDesktopParserProbe, verifyDesktopParserFormats } from './verify-desktop-parser-formats.mjs';
 import { verifySettingsRefresh } from './verify-settings-refresh.mjs';
+import { reproduceStyleMenu, verifyStyleMenu } from './verify-style-menu.mjs';
+import { captureUxBaseline, verifyUxPolish } from './verify-ux-polish.mjs';
+import { verifyDesktopVisualSettings } from './verify-desktop-visual-settings.mjs';
+import { installDesktopSegmentationProbe } from './verify-desktop-segmentation.mjs';
+import { verifyBackgroundTopbar } from './verify-background-topbar.mjs';
+import { verifySelectedControls } from './verify-selected-controls.mjs';
+import { verifySecondaryUi, verifySecondaryCoverContrast } from './verify-secondary-ui.mjs';
+import { verifyCoverFixture } from './verify-cover-fixture.mjs';
+import { installPopupMotionProbe } from './popup-motion-fixture.mjs';
+import { verifyPopupMotion } from './verify-popup-motion.mjs';
 
 // test/verify-renderers.mjs
 const root = resolve('dist-desktop');
-const singleMode = process.env.FOLIA_MODE_INDEX;
+const singleMode = process.env.FOLIA_MODE_INDEX || undefined;
 const output = resolve(singleMode === undefined ? 'test-results/desktop' : 'test-results/desktop-playback');
 await mkdir(output, { recursive: true });
 const mimes = { '.html':'text/html', '.js':'text/javascript', '.css':'text/css', '.json':'application/json', '.png':'image/png', '.svg':'image/svg+xml', '.otf':'font/otf', '.woff2':'font/woff2' };
@@ -40,15 +50,18 @@ let page;
 try {
   page = await browser.newPage({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1 });
   if (!process.env.FOLIA_CHECKS_ONLY || process.env.FOLIA_CHECKS_ONLY === 'input') await installPlaybackInputProbe(page);
-  if (!process.env.FOLIA_CHECKS_ONLY || ['parser', 'settings-refresh'].includes(process.env.FOLIA_CHECKS_ONLY)) await installDesktopParserProbe(page);
+  if (!process.env.FOLIA_CHECKS_ONLY || ['parser', 'settings-refresh', 'visual-settings', 'background-topbar', 'selected-controls', 'secondary-ui', 'cover-fixture', 'popup-motion'].includes(process.env.FOLIA_CHECKS_ONLY)) await installDesktopParserProbe(page);
+  if (process.env.FOLIA_CHECKS_ONLY === 'popup-motion') await installPopupMotionProbe(page);
+  if (!process.env.FOLIA_CHECKS_ONLY || process.env.FOLIA_CHECKS_ONLY === 'visual-settings') await installDesktopSegmentationProbe(page);
   page.on('pageerror', e => errors.push(String(e)));
   page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
   await installDesktopBridgeMock(page);
-  await page.goto(`http://127.0.0.1:${server.address().port}/desktop.html`, { waitUntil: 'networkidle' });
-  await page.getByRole('heading', { name: '音乐在播放，歌词在这里。' }).waitFor();
+  if (process.env.FOLIA_CHECKS_ONLY === 'ux-polish-baseline') await page.addInitScript(() => localStorage.setItem('folia.desktop.mode.v1', 'classic'));
+  await page.goto(process.env.FOLIA_TEST_URL || `http://127.0.0.1:${server.address().port}/desktop.html`, { waitUntil: 'networkidle' });
+  await page.locator('.waiting-screen h1').waitFor();
   assert(await page.getByRole('button', { name: '继续播放音乐', exact: true }).isDisabled());
   await page.screenshot({ path: `${output}/welcome.png` });
-  const appearanceChecks = await verifyAppearance(page, output);
+  const appearanceChecks = process.env.FOLIA_CHECKS_ONLY === 'ux-polish-baseline' ? [] : await verifyAppearance(page, output);
   const raw = process.env.FOLIA_TEST_LRC ? await readFile(process.env.FOLIA_TEST_LRC, 'utf8')
     : '[00:01.000]音乐在播放\n[00:20.000]歌词跟随时间\n[00:33.000]保留原版动效\n[00:42.000]下一行歌词';
   const song = { key: 'test', title: 'Reborn', artist: 'Girls Archives.', cover: '', source: 'Test local player',
@@ -61,7 +74,67 @@ try {
     window.__foliaEmit('lyrics', onlinePacket ? { ...onlinePacket, key: song.key } : { key: song.key, title: song.title, artist: song.artist, content: raw, source: '内嵌歌词 · Reborn.flac', cover: '', embedded: true });
   }, { song, raw, onlinePacket });
   await page.locator('.waiting-screen').waitFor({ state: 'detached' });
-  if (process.env.FOLIA_CHECKS_ONLY === 'settings-refresh') {
+  if (process.env.FOLIA_CHECKS_ONLY === 'popup-motion') {
+    const report = await verifyPopupMotion(page, song, output);
+    await writeFile(`${output}/popup-motion-results.json`, JSON.stringify({ ...report, appearanceChecks, errors }, null, 2));
+    assert.equal(errors.length, 0, errors.join('\n'));
+    console.log(`PASS focused popup motion: ${report.checks.length} checks`);
+  } else if (process.env.FOLIA_CHECKS_ONLY === 'cover-fixture') {
+    const report = await verifyCoverFixture(page, song, output);
+    await writeFile(`${output}/cover-fixture-results.json`, JSON.stringify({ ...report, appearanceChecks, errors }, null, 2));
+    assert.equal(errors.length, 0, errors.join('\n'));
+    console.log(`PASS focused cover fixture: ${report.checks.length} checks`);
+  } else if (process.env.FOLIA_CHECKS_ONLY === 'secondary-ui') {
+    const secondary = await verifySecondaryUi(page, song, output);
+    await writeFile(`${output}/secondary-ui-results.json`, JSON.stringify({ ...secondary, appearanceChecks, errors }, null, 2));
+    assert.equal(errors.length, 0, errors.join('\n'));
+    const cover = await verifyCoverFixture(page, song, output, { onPalette: () => verifySecondaryCoverContrast(page, output) });
+    const checks = [...secondary.checks, ...cover.checks], samples = [...secondary.samples, ...cover.samples];
+    await writeFile(`${output}/secondary-ui-results.json`, JSON.stringify({ checks, samples, runtimeErrors: secondary.runtimeErrors, appearanceChecks, errors }, null, 2));
+    assert.equal(errors.length, 0, errors.join('\n'));
+    console.log(`PASS focused secondary UI and cover fixture: ${checks.length} checks`);
+  } else if (process.env.FOLIA_CHECKS_ONLY === 'transport') {
+    const checks = await verifyTransport(page, song, output);
+    assert.equal(errors.length, 0, errors.join('\n'));
+    await writeFile(`${output}/transport-results.json`, JSON.stringify({ checks, appearanceChecks, errors }, null, 2));
+    console.log(`PASS focused player transport: ${checks.length} checks`);
+  } else if (process.env.FOLIA_CHECKS_ONLY === 'selected-controls') {
+    const checks = await verifySelectedControls(page, song, output);
+    assert.equal(errors.length, 0, errors.join('\n'));
+    const report = JSON.parse(await readFile(`${output}/selected-controls-results.json`, 'utf8'));
+    await writeFile(`${output}/selected-controls-results.json`, JSON.stringify({ ...report, appearanceChecks, errors }, null, 2));
+    console.log(`PASS focused selected controls: ${checks.length} checks`);
+  } else if (process.env.FOLIA_CHECKS_ONLY === 'background-topbar') {
+    const checks = await verifyBackgroundTopbar(page, song, output);
+    assert.equal(errors.length, 0, errors.join('\n'));
+    const report = JSON.parse(await readFile(`${output}/background-topbar-results.json`, 'utf8'));
+    await writeFile(`${output}/background-topbar-results.json`, JSON.stringify({ ...report, appearanceChecks, errors }, null, 2));
+    console.log(`PASS focused background topbar: ${checks.length} checks`);
+  } else if (process.env.FOLIA_CHECKS_ONLY === 'visual-settings') {
+    const checks = await verifyDesktopVisualSettings(page, song, output);
+    assert.equal(errors.length, 0, errors.join('\n'));
+    const report = JSON.parse(await readFile(`${output}/visual-settings-results.json`, 'utf8'));
+    await writeFile(`${output}/visual-settings-results.json`, JSON.stringify({ ...report, appearanceChecks, errors }, null, 2));
+    console.log(`PASS focused original visual settings: ${checks.length} checks`);
+  } else if (process.env.FOLIA_CHECKS_ONLY === 'ux-polish-baseline') {
+    await captureUxBaseline(page, song, output);
+    assert.equal(errors.length, 0, errors.join('\n'));
+  } else if (process.env.FOLIA_CHECKS_ONLY === 'ux-polish') {
+    const checks = await verifyUxPolish(page, song, output);
+    assert.equal(errors.length, 0, errors.join('\n'));
+    const report = JSON.parse(await readFile(`${output}/ux-polish-results.json`, 'utf8'));
+    await writeFile(`${output}/ux-polish-results.json`, JSON.stringify({ ...report, appearanceChecks, errors }, null, 2));
+    console.log(`PASS focused UX polish: ${checks.length} checks`);
+  } else if (process.env.FOLIA_CHECKS_ONLY === 'style-menu-baseline') {
+    const checks = await reproduceStyleMenu(page, song, output);
+    assert.equal(errors.length, 0, errors.join('\n'));
+    console.log(`PASS fullscreen style-menu baseline: ${checks.length} check`);
+  } else if (process.env.FOLIA_CHECKS_ONLY === 'style-menu') {
+    const checks = await verifyStyleMenu(page, song, output);
+    assert.equal(errors.length, 0, errors.join('\n'));
+    await writeFile(`${output}/style-menu-results.json`, JSON.stringify({ checks, samples: JSON.parse(await readFile(`${output}/style-menu-results.json`, 'utf8')).samples, errors }, null, 2));
+    console.log(`PASS focused style menu: ${checks.length} checks`);
+  } else if (process.env.FOLIA_CHECKS_ONLY === 'settings-refresh') {
     const checks = await verifySettingsRefresh(page, song, output);
     assert.equal(errors.length, 0, errors.join('\n'));
     console.log(`PASS focused settings and refresh: ${checks.length} checks`);
@@ -81,8 +154,8 @@ try {
     console.log('PASS focused lyric chrome layout integration checks');
   } else if (process.env.FOLIA_CHECKS_ONLY === 'glass') {
     const checks = await verifyGlassUi(page, song, output);
-    assert.equal(errors.length, 0, errors.join('\n'));
     await writeFile(`${output}/glass-results.json`, JSON.stringify({ checks, errors }, null, 2));
+    assert.equal(errors.length, 0, errors.join('\n'));
     console.log('PASS focused unified glass / nested menus integration checks');
   } else if (process.env.FOLIA_CHECKS_ONLY === 'topbar') {
     const checks = await verifyTopbar(page, song, output);
@@ -103,7 +176,7 @@ try {
   assert.equal(modeCount, 13, 'the desktop exposes all 13 dynamic modes');
   assert.equal(modes.filter(mode => mode.value === 'still').length, 0);
   assert.equal(modes.filter(mode => mode.label === '绘光').length, 1);
-  const clockMode = () => selectDesktopOption(page, '歌词样式', { label: 'Luminous' });
+  const clockMode = () => selectDesktopOption(page, '歌词样式', { label: '流光' });
   for (let i = 0; i < modeCount; i++) {
     if (singleMode !== undefined && i !== Number(singleMode)) continue;
     const { label, value } = modes[i];
@@ -152,7 +225,9 @@ try {
   assert.equal(await page.locator('.online-result').count(), 2);
   assert(await page.locator('.online-result').nth(1).isDisabled());
   await page.getByRole('button', { name: '使用歌词：Reborn / Girls Archives. / 1', exact: true }).click();
-  await page.waitForFunction(() => document.querySelector('.status-left')?.textContent?.includes('QQ 音乐 · 测试桥'));
+  await page.waitForFunction(() => document.querySelector('.current-lyric-source')?.textContent?.includes('QQ 音乐 · 测试桥'));
+  await page.locator('.current-lyric-source').scrollIntoViewIfNeeded();
+  assert(await page.locator('.current-lyric-source').isVisible(), 'the real selected lyric source remains available in synchronization settings');
   await page.getByRole('checkbox', { name: '自动匹配在线歌词', exact: true }).scrollIntoViewIfNeeded();
   await page.screenshot({ path: `${output}/online-settings.png` });
   await page.getByRole('button', { name: '歌词提前 0.2 秒' }).click();
@@ -198,16 +273,21 @@ try {
   });
   await page.waitForTimeout(150);
   assert.equal(await page.locator('.waiting-screen').count(), 1);
-  assert(!(await page.locator('.status-left').innerText()).includes('stale'));
+  assert(!(await page.locator('.waiting-screen').innerText()).includes('stale'), 'an old online result must not overwrite the current song waiting state');
   const playbackInputChecks = await verifyPlaybackInput(page, song, output);
   await writeFile(`${output}/playback-input-results.json`, JSON.stringify({ checks: playbackInputChecks, errors }, null, 2));
   // Theme checks use the real animation clock before the layout suite installs its virtual deadline clock.
   const settingsRefreshChecks = await verifySettingsRefresh(page, song, output);
+  const styleMenuChecks = await verifyStyleMenu(page, song, output);
+  const uxPolishChecks = await verifyUxPolish(page, song, output);
+  const visualSettingsChecks = await verifyDesktopVisualSettings(page, song, output);
+  const backgroundTopbarChecks = await verifyBackgroundTopbar(page, song, output);
+  const selectedControlsChecks = await verifySelectedControls(page, song, output);
   const chromeLayoutChecks = await verifyLyricsChromeLayout(page, song, output);
   await writeFile(`${output}/chrome-layout-results.json`, JSON.stringify({ checks: chromeLayoutChecks, errors }, null, 2));
   const parserFormatChecks = await verifyDesktopParserFormats(page, song, output);
   assert.equal(errors.length, 0, errors.join('\n'));
-  await writeFile(`${output}/results.json`, JSON.stringify({ modes: results, appearanceChecks, transportChecks, lumiereChecks, topbarChecks, glassChecks, playbackInputChecks, chromeLayoutChecks, settingsRefreshChecks, parserFormatChecks, checks: ['host handshake','mode mounts','paused mode switch initializes visible lyric without advancing time','offset','preference messages','pause','backward seek','immersion','no media element','track change clears lyrics','online source controls','manual search and selection','untimed result disabled','stale song and search results ignored'], errors }, null, 2));
+  await writeFile(`${output}/results.json`, JSON.stringify({ modes: results, appearanceChecks, transportChecks, lumiereChecks, topbarChecks, glassChecks, playbackInputChecks, chromeLayoutChecks, settingsRefreshChecks, styleMenuChecks, uxPolishChecks, visualSettingsChecks, backgroundTopbarChecks, selectedControlsChecks, parserFormatChecks, checks: ['host handshake','mode mounts','paused mode switch initializes visible lyric without advancing time','offset','preference messages','pause','backward seek','immersion','no media element','track change clears lyrics','online source controls','manual search and selection','untimed result disabled','stale song and search results ignored'], errors }, null, 2));
   console.log('PASS desktop integration checks');
   }
 } catch (error) {

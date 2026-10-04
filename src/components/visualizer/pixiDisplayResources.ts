@@ -53,3 +53,20 @@ export const destroyPixiContainerChildren = (container: PixiDisplayNode & {
 }) => {
     container.removeChildren().forEach(destroyPixiDisplayTree);
 };
+
+type PixiFilterCache = {
+    _filterStackIndex?: number;
+    _filterStack?: { inputTexture?: { source?: unknown; destroyed?: boolean } | null }[];
+};
+
+/** Clears inactive Pixi 8.21 filter inputs that its screen-size pool pruned during resize. */
+export const clearDestroyedPixiFilterInputs = (renderer: object) => {
+    // Pixi retains private filter entries across frames and reads their input before replacing it.
+    // Only inspect this cache after a resize, outside an active filter pass; live textures stay intact.
+    const filter = (renderer as { filter?: PixiFilterCache }).filter;
+    if (filter?._filterStackIndex !== 0 || !Array.isArray(filter._filterStack)) return;
+    filter._filterStack.forEach(entry => {
+        const texture = entry.inputTexture;
+        if (texture && (texture.destroyed || texture.source === null)) entry.inputTexture = null;
+    });
+};

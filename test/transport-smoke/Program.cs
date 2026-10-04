@@ -6,6 +6,7 @@ var checks = new List<string>();
 void Check(bool condition, string name) { if (!condition) throw new Exception(name); checks.Add(name); Console.WriteLine("PASS " + name); }
 MediaControlRequest Request(string action = "pause") => new(Guid.NewGuid().ToString(), "session-a", "song-a", action);
 Task<MediaControlResult> Run(FakeTarget target, string action = "pause") => new MediaTransport().Execute(Request(action), () => target, () => true);
+await CoverChecks.Run(Check);
 
 foreach (var action in new[] { "play", "pause", "previous", "next" })
 {

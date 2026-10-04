@@ -1,11 +1,11 @@
 /* src/desktopLyrics/audio-progress.css — rounded live bands along the window's bottom edge */
-.audio-progress{position:absolute;z-index:14;inset:auto 10px 0;height:48px;pointer-events:none;color:#f2d2c8;opacity:.8}
+.audio-progress{position:absolute;z-index:14;inset:auto 10px 0;height:18px;pointer-events:none;color:var(--glass-muted);opacity:.35}
 .audio-progress svg{display:block;width:100%;height:100%;overflow:hidden}
 .audio-progress use{fill:none;stroke:currentColor;stroke-width:3.8;stroke-linecap:round}
-.spectrum-remaining{opacity:.23}.spectrum-played{opacity:.65}
+.spectrum-remaining{opacity:.15}.spectrum-played{opacity:.4}
 .audio-progress line{stroke:currentColor;stroke-width:.8;vector-effect:non-scaling-stroke}.progress-track{opacity:.15}.progress-played{opacity:.75}
-.unknown-progress .progress-played{opacity:0}.immersive .audio-progress{opacity:.6}
+.unknown-progress .progress-played{opacity:0}.immersive .audio-progress{opacity:.25}
 .high-contrast .audio-progress{color:CanvasText;opacity:1}
-@media(max-width:850px){.audio-progress{height:35px;inset:auto 8px 0}}
-@media(max-height:600px){.audio-progress{height:26px}}
+@media(max-width:850px){.audio-progress{height:14px;inset:auto 8px 0}}
+@media(max-height:600px){.audio-progress{height:12px}}
 @media(forced-colors:active){.audio-progress{color:CanvasText}}

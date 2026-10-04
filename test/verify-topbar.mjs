@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { readDesktopOptions, selectDesktopOption } from './desktop-select.mjs';
+import { clickTopbarAction, topbarAction } from './desktop-topbar-actions.mjs';
 
 // test/verify-topbar.mjs — exercise the desktop topbar through real pointer and keyboard input.
 export async function verifyTopbar(page, song, output) {
@@ -37,7 +38,7 @@ export async function verifyTopbar(page, song, output) {
   await selectDesktopOption(page, '歌词样式', { label: '绘光' });
   await page.locator('.desktop-stage canvas').waitFor({ timeout: 60000 });
   assert.equal(await page.evaluate(() => localStorage.getItem('folia.desktop.mode.v1')), 'lumiere');
-  await selectDesktopOption(page, '歌词样式', { label: 'Luminous' });
+  await selectDesktopOption(page, '歌词样式', { label: '流光' });
   await page.locator('.desktop-stage canvas').waitFor({ state: 'detached' });
   assert.equal(await mode.getAttribute('data-value'), 'classic');
   checks.push('leftmost cover and song without a brand', '13 dynamic styles including Lumiere and excluding still', 'topbar style selection mounts original renderer and persists');
@@ -95,7 +96,7 @@ export async function verifyTopbar(page, song, output) {
   await mode.hover(); await mode.click();
   await page.keyboard.press('ArrowDown'); await page.keyboard.press('Enter');
   assert.equal(await page.locator('.immersive.top-controls-revealed').count(), 1);
-  await selectDesktopOption(page, '歌词样式', { label: 'Luminous' });
+  await selectDesktopOption(page, '歌词样式', { label: '流光' });
   await page.screenshot({ path: `${output}/immersive-top-controls.png` });
   await page.mouse.move(500, 300);
   await page.locator('.top-controls-revealed').waitFor({ state: 'detached' });
@@ -193,7 +194,7 @@ export async function verifyTopbar(page, song, output) {
     await page.mouse.move(width / 2, height / 2);
     const dimensions = await page.evaluate(() => ({ width: innerWidth, html: document.documentElement.scrollWidth, body: document.body.scrollWidth }));
     assert(dimensions.html <= dimensions.width && dimensions.body <= dimensions.width, `${width}x${height} controls must not create horizontal overflow`);
-    for (const locator of [mode, translation, topmost, page.getByRole('button', { name: '打开歌词设置', exact: true }), page.getByRole('button', { name: '切换全屏', exact: true })]) {
+    for (const locator of [mode, page.getByRole('button', { name: '打开歌词设置', exact: true }), page.getByRole('button', { name: '更多操作', exact: true })]) {
       const box = await locator.boundingBox();
       assert(box && box.x >= 0 && box.y >= 0 && box.x + box.width <= width && box.y + box.height <= height);
       assert(await locator.evaluate(el => {
@@ -202,9 +203,17 @@ export async function verifyTopbar(page, song, output) {
         return target === el || el.contains(target);
       }), `${width}x${height} shortcut center must be reachable rather than covered by another element`);
     }
-    await selectDesktopOption(page, '歌词样式', { label: 'Luminous' });
-    await translation.click(); await translation.click();
-    await topmost.click(); await topmost.click();
+    for (const name of ['显示译文', '窗口置顶', '切换全屏']) {
+      const action = await topbarAction(page, name), box = await action.boundingBox();
+      assert(box && box.x >= 0 && box.y >= 0 && box.x + box.width <= width && box.y + box.height <= height,
+        `${width}x${height} compact command ${name} must remain in the viewport`);
+      assert(await action.evaluate(element => { const bounds = element.getBoundingClientRect(), hit = document.elementFromPoint(bounds.left + bounds.width / 2, bounds.top + bounds.height / 2);
+        return hit === element || element.contains(hit); }), `${name}: More command has a reachable target`);
+      await page.keyboard.press('Escape'); await page.locator('.desktop-more-menu').waitFor({ state: 'detached' });
+    }
+    await selectDesktopOption(page, '歌词样式', { label: '流光' });
+    await clickTopbarAction(page, '显示译文'); await clickTopbarAction(page, '显示译文');
+    await clickTopbarAction(page, '窗口置顶'); await clickTopbarAction(page, '窗口置顶');
     await open(); assert(await page.locator('.control-panel').isVisible()); await close();
     await page.screenshot({ path: `${output}/${width === 600 ? 'topbar-small' : `topbar-small-${width}x${height}`}.png` });
     checks.push(`${width}x${height} controls stay within viewport without overflow or overlap`, `${width}x${height} style, translation, pinning and settings controls are usable`);

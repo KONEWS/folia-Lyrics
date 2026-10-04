@@ -8,13 +8,38 @@ export async function installDesktopParserProbe(page) {
     window.__foliaParserProbe = { workers: [], requests: [], responses: [] };
     window.__REACT_DEVTOOLS_GLOBAL_HOOK__ = { supportsFiber: true, renderers: new Map(),
       inject(renderer) { this.renderers.set(1, renderer); return 1; }, checkDCE() {},
-      onCommitFiberRoot(_renderer, root) { window.__foliaParserCommittedRoot = root.current; }, onCommitFiberUnmount() {}, onScheduleFiberRoot() {} };
+      onCommitFiberRoot(_renderer, root) {
+        if (root.containerInfo === document.getElementById('root')) window.__foliaParserCommittedContainer = root;
+      }, onCommitFiberUnmount() {}, onScheduleFiberRoot() {} };
+    // Observe the live DOM root; Diorama's separate Three.js root may commit or unmount after the desktop root.
+    Object.defineProperty(window, '__foliaParserCommittedRoot', { get: () => window.__foliaParserCommittedContainer?.current });
     window.__foliaParserReadRenderer = () => {
       const stack = [window.__foliaParserCommittedRoot];
       while (stack.length) {
         const node = stack.pop(); if (!node) continue;
         const props = node.memoizedProps;
         if (props?.mode === 'classic' && Array.isArray(props.lines) && props.currentTime) return props;
+        if (node.sibling) stack.push(node.sibling); if (node.child) stack.push(node.child);
+      }
+      return null;
+    };
+    // The visual-settings suite observes committed production props for every original mode.
+    window.__foliaReadVisualizerProps = () => {
+      const stack = [window.__foliaParserCommittedRoot];
+      while (stack.length) {
+        const node = stack.pop(); if (!node) continue;
+        const props = node.memoizedProps;
+        if (typeof props?.mode === 'string' && Array.isArray(props.lines) && props.currentTime && props.theme) return props;
+        if (node.sibling) stack.push(node.sibling); if (node.child) stack.push(node.child);
+      }
+      return null;
+    };
+    window.__foliaReadResolvedVisualizerProps = mode => {
+      const stack = [window.__foliaParserCommittedRoot];
+      while (stack.length) {
+        const node = stack.pop(); if (!node) continue;
+        const props = node.memoizedProps;
+        if (!props?.mode && Array.isArray(props?.lines) && props.currentTime && props.theme && props[`${mode}Tuning`]) return props;
         if (node.sibling) stack.push(node.sibling); if (node.child) stack.push(node.child);
       }
       return null;

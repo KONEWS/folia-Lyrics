@@ -1,6 +1,7 @@
 import type { MotionValue } from 'framer-motion';
 import type { TemperaTuning, Theme } from '../../../types';
 import {
+    clearDestroyedPixiFilterInputs,
     destroyPixiContainerChildren,
     destroyPixiDisplayTree,
     setPixiDisplayTreeVisibility,
@@ -299,6 +300,7 @@ export class TemperaPixiRuntime {
         // its resolution on one call, and the scenes are dropped below anyway.
         this.renderResolution = this.resolveRenderResolution(this.options.tuning);
         this.app.renderer.resize(width, height, this.renderResolution);
+        clearDestroyedPixiFilterInputs(this.app.renderer);
         // Staged against the old viewport, so its layout no longer fits.
         if (this.songSwap?.staged) {
             this.discardStaged(this.songSwap.staged);
@@ -1006,6 +1008,7 @@ export class TemperaPixiRuntime {
             // decoding the shared image pool again. The scene rebuild below refreshes text and
             // fixed-resolution filters against that new surface.
             this.app.renderer.resolution = resolution;
+            clearDestroyedPixiFilterInputs(this.app.renderer);
         }
         if (requiresSceneRebuild(previous, tuning)) {
             // Staged against the old tuning, so it can no longer be adopted.

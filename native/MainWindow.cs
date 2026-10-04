@@ -16,7 +16,8 @@ internal sealed partial class MainWindow : Form
     private bool ready, polling, scanning; private int ticks; private Song? song; private Lyrics? lyrics;
     private int sourceRevision;
     private readonly MediaTransport transport = new(log: DataFiles.Log);
-    private string lyricKey = "\0", statusKey = "";
+    private string lyricKey = "\0";
+    private Song? presentedSong;
     public MainWindow()
     {
         dispatcher = new(Environment.CurrentManagedThreadId, action => BeginInvoke(action), () => !IsDisposed && !Disposing && IsHandleCreated);
@@ -31,7 +32,7 @@ internal sealed partial class MainWindow : Form
         Activated += (_, _) => FocusLyricsIfActive();
         mediaTimer.Tick += async (_, _) => await Poll();
         audioTimer.Tick += (_, _) => { if (ready && preferences.AudioReactive && WindowState != FormWindowState.Minimized) Send("spectrum", new { bins = Convert.ToBase64String(audio.Read()), sampleRate = audio.SampleRate }); };
-        FormClosed += (_, _) => { lifetime.Cancel(); lyricWork?.Cancel(); online.Dispose(); mediaTimer.Dispose(); audioTimer.Dispose(); audio.Dispose(); tray.Visible = false; tray.Dispose(); };
+        FormClosed += (_, _) => { lifetime.Cancel(); lyricWork?.Cancel(); online.Dispose(); media.Dispose(); mediaTimer.Dispose(); audioTimer.Dispose(); audio.Dispose(); tray.Visible = false; tray.Dispose(); };
     }
     // 仅给当前前台歌词窗口补焦点，异步初始化完成时不抢其他程序的焦点。
     private void FocusLyricsIfActive()
@@ -92,10 +93,9 @@ internal sealed partial class MainWindow : Form
         if (!ready || polling || IsDisposed) return; polling = true;
         try
         {
-            var currentRevision = sourceRevision; var next = await media.Read(preferences.Source);
+            var currentRevision = sourceRevision; var next = await media.Read(preferences.Source, lifetime.Token);
             if (IsDisposed || currentRevision != sourceRevision) return; song = next;
-            var identity = $"{next.Key}|{next.SessionId}|{next.Controls}|{next.Playing}|{next.Duration}|{next.Rate}|{next.HasTimeline}|{string.Join(',', next.Sources.Select(s => s.Id))}";
-            if (identity != statusKey) { statusKey = identity; Send("session", next); }
+            if (!MediaPresentation.Same(presentedSong, next)) { presentedSong = next; Send("session", next); }
             Send("clock", new { next.Position, next.Duration, next.Rate, next.Playing, next.HasTimeline });
             if (lyricKey != next.Key)
             {

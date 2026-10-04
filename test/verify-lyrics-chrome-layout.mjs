@@ -62,10 +62,11 @@ export async function verifyLyricsChromeLayout(page, song, output) {
         toggle: box('.restore-controls'), shell: box('.desktop-topbar-shell'), header: box('.desktop-topbar'),
         settings: box('[aria-label="打开歌词设置"]'), footer: box('.desktop-statusbar'),
         subtitle: box('[data-font-debug-target="visualizer-translation"]'), center,
-        hit: hit === button || button.contains(hit), label: button.getAttribute('aria-label'),
+        hit: hit === button || button.contains(hit), hitTarget: hit?.outerHTML.slice(0, 500), label: button.getAttribute('aria-label'),
         viewport: { width: innerWidth, height: innerHeight }, storedHidden: localStorage.getItem('hide_player_progress_bar'),
         standaloneRestore: Boolean(document.querySelector('main.desktop-lyrics > .restore-controls')) };
     });
+    geometry.push({ context, ...sample });
     assert.equal(sample.count, 1, `${context}: exactly one hide/restore button exists`);
     assert.equal(sample.standaloneRestore, false, `${context}: no second standalone restoration control remains`);
     assert.equal(sample.storedHidden, 'true', `${context}: desktop layout must not rewrite the upstream stored preference`);
@@ -79,7 +80,6 @@ export async function verifyLyricsChromeLayout(page, song, output) {
       assert(Math.abs(sample.center.x - baseline.center.x) <= 1.1 && Math.abs(sample.center.y - baseline.center.y) <= 1.1,
         `${context}: hide and restore use the same coordinates at the same window size`);
     }
-    geometry.push({ context, ...sample });
     return sample;
   };
   const clearFooter = sample => assert(sample.subtitle.bottom <= sample.footer.y - 8,
@@ -196,6 +196,10 @@ export async function verifyLyricsChromeLayout(page, song, output) {
     checks.push(...await verifyImmersiveToggleIdle(page, song, output));
     console.log('PASS fixed immersion toggle and original subtitle/footer layout checks');
     return checks;
+  } catch (error) {
+    await writeFile(`${output}/chrome-layout-failure.json`, JSON.stringify({ checks, geometry, error: String(error) }, null, 2));
+    await page.screenshot({ path: `${output}/chrome-layout-failure.png` });
+    throw error;
   } finally {
     await page.evaluate(saved => {
       for (const [key, value] of [['hide_player_progress_bar', saved.hidden], ['folia.desktop.mode.v1', saved.mode]]) {

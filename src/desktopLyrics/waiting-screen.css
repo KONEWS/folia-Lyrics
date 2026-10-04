@@ -1,0 +1,10 @@
+/* src/desktopLyrics/waiting-screen.css — a single next action that also fits a short desktop window. */
+.waiting-screen .waiting-track{margin:0 0 8px;max-width:100%;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.waiting-screen .waiting-description{margin-bottom:12px}
+.waiting-screen .waiting-status{margin:0 0 16px;font-size:10px;line-height:1.6;max-width:560px;color:var(--glass-muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.waiting-alternatives{max-width:100%;margin-top:12px;font-size:10px;color:var(--glass-muted)}
+.waiting-alternatives>summary{cursor:pointer;padding:var(--desktop-control-padding);border:1px solid var(--desktop-control-border);border-radius:var(--desktop-control-radius);background:var(--desktop-glass-control);box-shadow:none;font-size:var(--desktop-control-font-size);line-height:var(--desktop-control-line-height)}
+.waiting-alternatives[open]>summary{margin-bottom:8px}
+.waiting-alternatives .waiting-actions button{min-height:32px;padding:8px 12px}
+@media(max-width:640px),(max-height:400px){.waiting-screen{padding:82px 20px 92px;justify-content:flex-start;overflow-y:auto;overscroll-behavior:contain}.waiting-screen h1{font-size:22px;line-height:1.35;letter-spacing:.5px;margin-bottom:8px}.waiting-screen .waiting-description{font-size:11px;line-height:1.6;margin-bottom:8px}.waiting-screen .waiting-status{font-size:9px;line-height:1.5;margin-bottom:8px;-webkit-line-clamp:1}.waiting-screen .waiting-track{font-size:10px;margin-bottom:5px}.waiting-screen .waiting-actions button{min-height:32px;padding:7px 14px}.waiting-alternatives{margin-top:6px}}
+@media(prefers-reduced-motion:reduce){.waiting-screen .online-spinner{animation:none}}

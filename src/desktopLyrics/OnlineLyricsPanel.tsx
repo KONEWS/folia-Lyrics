@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Search, LoaderCircle, Check, Globe2 } from 'lucide-react';
 import { send, type OnlineState, type Preferences, type Session } from './bridge';
 import { timeLabel } from './clock';
+import i18n from '../i18n/config';
 
 // src/desktopLyrics/OnlineLyricsPanel.tsx
 const SOURCES = [
@@ -14,7 +15,7 @@ export default function OnlineLyricsPanel({ session, preferences, online }: { se
   const [title, setTitle] = useState(session.title), [artist, setArtist] = useState(session.artist);
   const enabledSources = SOURCES.filter(source => preferences.onlineProviders.includes(source.id)).length;
   useEffect(() => { setTitle(session.title); setArtist(session.artist); }, [session.key, session.title, session.artist]);
-  return <section className="online-lyrics-panel" aria-label="在线歌词">
+  return <section className="online-lyrics-panel" data-settings-section="online" aria-label="在线歌词">
     <div className="section-label"><span className="online-heading"><Globe2 size={13}/>在线歌词</span><span>自动匹配 / 手动选词</span></div>
     <label className="toggle"><span>自动匹配在线歌词</span><input type="checkbox" checked={preferences.onlineEnabled} onChange={e => send('onlineEnabled', e.target.checked)}/></label>
     <details className="lyric-source-settings"><summary>歌词来源 <span className="hint">已启用 {enabledSources}/{SOURCES.length} 个来源</span></summary>
@@ -22,13 +23,12 @@ export default function OnlineLyricsPanel({ session, preferences, online }: { se
       <div><strong>{source.name}</strong><small>{source.detail}</small></div>
       <input type="checkbox" aria-label={`启用${source.name}歌词源`} checked={preferences.onlineProviders.includes(source.id)} disabled={!preferences.onlineEnabled}
         onChange={e => send('onlineProvider', { id: source.id, enabled: e.target.checked })}/></label>)}</div></details>
-    <p className="hint">找不到本地歌词时自动联网。只发送歌名、歌手、专辑和时长，不上传音频。已匹配歌词会缓存；关闭联网后仍可使用缓存。</p>
     <form className="online-search" onSubmit={e => { e.preventDefault(); send('searchOnline', { title: title.trim(), artist: artist.trim() }); }}>
       <label>歌名<input aria-label="在线搜索歌名" value={title} maxLength={200} placeholder="输入歌名" onChange={e => setTitle(e.target.value)}/></label>
       <label>歌手<input aria-label="在线搜索歌手" value={artist} maxLength={200} placeholder="可留空，手动选择版本" onChange={e => setArtist(e.target.value)}/></label>
       <div className="action-row"><button type="submit" disabled={!preferences.onlineEnabled || !title.trim() || online.busy || !preferences.onlineProviders.length}>
         {online.busy ? <LoaderCircle className="online-spinner" size={14}/> : <Search size={14}/>}搜索在线歌词</button>
-        <button type="button" disabled={!session.title || online.busy} onClick={() => send('resetOnline')}>重新自动匹配</button></div>
+        <button type="button" disabled={!preferences.onlineEnabled || !preferences.onlineProviders.length || !session.title || online.busy} onClick={() => send('resetOnline')}>重新自动匹配</button></div>
     </form>
     <p className={`online-status ${online.busy ? 'busy' : ''}`} role="status">{online.message}</p>
     {online.errors.length > 0 ? <details className="online-errors"><summary>部分歌词源暂不可用</summary>{online.errors.map((error, i) => <p key={i}>{error}</p>)}</details> : null}
@@ -39,6 +39,8 @@ export default function OnlineLyricsPanel({ session, preferences, online }: { se
       <span className="result-artist">{candidate.artist || '歌手未知'}{candidate.album ? ` · ${candidate.album}` : ''}</span>
       <span className="result-meta">{SOURCES.find(s => s.id === candidate.provider)?.name} · {candidate.quality}{candidate.autoEligible ? ' · 信息吻合' : ''}</span>
     </button>)}</div>
-    <p className="hint">逐字时间轴由歌词源提供；逐行歌词不会自动变成精准逐字歌词。</p>
+    <details className="settings-help online-help"><summary>{i18n.t('desktopLyrics.settings.onlineHelp', { lng: 'zh-CN' })}</summary>
+      <p className="hint">找不到本地歌词时自动联网。只发送歌名、歌手、专辑和时长，不上传音频。已匹配歌词会缓存；关闭联网后仍可使用缓存。</p>
+      <p className="hint">逐字时间轴由歌词源提供；逐行歌词不会自动变成精准逐字歌词。</p></details>
   </section>;
 }

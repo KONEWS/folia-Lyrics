@@ -12,14 +12,16 @@ export default function ImmersiveSettings({ preferences: p }: { preferences: Pre
     if (delay.trim() && Number.isInteger(value) && value >= 1 && value <= 3600) send('immersiveDelay', value);
     else setDelay(String(p.immersiveDelay));
   };
-  return <section className="immersive-settings"><div className="section-label">{text('appearanceImmersion')}</div>
+  return <section className="immersive-settings" data-settings-section="immersion"><div className="section-label">{text('appearanceImmersion')}</div>
     <label className="toggle"><span>{text('coverTheme')}</span><input type="checkbox" checked={p.coverTheme} onChange={e => send('coverTheme', e.target.checked)}/></label>
-    <p className="hint">{text('coverThemeHint')}</p>
     <label className="toggle"><span>{text('autoImmersive')}</span><input type="checkbox" checked={p.autoImmersive} onChange={e => send('autoImmersive', e.target.checked)}/></label>
     <label className="immersion-delay"><span>{text('immersiveDelay')}</span><input aria-label={text('immersiveDelay')} type="number" min="1" max="3600" step="1" disabled={!p.autoImmersive}
       value={delay} onChange={e => setDelay(e.target.value)} onBlur={commit} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur(); } }}/><span>{text('seconds')}</span></label>
-    <p className="hint">{text('autoImmersiveHint')}</p>
     <label className="toggle"><span>{text('bottomHoverControls')}</span><input type="checkbox" checked={p.bottomHoverControls} onChange={e => send('bottomHoverControls', e.target.checked)}/></label>
-    <p className="hint">{text('bottomHoverHint')}</p>
+    <p className="hint settings-recovery-hint">{text('settings.immersionRecovery')}</p>
+    <details className="settings-help immersion-help"><summary>{text('settings.immersionHelp')}</summary>
+      <p className="hint">{text('coverThemeHint')}</p>
+      <p className="hint">{text('autoImmersiveHint')}</p>
+      <p className="hint">{text('bottomHoverHint')}</p></details>
   </section>;
 }

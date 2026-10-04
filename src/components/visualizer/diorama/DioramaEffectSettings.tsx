@@ -64,6 +64,7 @@ const StrengthControl: React.FC<StrengthControlProps> = ({
                         <button
                             key={choice.key}
                             type="button"
+                            aria-pressed={active}
                             disabled={!enabled}
                             onClick={() => {
                                 if (choice.key === 'custom') {

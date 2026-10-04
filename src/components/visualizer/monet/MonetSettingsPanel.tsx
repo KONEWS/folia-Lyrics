@@ -56,7 +56,7 @@ const PresetGroup = <T,>({
     isDaylight,
     theme,
 }: PresetGroupProps<T>) => (
-    <div className="space-y-2.5">
+    <div role="group" aria-label={label} className="space-y-2.5">
         <SectionLabel theme={theme}>{label}</SectionLabel>
         <div className="flex flex-wrap gap-2">
             {options.map(option => {
@@ -65,6 +65,7 @@ const PresetGroup = <T,>({
                     <button
                         key={String(option.value)}
                         type="button"
+                        aria-pressed={isActive}
                         onClick={() => {
                             if (!option.disabled) {
                                 onChange(option.value);

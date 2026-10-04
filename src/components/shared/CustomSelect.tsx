@@ -27,12 +27,18 @@ interface CustomSelectProps {
     isDaylight?: boolean;
     theme?: Theme;
     className?: string;
+    /** Non-interactive decoration inside the same semantic trigger button. */
+    triggerPrefix?: React.ReactNode;
     menuClassName?: string;
+    /** Let a CSS skin own entry motion without a competing Motion transform. */
+    menuMotion?: 'default' | 'css';
     menuMinWidth?: number;
     getPortalContainer?: () => HTMLElement | null;
     getClipElement?: () => HTMLElement | null;
     getAnchorElement?: () => HTMLElement | null;
     keyboardNavigation?: boolean;
+    /** Optional action following the options, kept separate from the selectable values. */
+    menuAction?: { label: string; onAction: () => void };
 }
 
 export const CustomSelect: React.FC<CustomSelectProps> = ({
@@ -46,12 +52,15 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
     isDaylight = false,
     theme,
     className,
+    triggerPrefix,
     menuClassName,
+    menuMotion = 'default',
     menuMinWidth = 0,
     getPortalContainer,
     getClipElement,
     getAnchorElement,
     keyboardNavigation = false,
+    menuAction,
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -67,6 +76,18 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
         minWidth: menuMinWidth, getClipElement, getAnchorElement, close });
     const key = useCustomSelectKeyboard({ enabled: keyboardNavigation, open: isOpen, ready: Boolean(dropdownPosition),
         value, options, navigation: menuNavigation, trigger: triggerRef, show, close });
+    const handleKey = (event: React.KeyboardEvent<HTMLDivElement>) => {
+        if (keyboardNavigation && isOpen && menuAction && event.key === 'Tab') {
+            const footer = menuRef.current?.querySelector<HTMLButtonElement>('[data-custom-select-footer]');
+            if (event.target === footer && event.shiftKey) {
+                event.preventDefault(); menuNavigation.current?.focusOption(Math.max(0, options.findIndex(option => option.value === value))); return;
+            }
+            if (event.target !== footer && !event.shiftKey && footer) {
+                event.preventDefault(); footer.focus({ preventScroll: true }); return;
+            }
+        }
+        key(event);
+    };
 
     // Toggle the dropdown menu visibility
     const handleToggle = () => {
@@ -105,7 +126,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
     const borderColor = isDaylight ? 'rgba(28, 25, 23, 0.14)' : 'rgba(244, 244, 245, 0.14)';
 
     return (
-        <div ref={containerRef} className={`relative w-full ${className ?? ''}`} onKeyDown={key}
+        <div ref={containerRef} className={`relative w-full ${className ?? ''}`} onKeyDown={handleKey}
             onBlurCapture={event => { if (keyboardNavigation && !containerRef.current?.contains(event.relatedTarget) && !menuRef.current?.contains(event.relatedTarget)) close(); }}>
             <button
                 ref={triggerRef}
@@ -126,6 +147,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
                     boxShadow: isOpen ? `0 0 0 1px ${accentColor}` : undefined,
                 }}
             >
+                {triggerPrefix && <span className="custom-select-prefix flex items-center shrink-0" aria-hidden="true">{triggerPrefix}</span>}
                 <span className="truncate">
                     {selectedOption ? selectedOption.label : placeholder}
                 </span>
@@ -142,6 +164,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
                         <CustomSelectMenu
                             id={menuId}
                             className={menuClassName}
+                            menuMotion={menuMotion}
                             keyboardNavigation={keyboardNavigation}
                             navigationRef={menuNavigation}
                             menuRef={menuRef}
@@ -153,6 +176,9 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
                             accentColor={accentColor}
                             textColor={textColor}
                             borderColor={borderColor}
+                            menuAction={menuAction ? { label: menuAction.label, onAction: () => {
+                                close(); menuAction.onAction();
+                            } } : undefined}
                             onSelect={(nextValue) => {
                                 onChange(nextValue);
                                 close();
