@@ -6,5 +6,8 @@
 .waiting-alternatives>summary{cursor:pointer;padding:var(--desktop-control-padding);border:1px solid var(--desktop-control-border);border-radius:var(--desktop-control-radius);background:var(--desktop-glass-control);box-shadow:none;font-size:var(--desktop-control-font-size);line-height:var(--desktop-control-line-height)}
 .waiting-alternatives[open]>summary{margin-bottom:8px}
 .waiting-alternatives .waiting-actions button{min-height:32px;padding:8px 12px}
+/* Short or narrow windows: scroll the content, shrink decorative elements, keep CTA prominent. */
 @media(max-width:640px),(max-height:400px){.waiting-screen{padding:82px 20px 92px;justify-content:flex-start;overflow-y:auto;overscroll-behavior:contain}.waiting-screen h1{font-size:22px;line-height:1.35;letter-spacing:.5px;margin-bottom:8px}.waiting-screen .waiting-description{font-size:11px;line-height:1.6;margin-bottom:8px}.waiting-screen .waiting-status{font-size:9px;line-height:1.5;margin-bottom:8px;-webkit-line-clamp:1}.waiting-screen .waiting-track{font-size:10px;margin-bottom:5px}.waiting-screen .waiting-actions button{min-height:32px;padding:7px 14px}.waiting-alternatives{margin-top:6px}}
+/* Very short windows: tighten the CTA even more and de-emphasise alternatives to save vertical space. */
+@media(max-height:380px){.waiting-screen{padding-top:74px;padding-bottom:80px}.waiting-screen h1{font-size:19px;margin-bottom:6px}.waiting-screen .waiting-description{margin-bottom:6px;font-size:10px}.waiting-screen .waiting-status{display:none}.waiting-alternatives>summary{padding:5px 10px}}
 @media(prefers-reduced-motion:reduce){.waiting-screen .online-spinner{animation:none}}

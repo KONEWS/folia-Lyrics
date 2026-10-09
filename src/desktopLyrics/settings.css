@@ -26,4 +26,6 @@
 @media(max-width:850px){.control-panel{right:16px;top:78px;bottom:82px;width:min(370px,calc(100% - 32px));border-radius:20px;padding:0 18px 18px}.panel-heading{margin-inline:-18px;padding:16px 18px}.panel-heading span{font-size:16px}}
 @media(max-height:600px){.control-panel{bottom:78px}.panel-heading{padding-block:14px}.control-panel:not(.desktop-visual-settings)>section{padding:17px 0}}
 @media(max-height:400px){.control-panel:not(.desktop-visual-settings)>section{padding:14px 0}.control-panel:not(.desktop-visual-settings)>section>.section-label{margin-bottom:12px}.control-panel:not(.desktop-visual-settings)>section>.toggle{margin-block:12px}.control-panel:not(.desktop-visual-settings)>section>.toggle:first-child{margin-top:0}.control-panel:not(.desktop-visual-settings)>section>.toggle:last-child{margin-bottom:0}.control-panel:not(.desktop-visual-settings)>.settings-visual-entry{margin-bottom:14px}}
+/* Narrow panel: online search collapses to a single column so inputs don't overflow or truncate. */
+@media(max-width:340px){.online-search{grid-template-columns:1fr}.online-search>.action-row{grid-column:1}}
 @media(forced-colors:active){.desktop-lyrics .panel-heading{background:Canvas;color:CanvasText;backdrop-filter:none;box-shadow:none}}

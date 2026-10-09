@@ -101,6 +101,28 @@ internal static class CoverChecks
         await Throws<OperationCanceledException>(() => cache.Read(3, "song-c", 6, Jpeg, () => false), check,
             "changed source revision rejects an otherwise complete thumbnail");
 
+        pending = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        var slowReads = 0;
+        Task<string> Slow() { slowReads++; return pending.Task; }
+        var errors = new List<Exception>();
+        check(cache.Refresh(4, "song-slow", 7, Slow, () => true, errors.Add) == "" && !pending.Task.IsCompleted,
+            "song and playback snapshot can return before a slow cover completes");
+        var pendingRefresh = cache.Read(4, "song-slow", 7, Slow, () => true);
+        clock.Advance(3);
+        check(cache.Refresh(4, "song-slow", 7, Slow, () => true, errors.Add) == "" && slowReads == 1,
+            "repeated clock polls reuse an in-flight thumbnail even after the retry deadline");
+        pending.SetResult(jpegUrl);
+        check(await pendingRefresh == jpegUrl && cache.Value == jpegUrl && errors.Count == 0,
+            "completed asynchronous cover is available to the next presentation poll");
+        pending = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        var staleEvent = cache.Read(4, "song-slow", 8, () => pending.Task, () => true);
+        await cache.Read(4, "song-slow", 9, Png, () => true);
+        pending.SetResult(jpegUrl);
+        await Throws<OperationCanceledException>(() => staleEvent, check, "older same-song artwork event cannot overwrite newer artwork");
+        check(cache.Value == pngUrl, "newer same-song cover survives old read completion");
+        check(cache.Refresh(4, "song-slow", 10, () => throw new IOException("cover failed"), () => true, errors.Add) == pngUrl
+            && errors.Count == 1, "background artwork errors are observed while retaining current cover");
+
         Song session = new("song-a", "Title", "Artist", "", "player", true, 1, 200, 1, true,
             [new("player", "Player")], "Album", "session-a", new(true, true, true, true, true));
         check(!MediaPresentation.Same(null, session), "initial media session is sent to the WebView");

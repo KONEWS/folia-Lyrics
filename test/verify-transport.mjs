@@ -67,8 +67,22 @@ export async function verifyTransport(page, song, output) {
   await emit('session', { ...song, playing: true });
   await page.getByRole('button', { name: '下一首', exact: true }).click();
   const old = await last();
+  const footer = await page.locator('.desktop-statusbar').elementHandle();
   await emit('session', { ...song, key: 'new-track', title: '切歌后的歌词', playing: false, position: 0 });
   await page.locator('.waiting-screen').waitFor();
+  await emit('lyrics', { key: 'new-track', title: '切歌后的歌词', artist: song.artist, content: '', source: '', cover: '', embedded: false });
+  const loadingFrames = await footer.evaluate(async original => {
+    const frames = [];
+    for (let frame = 0; frame < 8; frame++) {
+      await new Promise(resolve => requestAnimationFrame(resolve));
+      const current = document.querySelector('.desktop-statusbar'), style = current && getComputedStyle(current);
+      frames.push(original.isConnected && current === original && style?.visibility === 'visible'
+        && style.opacity === '1' && style.pointerEvents !== 'none');
+    }
+    return frames;
+  });
+  assert(loadingFrames.every(Boolean), 'normal playback controls stay mounted and visible while the next song has no lyrics');
+  await footer.dispose();
   await reply(old, false, 'obsolete-control-error');
   await noCaption('track change clears pending feedback');
   assert.equal(await page.getByText('obsolete-control-error', { exact: true }).count(), 0);
@@ -91,6 +105,6 @@ export async function verifyTransport(page, song, output) {
   assert.equal(await page.locator('audio,video').count(), 0);
   return ['pause/play/previous/next IPC target', 'pending shows only an icon and disables duplicate controls', 'successful ACK is silent and waits for real session state',
     'unrelated and duplicate replies cannot unlock requests or show errors', 'provider rejection appears once as a failure alert', 'retry clears the previous failure and successful retry stays silent',
-    'unsupported and disconnected controls use disabled buttons with explanatory tooltips', 'old command result ignored after track change', 'new track loads new lyrics',
+    'unsupported and disconnected controls use disabled buttons with explanatory tooltips', 'old command result ignored after track change', 'normal playback controls remain visible while new lyrics load', 'new track loads new lyrics',
     '680px controls visible', 'connection failure disables controls', 'no audio/video output'];
 }

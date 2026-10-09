@@ -15,11 +15,7 @@ internal sealed partial class MainWindow
             case "import":
                 using (var dialog = new OpenFileDialog { Title = "读取音乐文件中的歌词或独立歌词（不会播放）", Filter = "音乐或歌词|*.flac;*.mp3;*.m4a;*.mp4;*.ogg;*.opus;*.wav;*.ape;*.wma;*.aiff;*.lrc;*.ttml;*.yrc;*.qrc;*.fia|所有文件|*.*" })
                 {
-                    if (dialog.ShowDialog(this) != DialogResult.OK) return; var target = song; var work = StartWork(); automaticLookup = false;
-                    var imported = await Task.Run(() => library.Import(dialog.FileName, target));
-                    if (song?.Key != target?.Key || work.Revision != lyricRevision) { Send("notice", new { text = "歌词已保存，播放器已切歌，未覆盖当前歌曲。" }); return; }
-                    if (target is not null) onlineCache.Forget(target); OnlineStatus(new(song?.Key ?? "", false, "已使用导入的本地歌词", [], [], Phase: "ready"));
-                    lyrics = imported; lyricKey = song?.Key ?? ""; Send("lyrics", imported); Send("library", library.Summary());
+                    if (dialog.ShowDialog(this) == DialogResult.OK) await ImportLyrics(dialog.FileName);
                 }
                 break;
             case "addFolder":
@@ -56,7 +52,7 @@ internal sealed partial class MainWindow
                 OnlinePreferenceChanged(); break;
             case "searchOnline": await SearchOnline(cmd.GetProperty("value")); break;
             case "selectOnline": await SelectOnline(cmd.GetProperty("value")); break;
-            case "resetOnline": if (song is not null) { onlineCache.Forget(song); BeginResolve(song, true); } break;
+            case "resetOnline": await ResetOnline(); break;
         }
     }
     private async Task ControlMedia(JsonElement value)

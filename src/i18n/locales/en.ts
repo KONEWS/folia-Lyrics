@@ -22,6 +22,7 @@ export default {
       "translation": "Show translation",
       "topmost": "Always on top",
       "immersive": "Immersive display",
+      "showControls": "Show controls",
       "fullscreen": "Toggle fullscreen",
       "exitFullscreen": "Exit fullscreen (Esc)",
       "settings": "Open lyric settings",
@@ -50,7 +51,10 @@ export default {
       "localLyricsTitle": "Local lyric library",
       "localFormatsHelp": "Supported lyric formats",
       "onlineHelp": "About online matching",
-      "currentLyricSource": "Current lyric source: {{source}}"
+      "currentLyricSource": "Current lyric source: {{source}}",
+      "noTimelineNotice": "This player does not provide a timeline. Use the manual lyric clock in settings.",
+      "noTimelineAction": "Open settings",
+      "previewMode": "Preview mode · Sync and file access require the Windows EXE"
     },
     "waiting": {
       "region": "Lyric connection and matching status",

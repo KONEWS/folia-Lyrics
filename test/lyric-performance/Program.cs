@@ -88,7 +88,7 @@ try
     var localPath = WriteLyric("resolve.lrc", target.Title, target.Artist);
     var cache = new OnlineCache(Path.Combine(DataFiles.Root, "online-lyrics"));
     Lyrics Cached(string line) => new("old-session", target.Title, target.Artist, "[00:01.00]" + line, "cache", "", false);
-    DataFiles.Reset(); Seed(new Entry(localPath, target.Title, target.Artist)); cache.Save(target, Cached("manual"), "qq:manual", true);
+    DataFiles.Reset(); Seed(new Entry(localPath, target.Title, target.Artist)); await cache.SaveAsync(target, Cached("manual"), "qq:manual", true);
     using (var host = new MainWindow())
     {
         var elapsed = Stopwatch.StartNew(); await host.Resolve(target); elapsed.Stop();
@@ -97,7 +97,7 @@ try
         Check(TestProviders.Searches.IsEmpty, "manual cache avoids all provider requests");
         if (!baseline) Check(host.Status.Phase == "ready" && !host.Status.Busy, "manual cached lyrics publish ready without changing Busy");
     }
-    DataFiles.Reset(); Seed(new Entry(localPath, target.Title, target.Artist)); cache.Save(target, Cached("automatic"), "qq:auto", false);
+    DataFiles.Reset(); Seed(new Entry(localPath, target.Title, target.Artist)); await cache.SaveAsync(target, Cached("automatic"), "qq:auto", false);
     using (var host = new MainWindow())
     {
         var elapsed = Stopwatch.StartNew(); await host.Resolve(target); elapsed.Stop();
@@ -149,7 +149,7 @@ try
                 "manual search with no candidates and no errors still publishes failed");
         }
     }
-    cache.Forget(target); DataFiles.Reset(); Seed(new Entry(localPath, target.Title, target.Artist));
+    await cache.ForgetAsync(target); DataFiles.Reset(); Seed(new Entry(localPath, target.Title, target.Artist));
     using (var host = new MainWindow())
     {
         var old = host.Resolve(SongOf("Uncached", key: "old"));
@@ -173,7 +173,7 @@ try
     using (var host = new MainWindow(new Preferences { OnlineProviders = ["qq", "netease"] }))
     {
         await host.Resolve(SongOf("OnlyOnline", key: "online"));
-        Check(TestProviders.Searches.SelectMany(page => page).SequenceEqual(["qq", "netease"]), "enabled provider selection remains unchanged");
+        Check(TestProviders.Searches.SelectMany(page => page).Order().SequenceEqual(new[] { "qq", "netease" }.Order()), "enabled provider selection remains unchanged");
         Check(TestProviders.Fetches.Single() == "qq", "automatic selection retains configured provider priority");
         try { await host.Select("qq:selected", "old-key"); throw new Exception("stale selection accepted"); }
         catch (IOException) { Check(true, "manual selections retain song identity checks"); }
@@ -280,7 +280,7 @@ try
                 if (manual)
                 {
                     await host.Select("kugou:alternative", progressiveSong.Key);
-                    Check(cache.Read(progressiveSong) is { Manual: true }, "early manual selection is persisted as a manual binding");
+                    Check(await cache.ReadAsync(progressiveSong) is { Manual: true }, "early manual selection is persisted as a manual binding");
                 }
                 else await host.Resolve(target);
             }
@@ -324,6 +324,8 @@ try
                 "failed manual selection publishes failed while preserving prior lyrics and candidates");
         }
     }
+
+    if (!baseline) await ResponsivenessChecks.Run(Check, measurements);
 
     // Measure lookup work separately; --logic-only preserves the previously recorded baseline and optimized data.
     if (!logicOnly)

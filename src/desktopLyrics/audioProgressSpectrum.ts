@@ -20,3 +20,12 @@ export function spectrumLevels(bins: Uint8Array, sampleRate: number) {
 export function spectrumPath(levels: Float32Array) {
   return Array.from(levels, (level, i) => `M${((i + .5) * 1000 / levels.length).toFixed(2)} 49V${(47 - Math.min(1, Math.max(0, level)) * 44).toFixed(2)}`).join('');
 }
+
+// Preserve the existing attack/decay, then settle below the SVG's 0.01-unit precision so silence stops repainting.
+export function smoothSpectrumLevels(levels: Float32Array, target: Float32Array, delta: number) {
+  for (let i = 0; i < target.length; i++) {
+    const response = 1 - Math.exp(-Math.min(delta, 100) / (target[i] > levels[i] ? 70 : 180));
+    const next = levels[i] + (target[i] - levels[i]) * response;
+    levels[i] = target[i] === 0 && next < .0001 ? 0 : next;
+  }
+}

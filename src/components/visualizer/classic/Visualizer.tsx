@@ -175,7 +175,7 @@ const Word: React.FC<{
     renderProfile: ClassicLineRenderProfile;
     isChorus?: boolean;
     fontSize: string;
-}> = ({ word, config, currentTime, theme, isChaotic, layoutVariants, bodyVariants, baseColor, activeColor, renderProfile, isChorus, fontSize }) => {
+}> = React.memo(({ word, config, currentTime, theme, isChaotic, layoutVariants, bodyVariants, baseColor, activeColor, renderProfile, isChorus, fontSize }) => {
     const [status, setStatus] = useState<"waiting" | "active" | "passed">("waiting");
     const rippleScale = useMemo(() => 1.5 + Math.random() * 2, []);
     const duration = getClassicWordDisplayDuration(word, renderProfile);
@@ -282,7 +282,7 @@ const Word: React.FC<{
             </AnimatePresence>
         </motion.div>
     );
-};
+});
 
 const Visualizer: React.FC<VisualizerProps> = (props) => {
     const {
@@ -317,9 +317,10 @@ const Visualizer: React.FC<VisualizerProps> = (props) => {
         lines,
         getLineEndTime: getLineRenderEndTime,
     });
-    const activeLineRenderProfile = activeLine ? resolveClassicLineRenderProfile(activeLine) : null;
-    const activeWordRenderProfile = activeLineRenderProfile ?? (activeLine ? resolveClassicLineRenderProfile(activeLine) : null);
-    const activeLineContainerMotion = getClassicLineContainerMotion(activeLineRenderProfile);
+    // Playback toggles change the shell, not the word layout or its motion definitions.
+    const activeLineRenderProfile = useMemo(() => resolveClassicLineRenderProfile(activeLine), [activeLine]);
+    const activeWordRenderProfile = activeLineRenderProfile;
+    const activeLineContainerMotion = useMemo(() => getClassicLineContainerMotion(activeLineRenderProfile), [activeLineRenderProfile]);
 
     const [viewportWidth, setViewportWidth] = useState(() => (
         typeof window === 'undefined' ? 1200 : window.innerWidth
@@ -472,7 +473,7 @@ const Visualizer: React.FC<VisualizerProps> = (props) => {
 
     // Container motion is the "body" of each word.
     // waiting/active/passed all reuse the same layout config but interpret it differently.
-    const layoutVariants: Variants = {
+    const layoutVariants = useMemo<Variants>(() => ({
         waiting: ({ config }: any) => ({
             opacity: 0,
             scale: 0.5,
@@ -508,11 +509,11 @@ const Visualizer: React.FC<VisualizerProps> = (props) => {
                 }
             }
         })
-    };
+    }), [resolvedClassicTuning.enableWordRotation, theme.animationIntensity]);
 
     // Body layer is where color transition and blur cleanup happen.
     // Glow is separated so we can overdrive highlight without making the actual glyph unreadable.
-    const bodyVariants: Variants = {
+    const bodyVariants = useMemo<Variants>(() => ({
         waiting: ({ baseColor }: any) => ({
             color: baseColor,
             filter: "blur(10px)",
@@ -540,7 +541,7 @@ const Visualizer: React.FC<VisualizerProps> = (props) => {
                 filter: "none"
             }
         })
-    };
+    }), []);
 
     const lyricContainerFloat = useMemo(() => {
         const multiplier = resolvedClassicTuning.breathingFloatMultiplier;

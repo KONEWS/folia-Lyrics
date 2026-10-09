@@ -13,11 +13,11 @@ internal sealed class LyricLibrary
     private sealed record IndexedEntry(Entry Entry, string Artist);
     private Lazy<Dictionary<string, Entry[]>>? titleIndex;
     public object Summary() { lock (gate) return new { folders = state.Folders.ToArray(), count = state.Entries.Count }; }
-    public async Task Scan(string? folder, Action<string> progress, CancellationToken token)
+    public Task Scan(string? folder, Action<string> progress, CancellationToken token)
     {
         string[] folders;
         lock (gate) { folders = folder is null ? state.Folders.ToArray() : state.Folders.Append(folder).Distinct(StringComparer.OrdinalIgnoreCase).ToArray(); }
-        var entries = await Task.Run(() =>
+        return Task.Run(() =>
         {
             var result = new List<Entry>(); var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase); var failures = 0;
             foreach (var root in folders)
@@ -30,10 +30,11 @@ internal sealed class LyricLibrary
                     if (seen.Count % 40 == 0) progress($"已扫描 {seen.Count} 个文件，{failures} 个无法读取");
                 }
             }
-            progress($"扫描完成：{result.Count} 个文件，{failures} 个无法读取"); return result;
+            progress($"扫描完成：{result.Count} 个文件，{failures} 个无法读取");
+            token.ThrowIfCancellationRequested();
+            // Commit the scan on its worker too; serializing a large library must not resume on the UI thread.
+            lock (gate) { state.Folders = folders.ToList(); state.Entries = result; titleIndex = null; DataFiles.Save("library.json", state); }
         }, token);
-        token.ThrowIfCancellationRequested();
-        lock (gate) { state.Folders = folders.ToList(); state.Entries = entries; titleIndex = null; DataFiles.Save("library.json", state); }
     }
     public Lyrics? Find(Song song)
     {

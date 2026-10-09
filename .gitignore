@@ -93,6 +93,8 @@ native/release/
 native/web-assets.zip
 native/web-assets.sha256
 release/win-x64/
+# Native desktop builds are grouped by semantic version.
+release/[0-9]*.[0-9]*.[0-9]*/
 release/build-*/
 release/previous/
 test-results/desktop/

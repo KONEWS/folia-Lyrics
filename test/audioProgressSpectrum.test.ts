@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AUDIO_PROGRESS_BARS, spectrumLevels, spectrumPath } from '../src/desktopLyrics/audioProgressSpectrum';
+import { AUDIO_PROGRESS_BARS, smoothSpectrumLevels, spectrumLevels, spectrumPath } from '../src/desktopLyrics/audioProgressSpectrum';
 
 // test/audioProgressSpectrum.test.ts: ensure live bands never invent sound and map frequencies consistently.
 describe('audio progress spectrum', () => {
@@ -22,5 +22,19 @@ describe('audio progress spectrum', () => {
     expect([...levels].every(n => Number.isFinite(n) && n >= 0 && n <= 1)).toBe(true);
     expect(spectrumPath(levels).match(/M/g)?.length).toBe(AUDIO_PROGRESS_BARS);
     expect(spectrumPath(levels)).not.toMatch(/NaN|Infinity/);
+  });
+  it('settles silent decay without changing the visible rounded SVG and resumes immediately', () => {
+    const levels = new Float32Array(AUDIO_PROGRESS_BARS).fill(1), silent = new Float32Array(AUDIO_PROGRESS_BARS);
+    for (let frame = 0; frame < 90; frame++) {
+      const before = levels[0];
+      smoothSpectrumLevels(levels, silent, 1000 / 30);
+      if (before > 0 && levels[0] === 0) {
+        const unsnapped = new Float32Array(AUDIO_PROGRESS_BARS).fill(before * Math.exp(-(1000 / 30) / 180));
+        expect(spectrumPath(levels)).toBe(spectrumPath(unsnapped));
+      }
+    }
+    expect([...levels].every(value => value === 0)).toBe(true);
+    smoothSpectrumLevels(levels, new Float32Array(AUDIO_PROGRESS_BARS).fill(1), 1000 / 30);
+    expect(levels[0]).toBeCloseTo(1 - Math.exp(-(1000 / 30) / 70), 6);
   });
 });

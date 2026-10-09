@@ -4,6 +4,7 @@ import { openDesktopMenu, desktopSelect } from './desktop-select.mjs';
 import { visualDialog, openVisualSettings, closeVisualSettings, emitVisual, waitVisual, visualFrame } from './desktop-visual-fixture.mjs';
 import { secondaryStrongBackground } from './secondary-contrast-fixture.mjs';
 import { secondaryScrollbars } from './secondary-scrollbar-fixture.mjs';
+import { topbarAction } from './desktop-topbar-actions.mjs';
 
 // test/verify-secondary-ui.mjs — shared menu/notice skin, body portals and genuine keyboard input.
 const tokens = ['--glass-text', '--glass-line', '--desktop-glass-base', '--desktop-glass-panel', '--desktop-glass-hover',
@@ -153,19 +154,23 @@ export async function verifySecondaryUi(page, song, output) {
     phase = 'parent-close'; await closeVisualSettings(page); await page.locator('body.desktop-visual-dialogs').waitFor({ state: 'detached' });
 
     phase = 'compact-resize'; await page.setViewportSize({ width: 600, height: 650 });
-    // Keep the pointer in the resized window before keyboard input; leaving the surface deliberately releases menu focus.
-    await page.mouse.move(15, 110); await visualFrame(page); const more = page.getByRole('button', { name: '更多操作', exact: true });
-    phase = 'more-menu';
-    await more.focus(); await more.press('ArrowDown'); const moreMenu = page.getByRole('menu', { name: '更多操作', exact: true }); await moreMenu.waitFor();
-    await page.waitForFunction(() => document.querySelector('[role=menu][aria-label="更多操作"]')?.contains(document.activeElement));
-    const moreSkin = await record(moreMenu, 'more-menu'); assert.deepEqual(moreSkin.tokens, primarySkin.tokens);
-    controlContract(await record(moreMenu.getByRole('menuitemcheckbox').first(), 'more-action'), 'more action');
-    if (!await moreMenu.locator('[aria-checked=true]').count()) { await moreMenu.getByRole('menuitemcheckbox').first().click(); await more.press('ArrowDown'); await moreMenu.waitFor(); }
-    await selectedHover(moreMenu, moreMenu.locator('[aria-checked=true]').first(), 'more-selection');
-    await page.screenshot({ path: `${output}/secondary-more-menu.png` });
-    await page.keyboard.press('End'); assert(await moreMenu.getByRole('menuitem').last().evaluate(element => element === document.activeElement));
-    await page.keyboard.press('Escape'); await moreMenu.waitFor({ state: 'detached' }); assert(await more.evaluate(element => element === document.activeElement));
-    checks.push('the compact More menu uses the same controls and selected hover while ArrowDown, End and Escape keep actions keyboard accessible');
+    // Keep the pointer in the resized window before keyboard input; leaving the surface deliberately releases control focus.
+    await page.mouse.move(15, 110); await visualFrame(page);
+    phase = 'compact-inline-actions';
+    const translation = await topbarAction(page, '显示译文'), originalTranslation = await translation.getAttribute('aria-pressed');
+    const idleSkin = await record(translation, 'compact-inline-translation'); assert.deepEqual(idleSkin.tokens, primarySkin.tokens);
+    await translation.focus(); await translation.press('Space');
+    await page.waitForFunction(original => document.querySelector('.desktop-topbar [aria-label="显示译文"]')?.getAttribute('aria-pressed') !== original, originalTranslation);
+    assert.notEqual(await translation.getAttribute('aria-pressed'), originalTranslation);
+    assert(await translation.evaluate(element => element === document.activeElement));
+    if (await translation.getAttribute('aria-pressed') !== 'true') await translation.press('Enter');
+    await emitVisual(page, 'appearance', { acrylic: false, solid: true, highContrast: true });
+    const selected = await record(translation, 'compact-inline-contrast-selected'); assert.equal(selected.borderStyle, 'double');
+    await translation.press('Enter'); const unselected = await record(translation, 'compact-inline-contrast-unselected'); assert.equal(unselected.borderStyle, 'solid');
+    await emitVisual(page, 'appearance', { acrylic: false, solid: false, highContrast: false });
+    if (await translation.getAttribute('aria-pressed') !== originalTranslation) await translation.press('Enter');
+    await page.screenshot({ path: `${output}/secondary-inline-controls.png` });
+    checks.push('compact direct actions retain shared desktop tokens, keyboard focus and Space/Enter activation; high contrast distinguishes selected and unselected controls');
     return { checks, samples, runtimeErrors };
   } catch (error) {
     const events = await page.evaluate(() => window.__foliaSecondaryUiEvents);

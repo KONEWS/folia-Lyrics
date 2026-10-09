@@ -43,12 +43,9 @@ export async function verifyUxPolish(page, song, output) {
   const prefs = values => page.evaluate(values => window.__foliaSetMockPreferences(values), values);
   const open = () => page.locator('.desktop-topbar').getByRole('button', { name: '打开歌词设置', exact: true }).click();
   const close = async () => { if (await page.locator('.control-panel').count()) await page.keyboard.press('Escape'); await page.locator('.control-panel').waitFor({ state: 'detached' }); };
-  const menu = page.getByRole('menu', { name: '更多操作', exact: true });
-  const more = page.getByRole('button', { name: '更多操作', exact: true });
   const packet = { key: song.key, title: song.title, artist: song.artist, source: '精简界面验证来源', format: 'lrc', embedded: false, cover: '', content: '[00:01.00]音乐在播放\n[00:33.00]保留原版歌词和译文\n[00:42.00]下一行歌词', translation: '[00:33.00]这是译文' };
   const seed = async () => { await emit(page, 'session', song); await emit(page, 'lyrics', packet); await page.locator('.waiting-screen').waitFor({ state: 'detached' }); };
   const visible = (selector, value) => page.waitForFunction(({ selector, value }) => getComputedStyle(document.querySelector(selector)).visibility === (value ? 'visible' : 'hidden'), { selector, value });
-  const closedMenu = () => page.locator('.desktop-more-menu').waitFor({ state: 'detached' });
   // Test real hit testing rather than mere DOM presence, including controls inside short scrolling panels.
   const hit = async (locator, context, scroll = false) => {
     if (scroll) await locator.scrollIntoViewIfNeeded(); await frame(page);
@@ -75,10 +72,11 @@ export async function verifyUxPolish(page, song, output) {
       assert.match(await page.locator('.clock-readout').innerText(), /^0:36/);
       for (const control of [page.getByRole('combobox', { name: '歌词样式', exact: true }), page.getByRole('button', { name: '打开歌词设置', exact: true }), page.locator('.restore-controls'), ...['上一首', '继续播放音乐', '下一首'].map(name => page.getByRole('button', { name, exact: true }))]) await hit(control, `${width}x${height} ${await control.getAttribute('aria-label')}`);
       if (width === 450) {
-        assert(layout.topbar.height <= 44, 'compact topbar fits a 42px row'); assert(layout.footer.height <= 64, 'compact transport leaves the stage substantially taller');
-        assert(layout.footer.top - layout.topbar.bottom >= 140, '450x300 leaves at least 140px between compact bars, versus 80px in the baseline');
-        assert.equal(await page.getByRole('button', { name: '显示译文', exact: true }).count(), 0); await hit(more, 'compact More');
-      } else assert.equal(await more.count(), 0);
+        assert(layout.topbar.height <= 78, 'compact two-row toolbar preserves song details and direct actions within 78px'); assert(layout.footer.height <= 64, 'compact transport leaves space for the lyric stage');
+        assert(layout.footer.top - layout.topbar.bottom >= 106, '450x300 retains at least 106px of clear lyric space between the direct toolbar and transport');
+      }
+      assert.equal(await page.getByRole('button', { name: '更多操作', exact: true }).count(), 0);
+      for (const name of ['动画强度', '背景设置', '刷新主题色', '显示译文', '窗口置顶', '切换全屏']) await hit(await topbarAction(page, name), `${width}x${height} direct ${name}`);
       samples.push({ context: `chrome-${width}x${height}`, ...layout }); await shoot(`chrome-${width}x${height}`);
     }
     checks.push('1280 and 450 chrome keep song information at the top, time/transport at the bottom and reachable essential controls');
@@ -115,51 +113,44 @@ export async function verifyUxPolish(page, song, output) {
     await shoot('wide-state-without-check');
     checks.push('wide translation and pin controls toggle pressed state with accurate state titles and no checkmarks');
 
-    await page.setViewportSize({ width: 450, height: 300 }); await more.click(); await menu.waitFor();
-    assert.equal(await menu.locator('button').count(), 4);
-    const menuBox = await menu.boundingBox(); assert(menuBox.x >= 8 && menuBox.y >= 8 && menuBox.x + menuBox.width <= 442 && menuBox.y + menuBox.height <= 292);
-    for (const item of await menu.locator('button').all()) await hit(item, `More ${await item.getAttribute('aria-label')}`);
-    for (const name of ['显示译文', '窗口置顶']) { const item = menu.getByRole('menuitemcheckbox', { name, exact: true }); const checked = await item.getAttribute('aria-checked') === 'true';
-      const state = name === '显示译文' ? checked ? '译文已开启' : '译文已关闭' : checked ? '窗口已置顶' : '窗口未置顶';
-      assert.equal(await item.locator('.topbar-more-copy small').innerText(), state); assert.equal(await item.getAttribute('title'), state);
-      assert.equal(await item.locator('.topbar-more-check svg,.lucide-check').count(), 0); }
-    await shoot('more-450x300'); await page.keyboard.press('Escape'); await closedMenu(); assert.equal(await more.getAttribute('aria-expanded'), 'false');
+    await page.setViewportSize({ width: 450, height: 300 });
     const mediaBefore = await page.evaluate(() => window.__foliaCommands.filter(command => command.type === 'mediaControl').length);
-    await more.focus(); await page.keyboard.press('Space'); await menu.waitFor(); await page.keyboard.press('ArrowDown');
-    assert(await menu.evaluate(element => element.contains(document.activeElement))); await page.keyboard.press('Escape'); await closedMenu();
-    assert.equal(await page.evaluate(() => window.__foliaCommands.filter(command => command.type === 'mediaControl').length), mediaBefore);
     for (const name of ['显示译文', '窗口置顶']) {
       for (let step = 0; step < 2; step++) {
-        const item = await topbarAction(page, name), before = await item.getAttribute('aria-checked') === 'true'; await item.click(); await closedMenu();
-        assert(await more.evaluate(element => element === document.activeElement));
-        const updated = await topbarAction(page, name), on = await updated.getAttribute('aria-checked') === 'true';
-        assert.equal(on, !before, `${name}: compact command toggles its actual state`);
+        const item = await topbarAction(page, name), before = await item.getAttribute('aria-pressed') === 'true';
+        await item.focus(); await item.press(step === 0 ? 'Space' : 'Enter'); await frame(page);
+        await page.waitForFunction(({ name, before }) => document.querySelector(`.desktop-topbar [aria-label="${name}"]`)?.getAttribute('aria-pressed') === String(!before), { name, before });
+        assert(await item.evaluate(element => element === document.activeElement));
+        const on = await item.getAttribute('aria-pressed') === 'true';
+        assert.equal(on, !before, `${name}: direct compact command toggles its actual state with the keyboard`);
         const state = name === '显示译文' ? on ? '译文已开启' : '译文已关闭' : on ? '窗口已置顶' : '窗口未置顶';
-        assert.equal(await updated.locator('.topbar-more-copy small').innerText(), state); assert.equal(await updated.getAttribute('title'), state);
-        assert.equal(await updated.locator('.topbar-more-check svg,.lucide-check').count(), 0);
+        assert.equal(await item.getAttribute('title'), state);
+        assert.equal(await item.locator('.topbar-state-check,.lucide-check').count(), 0);
         if (name === '窗口置顶' && on) await shoot('compact-state-on-without-check');
-        await page.keyboard.press('Escape'); await closedMenu();
       }
     }
-    await more.click(); await menu.waitFor(); await page.setViewportSize({ width: 1280, height: 800 }); await closedMenu(); assert.equal(await more.count(), 0);
-    checks.push('compact More toggles accurate semantic and text states without checkmarks, retaining bounds, keyboard, Escape and focus restoration');
+    assert.equal(await page.evaluate(() => window.__foliaCommands.filter(command => command.type === 'mediaControl').length), mediaBefore,
+      'Space and Enter on a toolbar button do not also control playback');
+    await shoot('inline-450x300');
+    checks.push('compact inline translation and pinning retain accurate pressed states and titles, keyboard focus, Space/Enter activation and no accidental playback');
 
     await page.setViewportSize({ width: 450, height: 300 }); await page.getByRole('button', { name: '沉浸显示', exact: true }).click();
     await page.mouse.move(225, 150); await visible('.desktop-topbar', false); await page.mouse.move(225, 16); await visible('.desktop-topbar', true);
-    await more.click(); await menu.waitFor(); const anchor = await more.boundingBox(), target = await menu.locator('button').last().boundingBox();
+    const firstAction = await topbarAction(page, '动画强度'), lastAction = await topbarAction(page, '切换全屏');
+    const anchor = await firstAction.boundingBox(), target = await lastAction.boundingBox();
     const x = anchor.x + anchor.width / 2, start = anchor.y + anchor.height / 2, finish = target.y + target.height / 2;
     for (let step = 1; step <= 20; step++) { await page.mouse.move(x + (target.x + target.width / 2 - x) * step / 20, start + (finish - start) * step / 20);
-      assert.equal(await more.getAttribute('aria-expanded'), 'true', `immersive More survives pointer step ${step}`); }
+      assert.equal(await page.locator('.top-controls-revealed').count(), 1, `immersive inline controls survive pointer step ${step}`); }
     assert.equal(await page.locator('.top-controls-revealed').count(), 1); await visible('.desktop-statusbar', false);
-    await page.mouse.move(20, 150); await closedMenu(); await visible('.desktop-topbar', false);
+    await page.mouse.move(20, 150); await visible('.desktop-topbar', false);
     await page.mouse.move(225, 294); await visible('.desktop-statusbar', true); await visible('.desktop-topbar', false);
-    await page.mouse.move(225, 16); await more.click(); await menu.waitFor();
-    await emit(page, 'windowState', { maximized: false, fullscreen: false, clickThrough: true }); await closedMenu(); await visible('.desktop-topbar', false);
+    await page.mouse.move(225, 16); await visible('.desktop-topbar', true); await firstAction.focus();
+    await emit(page, 'windowState', { maximized: false, fullscreen: false, clickThrough: true }); await visible('.desktop-topbar', false);
     await emit(page, 'windowState', { maximized: false, fullscreen: false, clickThrough: false }); await emit(page, 'restore', {});
-    await prefs({ immersiveDelay: 1 }); await page.getByRole('button', { name: '沉浸显示', exact: true }).click(); await page.mouse.move(226, 16); await more.click(); await menu.waitFor();
-    await page.locator('.immersive.cursor-idle').waitFor(); await closedMenu(); await visible('.desktop-topbar', false);
+    await prefs({ immersiveDelay: 1 }); await page.getByRole('button', { name: '沉浸显示', exact: true }).click(); await page.mouse.move(226, 16); await visible('.desktop-topbar', true); await firstAction.focus();
+    await page.locator('.immersive.cursor-idle').waitFor(); await visible('.desktop-topbar', false);
     await emit(page, 'restore', {}); await prefs({ immersiveDelay: 30 });
-    checks.push('immersive More survives the trigger gap and menu pointer path, leaves cleanly and obeys independent bottom hover, click-through and idle hiding');
+    checks.push('immersive inline controls remain revealed while crossing their row, leave cleanly and obey independent bottom hover, click-through and idle hiding');
 
     const empty = { key: '', busy: false, phase: 'idle', message: '', errors: [], selectedKey: '', candidates: [] };
     const noPlayer = { ...song, key: '', title: '', artist: '', source: '', sources: [], sessionId: '', position: 0, duration: 0, hasTimeline: false, controls: null };

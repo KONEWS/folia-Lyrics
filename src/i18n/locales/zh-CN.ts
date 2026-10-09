@@ -22,6 +22,7 @@ export default {
       "translation": "显示译文",
       "topmost": "窗口置顶",
       "immersive": "沉浸显示",
+      "showControls": "显示控制栏",
       "fullscreen": "切换全屏",
       "exitFullscreen": "退出全屏（Esc）",
       "settings": "打开歌词设置",
@@ -50,7 +51,10 @@ export default {
       "localLyricsTitle": "本地歌词库",
       "localFormatsHelp": "支持的歌词格式",
       "onlineHelp": "在线匹配说明",
-      "currentLyricSource": "当前歌词来源：{{source}}"
+      "currentLyricSource": "当前歌词来源：{{source}}",
+      "noTimelineNotice": "此播放器未提供有效进度，请在设置中使用手动歌词时钟。",
+      "noTimelineAction": "查看设置",
+      "previewMode": "界面预览 · 自动同步与文件读取需在 Windows EXE 中使用"
     },
     "waiting": {
       "region": "歌词等待状态",

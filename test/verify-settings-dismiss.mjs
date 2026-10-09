@@ -3,6 +3,7 @@ import { PNG } from 'pngjs';
 import { openDesktopMenu, selectDesktopOption } from './desktop-select.mjs';
 import { visualDialog, backgroundDialog, openVisualSettings, openBackgroundSettings, readVisual,
   waitVisual, visualFrame, emitVisual, readVisualCache } from './desktop-visual-fixture.mjs';
+import { openDesktopSegmentation, expectDesktopSegmentationReturn } from './desktop-segmentation-actions.mjs';
 
 // test/verify-settings-dismiss.mjs — real pointer dismissal, portal layering and original draft boundaries.
 export async function verifySettingsDismiss(page, song, output) {
@@ -146,17 +147,17 @@ export async function verifySettingsDismiss(page, song, output) {
   await emitVisual(page, 'session', segmentSong); await emitVisual(page, 'lyrics', packet);
   await page.waitForFunction(() => window.__foliaReadVisualizerProps?.()?.lines[0]?.fullText === '春风吹过原野');
   const segmentation = page.getByRole('dialog', { name: '本曲歌词分词', exact: true });
-  const openSegmentation = async () => { await page.locator('.segmentation-shortcut').click(); await segmentation.waitFor();
-    await page.waitForFunction(() => !document.querySelector('.desktop-segmentation-editor textarea')?.disabled); };
+  const openSegmentation = () => openDesktopSegmentation(page);
   await openSegmentation(); const originalText = await segmentation.getByRole('textbox', { name: '分词内容', exact: true }).inputValue();
   const originalLines = (await readVisual(page)).lines;
   await segmentation.getByRole('textbox', { name: '分词内容', exact: true }).fill('春/风吹/过原野');
   await page.screenshot({ path: `${output}/settings-dismiss-segmentation.png` });
-  await outside(); await segmentation.waitFor({ state: 'detached' }); await focus('.segmentation-shortcut');
+  await outside(); await expectDesktopSegmentationReturn(page);
   assert.deepEqual((await readVisual(page)).lines, originalLines);
   assert.equal((await readVisualCache(page, `lyricSeg_desktop:${key}`)).length, 0, 'blank close discards unsaved segmentation without a write');
   await openSegmentation(); assert.equal(await segmentation.getByRole('textbox', { name: '分词内容', exact: true }).inputValue(), originalText);
-  await page.keyboard.press('Escape'); await segmentation.waitFor({ state: 'detached' }); await focus('.segmentation-shortcut');
+  await page.keyboard.press('Escape'); await expectDesktopSegmentationReturn(page);
+  await page.keyboard.press('Escape'); await settings.waitFor({ state: 'detached' }); await focus('[data-settings-trigger]');
   checks.push('segmentation outside close preserves Cancel semantics: unsaved text is discarded, timed lyrics and IndexedDB remain unchanged, and both outside and Escape restore the song grouping opener');
   samples.push({ context: 'segmentation-cancel', originalLines, originalText, mediaCommands: await commands() });
   return { checks, samples };

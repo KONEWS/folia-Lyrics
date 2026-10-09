@@ -34,10 +34,11 @@ internal sealed partial class MainWindow
         {
             if (target.Title.Length == 0) return;
             // Read cache and local files off the UI thread; debounce only requests that need the network.
-            var resolved = await Task.Run(() =>
+            var resolved = await Task.Run(async () =>
             {
                 work.Token.ThrowIfCancellationRequested();
-                var workerCached = onlineCache.Read(target);
+                var workerCached = await onlineCache.ReadAsync(target).ConfigureAwait(false);
+                work.Token.ThrowIfCancellationRequested();
                 Lyrics? workerLocal = null;
                 if (workerCached is not { Manual: true })
                 {
@@ -72,7 +73,8 @@ internal sealed partial class MainWindow
                         if (!Current(work, target)) return false;
                         if (packet is null) continue;
                         matched = packet; selectedCandidate = candidate; selectedKey = candidate.Key;
-                        ApplyLyrics(packet); SaveOnline(target, packet, candidate.Key, false);
+                        ApplyLyrics(packet); await SaveOnline(target, packet, candidate.Key, false);
+                        if (!Current(work, target)) return false;
                         OnlineStatus(new(target.Key, false, "已自动匹配 · " + packet.Source + "；正在补全其他搜索结果", page, errors.ToArray(), candidate.Key, "ready")); return true;
                     }
                     catch (OperationCanceledException) when (work.Token.IsCancellationRequested) { throw; }
@@ -96,8 +98,8 @@ internal sealed partial class MainWindow
         catch (Exception e) { if (Current(work, target)) OnlineStatus(new(target.Key, false, "匹配暂未完成，请重试", [], [e.Message], Phase: "failed")); }
     }
     private string[] EnabledSources() => (preferences.OnlineProviders ?? []).Where(OnlineLyrics.ProviderIds.Contains).Distinct().ToArray();
-    private void SaveOnline(Song target, Lyrics packet, string candidateKey, bool manual)
-    { try { onlineCache.Save(target, packet, candidateKey, manual); } catch (Exception e) { DataFiles.Log(e); } }
+    private async Task SaveOnline(Song target, Lyrics packet, string candidateKey, bool manual)
+    { try { await onlineCache.SaveAsync(target, packet, candidateKey, manual); } catch (Exception e) { DataFiles.Log(e); } }
     private async Task SearchOnline(JsonElement value)
     {
         if (!preferences.OnlineEnabled) return;
@@ -128,7 +130,8 @@ internal sealed partial class MainWindow
             var packet = await online.Fetch(candidate, target, work.Token);
             if (!Current(work, target)) return;
             if (packet is null) throw new IOException("这个版本没有可用的同步歌词，请尝试其他结果");
-            ApplyLyrics(packet); SaveOnline(target, packet, candidate.Key, true);
+            ApplyLyrics(packet); await SaveOnline(target, packet, candidate.Key, true);
+            if (!Current(work, target)) return;
             OnlineStatus(onlineState with { Busy = false, Message = "已使用 · " + packet.Source, SelectedKey = candidate.Key, Phase = "ready" });
         }
         catch (OperationCanceledException) when (work.Token.IsCancellationRequested) { }
@@ -139,5 +142,37 @@ internal sealed partial class MainWindow
         SavePreferences(); StartWork();
         OnlineStatus(onlineState with { Busy = false, Message = preferences.OnlineEnabled ? "歌词源设置已更新，可重新搜索" : "在线匹配已关闭；本地和已缓存歌词仍可使用", Phase = "idle" });
         if (preferences.OnlineEnabled && lyrics is null && song is not null) BeginResolve(song, false);
+    }
+    // Clear the cancelled lookup's busy state even when deleting a locked cache file fails.
+    private async Task ResetOnline()
+    {
+        if (song is not { } target) return;
+        var work = StartWork(); automaticLookup = false;
+        try { await onlineCache.ForgetAsync(target); if (Current(work, target)) BeginResolve(target, true); }
+        catch (Exception e)
+        {
+            if (Current(work, target)) OnlineStatus(onlineState with { Busy = false, Message = "重新匹配失败：" + e.Message, Errors = [e.Message], Phase = "failed" });
+            throw;
+        }
+    }
+    // Import and cache invalidation share one revision so late failures cannot overwrite a newer song's status.
+    private async Task ImportLyrics(string path)
+    {
+        var target = song; var work = StartWork(); automaticLookup = false;
+        bool IsCurrentImport() => !IsDisposed && !work.Token.IsCancellationRequested && work.Revision == lyricRevision && song?.Key == target?.Key;
+        try
+        {
+            var imported = await Task.Run(() => library.Import(path, target));
+            if (!IsCurrentImport()) { Send("notice", new { text = "歌词已保存，播放器已切歌，未覆盖当前歌曲。" }); return; }
+            if (target is not null) await onlineCache.ForgetAsync(target);
+            if (!IsCurrentImport()) { Send("notice", new { text = "歌词已保存，播放器已切歌，未覆盖当前歌曲。" }); return; }
+            OnlineStatus(new(song?.Key ?? "", false, "已使用导入的本地歌词", [], [], Phase: "ready"));
+            lyrics = imported; lyricKey = song?.Key ?? ""; Send("lyrics", imported); Send("library", library.Summary());
+        }
+        catch (Exception e)
+        {
+            if (IsCurrentImport()) OnlineStatus(onlineState with { Busy = false, Message = "歌词导入失败：" + e.Message, Errors = [e.Message], Phase = "failed" });
+            throw;
+        }
     }
 }

@@ -8,27 +8,39 @@ namespace FoliaLyrics;
 internal sealed class AudioSpectrum : IDisposable
 {
     private readonly object gate = new();
-    private WasapiLoopbackCapture? capture;
+    private readonly AudioCaptureMaintenance maintenance;
+    private volatile WasapiLoopbackCapture? capture;
     private MMDevice? device;
     private readonly float[] ring = new float[2048], smooth = new float[1024];
     private readonly Complex[] fft = new Complex[2048];
-    private int cursor; private long lastSamples; private string deviceId = "";
-    public string Status { get; private set; } = "声音响应未开启";
-    public int SampleRate { get; private set; } = 48000;
-    public void Ensure(bool enabled)
+    private int cursor, resetRevision, readRevision; private long lastSamples; private string deviceId = "";
+    private volatile bool capturing;
+    private volatile string status = "声音响应未开启";
+    private volatile int sampleRate = 48000;
+    public string Status => status;
+    public int SampleRate => sampleRate;
+    public AudioSpectrum() => maintenance = new(EnsureDevice, DataFiles.Log);
+    public void Ensure(bool enabled) => maintenance.Request(enabled);
+    private void EnsureDevice(bool enabled)
     {
-        if (!enabled) { Stop(); Status = "声音响应已关闭"; return; }
+        if (!enabled) { Stop(); status = "声音响应已关闭"; return; }
         try
         {
             using var enumerator = new MMDeviceEnumerator(); using var candidate = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
-            if (capture is not null && candidate.ID == deviceId) return;
+            if (capture is not null && capturing && candidate.ID == deviceId) return;
             Stop(); device = enumerator.GetDevice(candidate.ID); deviceId = candidate.ID;
-            capture = new WasapiLoopbackCapture(device); SampleRate = capture.WaveFormat.SampleRate;
+            capture = new WasapiLoopbackCapture(device); sampleRate = capture.WaveFormat.SampleRate;
             capture.DataAvailable += OnData;
-            capture.RecordingStopped += (_, e) => { deviceId = ""; if (e.Exception is not null) Status = "声音响应中断，正在重新连接"; };
-            capture.StartRecording(); Status = "系统声音响应已开启";
+            capture.RecordingStopped += OnStopped;
+            capturing = true; capture.StartRecording(); status = "系统声音响应已开启";
         }
-        catch (Exception e) { Stop(); Status = "无法读取输出声音（独占或 ASIO 模式可能不支持）"; DataFiles.Log(e); }
+        catch (Exception e) { Stop(); status = "无法读取输出声音（独占或 ASIO 模式可能不支持）"; DataFiles.Log(e); }
+    }
+    private void OnStopped(object? sender, StoppedEventArgs e)
+    {
+        if (!ReferenceEquals(sender, capture)) return;
+        capturing = false;
+        if (e.Exception is not null) status = "声音响应中断，正在重新连接";
     }
     private void OnData(object? sender, WaveInEventArgs e)
     {
@@ -58,7 +70,9 @@ internal sealed class AudioSpectrum : IDisposable
         bool fresh;
         lock (gate)
         {
-            fresh = capture is not null && Stopwatch.GetElapsedTime(lastSamples).TotalSeconds < .3;
+            // The capture worker owns device/ring reset; only this reader ever mutates FFT smoothing.
+            if (readRevision != resetRevision) { Array.Clear(smooth); readRevision = resetRevision; }
+            fresh = capturing && Stopwatch.GetElapsedTime(lastSamples).TotalSeconds < .3;
             if (fresh)
             {
                 var window = AudioSpectrumWindow.Coefficients;
@@ -79,9 +93,15 @@ internal sealed class AudioSpectrum : IDisposable
     }
     private void Stop()
     {
+        capturing = false;
         var previous = capture; capture = null;
-        if (previous is not null) { previous.DataAvailable -= OnData; previous.StopRecording(); previous.Dispose(); }
-        device?.Dispose(); device = null; deviceId = ""; lock (gate) { Array.Clear(ring); Array.Clear(smooth); }
+        if (previous is not null)
+        {
+            previous.DataAvailable -= OnData; previous.RecordingStopped -= OnStopped;
+            previous.StopRecording(); previous.Dispose();
+        }
+        device?.Dispose(); device = null; deviceId = "";
+        lock (gate) { Array.Clear(ring); cursor = 0; lastSamples = 0; resetRevision++; }
     }
-    public void Dispose() => Stop();
+    public void Dispose() => maintenance.Dispose();
 }

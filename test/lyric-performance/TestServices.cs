@@ -59,6 +59,8 @@ internal sealed partial class MainWindow : IDisposable
     public Task Resolve(Song target) { song = target; return ResolveLyrics(target, StartWork()); }
     public Task Select(string id, string key) => SelectOnline(JsonSerializer.SerializeToElement(new { id, songKey = key }));
     public Task Search(string title, string artist) => SearchOnline(JsonSerializer.SerializeToElement(new { title, artist }));
+    public Task Reset() => ResetOnline();
+    public Task Import(string path) => ImportLyrics(path);
     public OnlineState Status => onlineState;
     public (bool Automatic, double Duration, string AppliedKey) LookupSnapshot => (automaticLookup, lookupDuration, lyricKey);
     private void Send(string type, object data)

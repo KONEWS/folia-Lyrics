@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { selectDesktopOption } from './desktop-select.mjs';
 import { emitVisual, readVisual, waitVisual, readVisualCache, reloadVisualSong, visualFrame } from './desktop-visual-fixture.mjs';
+import { openDesktopSegmentation, expectDesktopSegmentationReturn, desktopSettingsPanel } from './desktop-segmentation-actions.mjs';
 
 // test/verify-desktop-segmentation.mjs — original grouping records change wordSegments while preserving exact timed words.
 export async function installDesktopSegmentationProbe(page) {
@@ -29,10 +30,9 @@ export async function verifyDesktopSegmentation(page, song, output, samples) {
           { text: fullText.slice(4), startTime: 3, endTime: 5 }] }] } }) });
   const packetA = packet(songA, '春风吹过原野'), packetB = packet(songB, '秋雨落在山川');
   const dialog = page.getByRole('dialog', { name: '本曲歌词分词', exact: true });
-  const open = async () => { await page.locator('.segmentation-shortcut').click(); await dialog.waitFor();
-    await page.waitForFunction(() => { const input = document.querySelector('.desktop-segmentation-editor textarea'); return input && !input.disabled; }); };
-  const close = async () => { await dialog.getByRole('button', { name: '关闭分词设置', exact: true }).click(); await dialog.waitFor({ state: 'detached' });
-    await page.waitForFunction(() => document.activeElement?.classList.contains('segmentation-shortcut')); };
+  const open = () => openDesktopSegmentation(page);
+  const close = async () => { await dialog.getByRole('button', { name: '关闭分词设置', exact: true }).click(); await expectDesktopSegmentationReturn(page);
+    await page.keyboard.press('Escape'); await desktopSettingsPanel(page).waitFor({ state: 'detached' }); };
   await selectDesktopOption(page, '歌词样式', { value: 'classic' });
   await emitVisual(page, 'session', songA); await emitVisual(page, 'lyrics', packetA);
   await page.waitForFunction(() => window.__foliaReadVisualizerProps?.()?.lines[0]?.fullText === '春风吹过原野');
