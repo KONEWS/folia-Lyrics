@@ -70,6 +70,53 @@ export async function verifyCoverImmersion(page, song, output) {
   assert.equal(command.value.songKey, 'newer-cover'); assert.equal(command.value.action, 'play');
   await emit('transport', { requestId: command.value.requestId, success: true, message: '测试成功' });
   await page.screenshot({ path: `${output}/immersive-bottom-controls.png` });
+  await page.evaluate(() => window.__foliaSetMockPreferences({ immersiveDelay: 30 }));
+  await page.waitForFunction(() => document.querySelector('.playback-controls')?.getAttribute('aria-busy') === 'false');
+  const footer = await page.locator('.desktop-statusbar').elementHandle();
+  await page.getByRole('button', { name: '下一首', exact: true }).focus();
+  await page.waitForFunction(() => getComputedStyle(document.querySelector('.desktop-statusbar')).opacity === '1');
+  // Sample consecutive rendered frames so a brief loading-state hide or focus reset cannot pass unnoticed.
+  const stableFooter = async (type, data, context) => {
+    const samples = await footer.evaluate(async (original, { type, data }) => {
+      const focused = document.activeElement;
+      if (type) window.__foliaEmit(type, data);
+      const frames = [];
+      for (let frame = 0; frame < 8; frame++) {
+        await new Promise(resolve => requestAnimationFrame(resolve));
+        const current = document.querySelector('.desktop-statusbar'), style = current && getComputedStyle(current);
+        frames.push({ sameNode: original.isConnected && current === original,
+          focused: original.contains(focused) && document.activeElement === focused,
+          visible: style?.visibility === 'visible' && style.opacity === '1' && style.pointerEvents !== 'none',
+          revealed: Boolean(document.querySelector('.immersive.controls-revealed')) });
+      }
+      return frames;
+    }, { type, data });
+    assert(samples.every(sample => sample.sameNode), `${context}: the original footer remains mounted`);
+    assert(samples.every(sample => sample.focused), `${context}: the focused playback button remains focused`);
+    assert(samples.every(sample => sample.visible && sample.revealed), `${context}: the playback controls never hide during lyric loading`);
+  };
+  const nextSong = { ...song, key: 'immersion-next-track', title: '等待新歌词的歌曲', cover: cover('#246edc'), position: 0 };
+  const nextLyrics = { key: nextSong.key, title: nextSong.title, artist: song.artist, content: '', source: '切歌验证', cover: '', embedded: false };
+  await stableFooter('session', nextSong, 'new song session');
+  await page.locator('.waiting-screen').waitFor();
+  await stableFooter('lyrics', nextLyrics, 'empty lyrics while matching');
+  await page.mouse.move(520, 320); await page.locator('.controls-revealed').waitFor({ state: 'detached' });
+  await page.waitForFunction(() => getComputedStyle(document.querySelector('.desktop-statusbar')).visibility === 'hidden');
+  await page.mouse.move(620, 760); await page.locator('.immersive.controls-revealed').waitFor();
+  await page.getByRole('button', { name: '继续播放音乐', exact: true }).click();
+  const nextCommand = await page.evaluate(() => window.__foliaCommands.filter(m => m.type === 'mediaControl').at(-1));
+  assert.equal(nextCommand.value.songKey, nextSong.key); assert.equal(nextCommand.value.sessionId, song.sessionId);
+  assert.equal(nextCommand.value.action, 'play', 'controls target the new song before its lyrics arrive');
+  await emit('transport', { requestId: nextCommand.value.requestId, success: true, message: '测试成功' });
+  await page.waitForFunction(() => document.querySelector('.playback-controls')?.getAttribute('aria-busy') === 'false'
+    && getComputedStyle(document.querySelector('.desktop-statusbar')).opacity === '1');
+  await page.getByRole('button', { name: '下一首', exact: true }).focus();
+  await stableFooter('lyrics', { ...nextLyrics, content: '[00:01.00]新歌曲歌词已加载\n[00:20.00]播放控件保持原位' }, 'lyrics received');
+  await page.locator('.waiting-screen').waitFor({ state: 'detached' });
+  await stableFooter(null, null, 'lyrics ready');
+  await page.screenshot({ path: `${output}/immersive-track-change-controls.png` });
+  await footer.dispose();
+  await page.evaluate(() => window.__foliaSetMockPreferences({ immersiveDelay: 2 }));
   await page.mouse.move(520, 320); await page.locator('.controls-revealed').waitFor({ state: 'detached' });
   await page.keyboard.press('Escape'); await page.locator('.immersive').waitFor({ state: 'detached' });
   await open(); await hover.uncheck(); await automatic.uncheck(); await close();
@@ -86,5 +133,5 @@ export async function verifyCoverImmersion(page, song, output) {
   await automatic.uncheck(); await close();
   await setDesktopCoverTheme(page, previousCoverTheme);
   console.log('PASS cover theme / configurable idle immersion / bottom controls checks');
-  return ['red-blue cover theme changes', 'neutral palette for monochrome covers', 'stable theme when returning', 'theme switch', 'high contrast preserved', 'stale extraction discarded', 'missing cover fallback', 'native preference commands', 'seconds validation', 'settings suspend timer', 'pointer resets timer', 'idle hides controls and cursor', 'bottom hover reveals working transport', 'leaving bottom hides focused controls', 'hover switch', 'manual immersive cursor hiding', 'mouse restores cursor', 'Escape restores controls', 'automatic switch', 'keyboard resets timer'];
+  return ['red-blue cover theme changes', 'neutral palette for monochrome covers', 'stable theme when returning', 'theme switch', 'high contrast preserved', 'stale extraction discarded', 'missing cover fallback', 'native preference commands', 'seconds validation', 'settings suspend timer', 'pointer resets timer', 'idle hides controls and cursor', 'bottom hover reveals working transport', 'track changes preserve the footer node, focus and visibility while lyrics clear and load', 'bottom hover remains interactive without lyrics and commands target the new song', 'leaving bottom hides focused controls', 'hover switch', 'manual immersive cursor hiding', 'mouse restores cursor', 'Escape restores controls', 'automatic switch', 'keyboard resets timer'];
 }

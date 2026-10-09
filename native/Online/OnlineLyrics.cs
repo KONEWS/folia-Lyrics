@@ -28,7 +28,7 @@ internal sealed class OnlineLyrics : IDisposable
     private Task<SearchPage>[] StartSearch(LyricQuery query, string[] enabled, CancellationToken token) => providers
         .Where(p => enabled.Contains(p.Id)).OrderBy(p => Array.IndexOf(ProviderIds, p.Id)).Select(async p =>
         {
-            try { return new SearchPage(await p.Search(query, token), ""); }
+            try { return new SearchPage(await Task.Run(() => p.Search(query, token), token).ConfigureAwait(false), ""); }
             catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
             catch (Exception e) { return new SearchPage([], $"{p.Name}：{(e is OperationCanceledException ? "请求超时" : e.Message)}"); }
         }).ToArray();
@@ -40,15 +40,16 @@ internal sealed class OnlineLyrics : IDisposable
             .OrderByDescending(c => c.Score).ThenBy(c => Array.IndexOf(ProviderIds, c.Provider)).Take(40).ToArray();
         return new(candidates, pages.Where(p => p.Error.Length > 0).Select(p => p.Error).ToArray());
     }
-    public async Task<Lyrics?> Fetch(LyricCandidate candidate, Song song, CancellationToken token)
+    public Task<Lyrics?> Fetch(LyricCandidate candidate, Song song, CancellationToken token) => Task.Run(async () =>
     {
         var provider = providers.First(p => p.Id == candidate.Provider);
-        var result = await provider.Fetch(candidate, song, token); token.ThrowIfCancellationRequested();
+        // Provider decoding and response parsing may be substantial; keep them off the host's UI context.
+        var result = await provider.Fetch(candidate, song, token).ConfigureAwait(false); token.ThrowIfCancellationRequested();
         if (result is null) return null;
         if (result.Format == "qq-qrc") return result.Content.Length > 16 && Regex.IsMatch(result.Content, "^[0-9a-fA-F]+$") ? result : null;
         if (!Regex.IsMatch(result.Content, @"\[\d+(?::\d+|,\d+)[^\]]*\]")) return null;
         return result;
-    }
+    }, token);
     public static string Normalize(string value) => Regex.Replace(value.Normalize(NormalizationForm.FormKC).ToLowerInvariant(), @"[^\p{L}\p{N}]", "");
     internal static LyricCandidate Rank(LyricCandidate c, LyricQuery q)
     {

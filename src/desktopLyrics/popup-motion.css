@@ -1,9 +1,13 @@
 /* src/desktopLyrics/popup-motion.css — one brief entry for desktop menus and settings surfaces. */
 .desktop-lyrics aside.control-panel,
 .desktop-lyrics .desktop-glass-menu,
+.desktop-lyrics .desktop-notice,
+.desktop-lyrics .desktop-playback-bar .transport-caption.error,
 .desktop-visual-dialogs .desktop-glass-menu,
 .desktop-visual-dialogs .desktop-visual-asset-dialog>[role=dialog]{animation:desktop-popup-enter 160ms cubic-bezier(.2,.8,.2,1) backwards}
 .desktop-lyrics aside.control-panel,
+.desktop-lyrics .desktop-notice,
+.desktop-lyrics .desktop-playback-bar .transport-caption.error,
 .desktop-visual-dialogs .desktop-visual-asset-dialog>[role=dialog],
 .desktop-glass-menu[data-menu-placement=top],
 .desktop-visual-asset-dialog .desktop-glass-menu{--desktop-popup-offset:6px}
@@ -15,6 +19,8 @@
 @media(prefers-reduced-motion:reduce){
   .desktop-lyrics aside.control-panel,
   .desktop-lyrics .desktop-glass-menu,
+  .desktop-lyrics .desktop-notice,
+  .desktop-lyrics .desktop-playback-bar .transport-caption.error,
   .desktop-visual-dialogs .desktop-glass-menu,
   .desktop-visual-dialogs .desktop-visual-asset-dialog>[role=dialog]{animation:none!important;translate:none!important}
 }

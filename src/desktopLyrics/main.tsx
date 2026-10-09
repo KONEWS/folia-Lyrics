@@ -8,6 +8,7 @@ import './desktop.css';
 import './settings.css';
 import './window-chrome.css';
 import DesktopLyrics from './DesktopLyrics';
+import { prepareDesktopFonts } from './desktopFonts';
 import './reference-glass.css';
 import './cover-immersion.css';
 import './topbar.css';
@@ -19,4 +20,6 @@ import './desktop-theme.css';
 
 // src/desktopLyrics/main.tsx: Install Pixi's CSP-compatible implementation before loading the original renderers.
 const render = () => createRoot(document.getElementById('root')!).render(<React.StrictMode><DesktopLyrics/></React.StrictMode>);
-document.fonts.load('16px "Noto Sans CJK SC"').then(render, render);
+// Connect to the host immediately; only measured lyric layouts wait for their font.
+void prepareDesktopFonts();
+render();

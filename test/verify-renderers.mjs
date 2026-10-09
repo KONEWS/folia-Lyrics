@@ -118,6 +118,11 @@ try {
     assert.equal(errors.length, 0, errors.join('\n'));
     await writeFile(`${output}/transport-results.json`, JSON.stringify({ checks, appearanceChecks, errors }, null, 2));
     console.log(`PASS focused player transport: ${checks.length} checks`);
+  } else if (process.env.FOLIA_CHECKS_ONLY === 'audio-progress') {
+    const checks = await verifyAudioProgress(page, song, output);
+    assert.equal(errors.length, 0, errors.join('\n'));
+    await writeFile(`${output}/audio-progress-results.json`, JSON.stringify({ checks, appearanceChecks, errors }, null, 2));
+    console.log(`PASS focused audio progress: ${checks.length} checks`);
   } else if (process.env.FOLIA_CHECKS_ONLY === 'selected-controls') {
     const checks = await verifySelectedControls(page, song, output);
     assert.equal(errors.length, 0, errors.join('\n'));
@@ -213,6 +218,12 @@ try {
     results.push({ mode: label, mounted: true, consoleErrors: 0 });
     console.log('PASS', label);
   }
+  if (process.env.FOLIA_CHECKS_ONLY === 'renderers') {
+    assert.equal(errors.length, 0, errors.join('\n'));
+    await writeFile(`${output}/results.json`, JSON.stringify({ modes: results, appearanceChecks,
+      checks: ['host handshake', 'mode mounts', 'paused mode switch retains playback time', 'mode preference persists'], errors }, null, 2));
+    console.log(`PASS focused renderers: ${results.length} modes`);
+  } else {
   const lumiereChecks = await verifyLumiere(page, song, output);
   // Exercise real frame updates with a mocked external player, then freeze the lyric on pause.
   await clockMode();
@@ -309,6 +320,7 @@ try {
   assert.equal(errors.length, 0, errors.join('\n'));
   await writeFile(`${output}/results.json`, JSON.stringify({ modes: results, appearanceChecks, transportChecks, lumiereChecks, topbarChecks, glassChecks, playbackInputChecks, chromeLayoutChecks, settingsRefreshChecks, styleMenuChecks, uxPolishChecks, visualSettingsChecks, backgroundTopbarChecks, selectedControlsChecks, parserFormatChecks, checks: ['host handshake','mode mounts','paused mode switch initializes visible lyric without advancing time','offset','preference messages','pause','backward seek','immersion','no media element','track change clears lyrics','online source controls','manual search and selection','untimed result disabled','stale song and search results ignored'], errors }, null, 2));
   console.log('PASS desktop integration checks');
+  }
   }
 } catch (error) {
   // Preserve visible state on failure so hidden chrome and asynchronous lyric parsing can be distinguished.

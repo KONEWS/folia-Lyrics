@@ -7,6 +7,7 @@ void Check(bool condition, string name) { if (!condition) throw new Exception(na
 MediaControlRequest Request(string action = "pause") => new(Guid.NewGuid().ToString(), "session-a", "song-a", action);
 Task<MediaControlResult> Run(FakeTarget target, string action = "pause") => new MediaTransport().Execute(Request(action), () => target, () => true);
 await CoverChecks.Run(Check);
+await AudioMaintenanceChecks.Run(Check);
 
 foreach (var action in new[] { "play", "pause", "previous", "next" })
 {

@@ -2,10 +2,12 @@ import { useEffect, useId, useRef, type CSSProperties, type RefObject } from 're
 import { useMotionValueEvent, type MotionValue } from 'framer-motion';
 import i18n from '../i18n/config';
 import { timeLabel } from './clock';
-import { AUDIO_PROGRESS_BARS, spectrumLevels, spectrumPath } from './audioProgressSpectrum';
+import { AUDIO_PROGRESS_BARS, smoothSpectrumLevels, spectrumLevels, spectrumPath } from './audioProgressSpectrum';
 import './audio-progress.css';
 
 // src/desktopLyrics/AudioProgress.tsx: live output spectrum plus read-only, unshifted media progress.
+const SILENT_LEVELS = new Float32Array(AUDIO_PROGRESS_BARS);
+const SILENT_PATH = spectrumPath(SILENT_LEVELS);
 export default function AudioProgress({ time, duration, spectrum, input, playing, unavailable }: {
   time: MotionValue<number>; duration: number; spectrum: MotionValue<Uint8Array<ArrayBuffer>>;
   input: RefObject<{ sampleRate: number }>; playing: boolean; unavailable: boolean;
@@ -33,11 +35,8 @@ export default function AudioProgress({ time, duration, spectrum, input, playing
     lastFrame.current = now;
     // A settled silent spectrum already has the exact initial SVG; preserve nonzero decay without rebuilding it.
     if ((!playing || !bins.some(value => value !== 0)) && levels.current.every(value => value === 0)) return;
-    const target = playing ? spectrumLevels(bins, input.current.sampleRate) : new Float32Array(AUDIO_PROGRESS_BARS);
-    for (let i = 0; i < target.length; i++) {
-      const response = 1 - Math.exp(-Math.min(delta, 100) / (target[i] > levels.current[i] ? 70 : 180));
-      levels.current[i] += (target[i] - levels.current[i]) * response;
-    }
+    const target = playing ? spectrumLevels(bins, input.current.sampleRate) : SILENT_LEVELS;
+    smoothSpectrumLevels(levels.current, target, delta);
     bars.current?.setAttribute('d', spectrumPath(levels.current));
     root.current?.setAttribute('data-energy', Math.max(...levels.current).toFixed(3));
   });
@@ -48,7 +47,7 @@ export default function AudioProgress({ time, duration, spectrum, input, playing
       <defs><linearGradient id={`${id}-gradient`} gradientUnits="userSpaceOnUse" x1="0" x2="1000" y1="0" y2="0">
           <stop className="progress-gradient-light" offset="0%"/><stop className="progress-gradient-deep" offset="100%"/>
         </linearGradient><clipPath id={`${id}-clip`}><rect ref={clip} x="0" y="0" width="0" height="50"/></clipPath>
-        <path ref={bars} id={`${id}-bars`} d={spectrumPath(new Float32Array(AUDIO_PROGRESS_BARS))}/></defs>
+        <path ref={bars} id={`${id}-bars`} d={SILENT_PATH}/></defs>
       <use className="spectrum-remaining" href={`#${id}-bars`}/><use className="spectrum-played" href={`#${id}-bars`} clipPath={`url(#${id}-clip)`}/>
       <line className="progress-track" x1="0" x2="1000" y1="49" y2="49"/>
       <line ref={line} className="progress-played" x1="0" x2="0" y1="49" y2="49"/>

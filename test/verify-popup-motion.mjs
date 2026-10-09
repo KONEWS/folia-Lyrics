@@ -3,6 +3,8 @@ import { writeFile } from 'node:fs/promises';
 import { desktopSelect, openDesktopMenu, selectDesktopOption } from './desktop-select.mjs';
 import { visualDialog, backgroundDialog, openVisualSettings, closeVisualSettings, openBackgroundSettings, emitVisual, waitVisual, visualFrame } from './desktop-visual-fixture.mjs';
 import { popupMotion, popupItemVisible, popupStyleAligned, popupStyleLabels } from './popup-motion-fixture.mjs';
+import { openDesktopSegmentation, expectDesktopSegmentationReturn, desktopSettingsPanel } from './desktop-segmentation-actions.mjs';
+import { topbarAction } from './desktop-topbar-actions.mjs';
 
 // test/verify-popup-motion.mjs — uniform desktop entrances, settled positioning, genuine keyboard access and reduced motion.
 export async function verifyPopupMotion(page, song, output) {
@@ -74,12 +76,16 @@ export async function verifyPopupMotion(page, song, output) {
           if (!reduced) await page.screenshot({ path: `${output}/popup-motion-style-${size.width}-${edge}-selected.png` });
           await escape(selectedList); assert(await desktopSelect(page, '歌词样式').evaluate(element => element === document.activeElement));
         }
-        const more = page.getByRole('button', { name: '更多操作', exact: true }); await more.focus(); await more.press('ArrowDown');
-        const menu = page.getByRole('menu', { name: '更多操作', exact: true }); await motion(menu, `more-${size.width}`, reduced);
-        await page.keyboard.press('End'); await popupItemVisible(menu.getByRole('menuitem').last(), menu, 'last More action');
-        await escape(menu); assert(await more.evaluate(element => element === document.activeElement));
+        const translated = await topbarAction(page, '显示译文'), original = await translated.getAttribute('aria-pressed');
+        await translated.focus(); await translated.press('Space');
+        await page.waitForFunction(original => document.querySelector('.desktop-topbar [aria-label="显示译文"]')?.getAttribute('aria-pressed') !== original, original);
+        assert.notEqual(await translated.getAttribute('aria-pressed'), original);
+        await translated.press('Enter');
+        await page.waitForFunction(original => document.querySelector('.desktop-topbar [aria-label="显示译文"]')?.getAttribute('aria-pressed') === original, original);
+        assert.equal(await translated.getAttribute('aria-pressed'), original);
+        assert(await translated.evaluate(element => element === document.activeElement));
       }
-      checks.push(`${reduced ? 'reduced' : 'normal'} motion: player/style/More menus retain keyboard focus, complete first/last selections and both aligned edges in small windows`);
+      checks.push(`${reduced ? 'reduced' : 'normal'} motion: player/style menus retain keyboard focus, complete first/last selections and aligned edges; small-window inline actions remain keyboard accessible`);
       await page.setViewportSize(viewport); await selectDesktopOption(page, '歌词样式', { value: 'classic' });
       await openVisualSettings(page, 'common'); await motion(visualDialog(page), 'visual-settings-panel', reduced);
       await selectMenu('字体', reduced); await selectMenu('动画强度', reduced);
@@ -98,10 +104,9 @@ export async function verifyPopupMotion(page, song, output) {
       if (!reduced) await page.screenshot({ path: `${output}/popup-motion-body-menu.png` });
       await escape(menu); assert(await images.isVisible()); assert(await visualDialog(page).isVisible());
       await escape(images); assert(await visualDialog(page).isVisible()); await closeVisualSettings(page);
-      const segmentation = page.locator('.segmentation-shortcut'); await segmentation.focus(); await segmentation.press('Enter');
-      const dialog = page.getByRole('dialog', { name: '本曲歌词分词', exact: true }); await motion(dialog, 'segmentation-panel', reduced);
+      const dialog = await openDesktopSegmentation(page, { keyboard: true, waitReady: false }); await motion(dialog, 'segmentation-panel', reduced);
       await page.keyboard.press('Shift+Tab'); assert(await dialog.evaluate(element => element.contains(document.activeElement)));
-      await escape(dialog); assert(await segmentation.evaluate(element => element === document.activeElement));
+      await escape(dialog); await expectDesktopSegmentationReturn(page); await escape(desktopSettingsPanel(page));
       checks.push(`${reduced ? 'reduced' : 'normal'} motion: the original body asset/import layers and segmentation panel animate consistently and Escape closes only the current layer`);
       await page.setViewportSize({ width: 600, height: 450 });
       const tailList = await openDesktopMenu(page, '歌词样式'); await page.keyboard.press('End');

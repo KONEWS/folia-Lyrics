@@ -20,7 +20,7 @@ import SystemVolumeFeedback from './SystemVolumeFeedback';
 import { useDesktopSubtitleLayout } from './useDesktopSubtitleLayout';
 import { useImmersiveToggleIdle } from './useImmersiveToggleIdle';
 import DesktopWaitingScreen from './DesktopWaitingScreen';
-import DesktopStage from './DesktopStage';
+import { prepareDesktopFonts } from './desktopFonts';
 import { ALL_MODES } from './desktopModes';
 import { getVisualizerRegistryEntry } from '../components/visualizer/registry';
 import { useDesktopVisualSettings } from './useDesktopVisualSettings';
@@ -31,6 +31,7 @@ import { useTypographySettingsStore } from '../stores/useTypographySettingsStore
 import { useDesktopSettingsTransparency } from './useDesktopSettingsTransparency';
 
 // src/desktopLyrics/DesktopLyrics.tsx
+const DesktopStage = lazy(() => Promise.all([import('./DesktopStage'), prepareDesktopFonts()]).then(([stage]) => stage));
 const DesktopVisualSettings = lazy(() => import('./DesktopVisualSettings'));
 const DesktopSegmentationSettings = lazy(() => import('./DesktopSegmentationSettings'));
 export default function DesktopLyrics() {
@@ -47,9 +48,10 @@ export default function DesktopLyrics() {
     if (enabled && saved.hidePlayerTranslationSubtitle) saved.handleToggleHidePlayerTranslationSubtitle(false);
     if (saved.subtitleContentMode !== content || saved.showSubtitleTranslation !== enabled) saved.handleSetSubtitleContentMode(content);
   }, []);
-  const [panelSection, setPanelSection] = useState<'player' | 'online' | undefined>();
+  const [panelSection, setPanelSection] = useState<'player' | 'online' | 'segmentation' | undefined>();
   const [visualSection, setVisualSection] = useState<DesktopVisualSection | null>(null), [segmentationOpen, setSegmentationOpen] = useState(false);
   const visualOpener = useRef<HTMLElement | null>(null), segmentationOpener = useRef<HTMLElement | null>(null);
+  const segmentationFromSettings = useRef(false);
   const [immersiveProgress, setImmersiveProgress] = useState(() => localStorage.getItem('folia.desktop.immersiveProgress.v1') === 'true');
   const [manual, setManual] = useState<ManualClock>({ enabled: false, playing: false, position: 0, received: performance.now() });
   const songIdentity = state.session.key || state.lyricInfo?.key || (state.lyricInfo ? `${state.lyricInfo.source}\n${state.lyricInfo.title}\n${state.lyricInfo.artist}` : '');
@@ -89,12 +91,22 @@ export default function DesktopLyrics() {
       ? active : glassSurface.current?.querySelector<HTMLElement>('.topbar-mode-picker [role="combobox"]') ?? null;
   };
   const showVisualSettings = (section: DesktopVisualSection = 'visualizer') => { visualOpener.current = captureVisualOpener(); setPanel(false); setSegmentationOpen(false); setVisualSection(section); setImmersive(false); };
-  const showSegmentation = () => { if (canSegment) { segmentationOpener.current = captureVisualOpener(); setPanel(false); setVisualSection(null); setSegmentationOpen(true); setImmersive(false); } };
+  // Return to the current-song settings entry when the editor was opened from that panel.
+  const showSegmentation = () => {
+    if (!canSegment) return;
+    segmentationFromSettings.current = panel;
+    segmentationOpener.current = panel && document.activeElement instanceof HTMLElement ? document.activeElement : captureVisualOpener();
+    setPanel(false); setVisualSection(null); setSegmentationOpen(true); setImmersive(false);
+  };
+  const closeSegmentation = () => {
+    setSegmentationOpen(false);
+    if (segmentationFromSettings.current) { setPanelSection('segmentation'); setPanel(true); }
+  };
   return <main ref={glassSurface} style={coverTheme.style} className={`desktop-lyrics ${coverTheme.active ? 'cover-theme' : ''} ${immersive ? 'immersive' : ''} ${cursorHidden ? 'cursor-idle' : ''} ${immersiveToggleHidden ? 'immersive-toggle-idle' : ''} ${controlsRevealed ? 'controls-revealed' : ''} ${topControlsRevealed ? 'top-controls-revealed' : ''} ${state.fullscreen ? 'native-fullscreen' : ''} ${state.appearance.acrylic ? 'native-acrylic' : ''} ${state.appearance.transparent ? 'transparent-background' : ''} ${state.appearance.solid ? 'solid-surfaces' : ''} ${state.appearance.highContrast ? 'high-contrast' : ''}`}>
     {state.appearance.transparent ? <div className="transparent-veil" aria-hidden="true"/> : <AcrylicBackdrop cover={cover}/>}<WindowChrome/><div className="desktop-stage">
-    {state.lyrics.lines.length ? <DesktopStage mode={mode} onRecover={recoverStage} currentTime={runtime.currentTime} currentLineIndex={runtime.lineIndex} lines={segmentation.lyrics.lines} theme={visual.mergedTheme}
+    {state.lyrics.lines.length ? <Suspense fallback={null}><DesktopStage mode={mode} onRecover={recoverStage} currentTime={runtime.currentTime} currentLineIndex={runtime.lineIndex} lines={segmentation.lyrics.lines} theme={visual.mergedTheme}
         audioPower={runtime.audioPower} audioBands={runtime.audioBands} songTitle={title} songArtist={artist} coverUrl={cover || undefined} showText paused={!playing}
-        seed={state.session.key || title || 'desktop'} isPreviewMode={false} {...visual.rendererProps} isPlayerChromeHidden={!footerVisible}/> : <DesktopWaitingScreen session={state.session} online={state.online} preferences={state.preferences}
+        seed={state.session.key || title || 'desktop'} isPreviewMode={false} {...visual.rendererProps} isPlayerChromeHidden={!footerVisible}/></Suspense> : <DesktopWaitingScreen session={state.session} online={state.online} preferences={state.preferences}
       connectionError={state.connectionError} lyricStatus={state.lyricStatus} title={title} scanning={state.scan.active} onSettings={showSettings}/>}</div>
     <DesktopTopbar title={title} artist={artist} cover={cover} mode={mode} onMode={changeMode} translated={translated} onTranslated={changeTranslated}
       topmost={state.preferences.topmost} onTopmost={value => send('topmost', value)} playing={playing} connected={Boolean(state.session.key)} manual={manual.enabled}
@@ -102,7 +114,6 @@ export default function DesktopLyrics() {
       onVisualSettings={() => showVisualSettings()} animationIntensity={visual.animationIntensity} onAnimationIntensity={visual.setAnimationIntensity}
       onBackgroundSettings={() => { if (visualSection === 'background') setVisualSection(null); else showVisualSettings('background'); }}
       backgroundPanel={visualSection === 'background'} backgroundEnabled={visual.backgroundEnabled} backgroundSuppressed={visual.backgroundSuppressed}
-      canSegment={canSegment} savedSegmentation={Boolean(segmentation.record)} onSegmentation={showSegmentation}
       fullscreen={state.fullscreen} onFullscreen={() => send('fullscreen')} canRefreshTheme={coverTheme.canRefresh}
       refreshingTheme={coverTheme.refreshing} refreshThemeUnavailableReason={coverTheme.refreshUnavailableReason} onRefreshTheme={coverTheme.refresh}/>
     <footer ref={footer} className="desktop-statusbar desktop-playback-bar"><div className="status-left"><ClockReadout time={runtime.playbackTime} duration={duration}/></div>
@@ -111,14 +122,14 @@ export default function DesktopLyrics() {
       playing={playing} unavailable={Boolean(state.connectionError) || !manual.enabled && !state.session.hasTimeline}/> : null}
     {panel ? <ControlPanel mode={mode} onMode={changeMode} session={state.session} preferences={state.preferences} library={state.library} online={state.online} scan={state.scan} offset={offset} onOffset={changeOffset}
       translated={translated} onTranslated={changeTranslated} immersiveProgress={immersiveProgress} onImmersiveProgress={changeImmersiveProgress} manual={manual} setManual={setManual} audioStatus={state.audioStatus}
-      lyricSource={state.lyricInfo?.source} focusSection={panelSection} onVisualSettings={() => showVisualSettings()} onClose={() => setPanel(false)}/> : null}
+      lyricSource={state.lyricInfo?.source} focusSection={panelSection} onVisualSettings={() => showVisualSettings()} canSegment={canSegment} onSegmentation={showSegmentation} onClose={() => setPanel(false)}/> : null}
     {visualSection !== null || segmentationOpen ? <Suspense fallback={<aside className="control-panel" role="status">{i18n.t('desktopVisual.loadingSettings', { lng: 'zh-CN' })}</aside>}>
       {visualSection !== null ? <DesktopVisualSettings key={visualSection === 'background' ? 'background' : 'visual'} initialSection={visualSection} mode={mode} onMode={changeMode} model={visual}
-        returnFocus={visualOpener.current} canSegment={canSegment} onSegmentation={showSegmentation} onClose={() => setVisualSection(null)}/> : <DesktopSegmentationSettings model={segmentation} returnFocus={segmentationOpener.current} onClose={() => setSegmentationOpen(false)}/>}
+        returnFocus={visualOpener.current} canSegment={canSegment} onSegmentation={showSegmentation} onClose={() => setVisualSection(null)}/> : <DesktopSegmentationSettings model={segmentation} returnFocus={segmentationOpener.current} onClose={closeSegmentation}/>}
     </Suspense> : null}
     {state.notice || state.connectionError || state.session.key && !state.session.hasTimeline && !manual.enabled ? <div className="desktop-notice" role="status">
-      {state.notice || state.connectionError || '此播放器未提供有效进度，请在设置中使用手动歌词时钟。'}<button onClick={() => { state.setNotice(''); showSettings(); }}>查看设置</button></div> : null}
-    {!isDesktop() ? <div className="desktop-host-warning">界面预览 · 自动同步与文件读取需在 Windows EXE 中使用</div> : null}
+      {state.notice || state.connectionError || i18n.t('desktopLyrics.settings.noTimelineNotice', { lng: 'zh-CN' })}<button onClick={() => { state.setNotice(''); showSettings(); }}>{i18n.t('desktopLyrics.settings.noTimelineAction', { lng: 'zh-CN' })}</button></div> : null}
+    {!isDesktop() ? <div className="desktop-host-warning">{i18n.t('desktopLyrics.settings.previewMode', { lng: 'zh-CN' })}</div> : null}
     <SystemVolumeFeedback/>
   </main>;
 }

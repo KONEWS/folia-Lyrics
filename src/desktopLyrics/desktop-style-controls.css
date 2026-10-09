@@ -19,5 +19,4 @@
 .desktop-segmentation-actions button{padding:var(--desktop-control-padding);font-size:var(--desktop-control-font-size);line-height:var(--desktop-control-line-height);border:1px solid var(--desktop-control-border);border-radius:var(--desktop-control-radius);background:var(--desktop-glass-control);color:var(--glass-text)}
 .desktop-segmentation-actions button:disabled{opacity:.45;cursor:not-allowed}
 .high-contrast .desktop-segmentation-editor textarea,.high-contrast .desktop-segmentation-actions button,.high-contrast .desktop-top-menu .custom-select-footer{color:CanvasText!important;background:Canvas!important;border-color:CanvasText!important}
-@media(max-width:1100px){.desktop-topbar .style-intensity-button,.desktop-topbar .segmentation-shortcut{display:none}}
 @media(max-width:640px){.desktop-segmentation-editor textarea{min-height:80px;max-height:34vh}}

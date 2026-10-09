@@ -27,6 +27,8 @@ export function useDesktopPlaybackInput(options: Options) {
       && !surface.querySelector('.desktop-glass-menu');
     const key = (event: KeyboardEvent) => {
       if (!enabled() || event.defaultPrevented || event.isComposing || event.keyCode === 229 || modified(event) || editing(event.target) || editing(document.activeElement)) return;
+      // Focused toolbar controls keep their native keyboard activation; transport buttons retain playback shortcuts.
+      if ([event.target, document.activeElement].some(target => target instanceof Element && target.closest('.desktop-topbar-shell button'))) return;
       const action = event.code === 'Space' || event.key === ' ' ? latest.current.playing ? 'pause' : 'play'
         : event.key === 'ArrowLeft' ? 'previous' : event.key === 'ArrowRight' ? 'next' : null;
       if (!action) return;

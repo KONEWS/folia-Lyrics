@@ -7,6 +7,7 @@
     <Compile Include="../../native/DesktopAssets.cs" Link="DesktopAssets.cs"/>
     <Compile Include="../../native/AudioSpectrumWindow.cs" Link="AudioSpectrumWindow.cs"/>
     <Compile Include="../../native/AudioSpectrum.cs" Link="AudioSpectrum.cs"/>
+    <Compile Include="../../native/AudioCaptureMaintenance.cs" Link="AudioCaptureMaintenance.cs"/>
     <PackageReference Include="NAudio" Version="2.2.1"/>
   </ItemGroup>
 </Project>

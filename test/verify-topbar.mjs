@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readDesktopOptions, selectDesktopOption } from './desktop-select.mjs';
 import { clickTopbarAction, topbarAction } from './desktop-topbar-actions.mjs';
+import { desktopSegmentationEntry, openDesktopSegmentation, expectDesktopSegmentationReturn } from './desktop-segmentation-actions.mjs';
 
 // test/verify-topbar.mjs — exercise the desktop topbar through real pointer and keyboard input.
 export async function verifyTopbar(page, song, output) {
@@ -204,13 +205,21 @@ export async function verifyTopbar(page, song, output) {
   await open(); await bottomHover.check(); await automaticImmersion.check();
   await delay.fill(originalDelay); await delay.press('Enter'); await automaticImmersion.setChecked(originalAutomatic); await close();
 
-  // Include the smallest CSS viewport produced by the native minimum size at 150% display scaling.
-  for (const { width, height } of [{ width: 600, height: 450 }, { width: 450, height: 300 }]) {
+  assert(await page.getByRole('button', { name: '动画强度', exact: true }).isVisible());
+  assert.equal(await page.locator('.desktop-topbar').getByRole('button', { name: '本曲歌词分词', exact: true }).count(), 0);
+  assert.equal(await page.getByRole('button', { name: '更多操作', exact: true }).count(), 0);
+  await selectDesktopOption(page, '歌词样式', { value: 'cadenza' });
+  assert(await (await desktopSegmentationEntry(page)).isDisabled(), 'styles without word grouping disable the settings entry');
+  await close(); await selectDesktopOption(page, '歌词样式', { value: 'classic' });
+  checks.push('segmentation lives in synchronization settings and is disabled for styles that do not use word grouping');
+  // Cover ordinary narrow windows and the smallest CSS viewport from native minimum size at 150% scaling.
+  for (const { width, height } of [{ width: 1100, height: 800 }, { width: 900, height: 600 }, { width: 680, height: 450 }, { width: 600, height: 450 }, { width: 450, height: 300 }, { width: 400, height: 300 }]) {
     await page.setViewportSize({ width, height });
     await page.mouse.move(width / 2, height / 2);
     const dimensions = await page.evaluate(() => ({ width: innerWidth, html: document.documentElement.scrollWidth, body: document.body.scrollWidth }));
     assert(dimensions.html <= dimensions.width && dimensions.body <= dimensions.width, `${width}x${height} controls must not create horizontal overflow`);
-    for (const locator of [mode, page.getByRole('button', { name: '打开歌词设置', exact: true }), page.getByRole('button', { name: '更多操作', exact: true })]) {
+    assert.equal(await page.getByRole('button', { name: '更多操作', exact: true }).count(), 0);
+    for (const locator of [mode, page.getByRole('button', { name: '打开歌词设置', exact: true }), page.getByRole('button', { name: '背景设置', exact: true })]) {
       const box = await locator.boundingBox();
       assert(box && box.x >= 0 && box.y >= 0 && box.x + box.width <= width && box.y + box.height <= height);
       assert(await locator.evaluate(el => {
@@ -219,20 +228,41 @@ export async function verifyTopbar(page, song, output) {
         return target === el || el.contains(target);
       }), `${width}x${height} shortcut center must be reachable rather than covered by another element`);
     }
-    for (const name of ['显示译文', '窗口置顶', '切换全屏']) {
+    for (const name of ['动画强度', '刷新主题色', '显示译文', '窗口置顶', '切换全屏']) {
       const action = await topbarAction(page, name), box = await action.boundingBox();
       assert(box && box.x >= 0 && box.y >= 0 && box.x + box.width <= width && box.y + box.height <= height,
         `${width}x${height} compact command ${name} must remain in the viewport`);
       assert(await action.evaluate(element => { const bounds = element.getBoundingClientRect(), hit = document.elementFromPoint(bounds.left + bounds.width / 2, bounds.top + bounds.height / 2);
-        return hit === element || element.contains(hit); }), `${name}: More command has a reachable target`);
-      await page.keyboard.press('Escape'); await page.locator('.desktop-more-menu').waitFor({ state: 'detached' });
+        return hit === element || element.contains(hit); }), `${name}: direct toolbar command has a reachable target`);
+    }
+    if (width === 400) {
+      assert.equal(await page.locator('.track-caption strong').innerText(), song.title);
+      assert.equal(await page.locator('.track-caption small').innerText(), song.artist);
+      await page.screenshot({ path: `${output}/topbar-small-${width}x${height}.png` });
+      checks.push('400x300 retains song and artist with directly reachable toolbar controls and no horizontal overflow');
+      continue;
     }
     await selectDesktopOption(page, '歌词样式', { label: '流光' });
+    const intensity = await topbarAction(page, '动画强度');
+    const originalIntensity = await intensity.getAttribute('title');
+    await intensity.click();
+    assert.notEqual(await intensity.getAttribute('title'), originalIntensity, 'the direct intensity command updates its displayed value');
+    assert(['calm', 'normal', 'chaotic'].includes(await page.evaluate(() => localStorage.getItem('folia.desktop.animationIntensity.v1'))),
+      'the direct intensity command persists the selected value');
+    await intensity.click(); await clickTopbarAction(page, '动画强度');
+    assert.equal(await intensity.getAttribute('title'), originalIntensity, 'the direct intensity command cycles through all choices');
+    const segmentation = await openDesktopSegmentation(page);
+    await page.waitForFunction(() => {
+      const editor = document.querySelector('.desktop-segmentation-editor textarea');
+      return editor && !editor.disabled && editor.value.replaceAll('/', '').includes('音乐在播放');
+    });
+    await segmentation.getByRole('button', { name: '关闭分词设置', exact: true }).click();
+    await expectDesktopSegmentationReturn(page); await close();
     await clickTopbarAction(page, '显示译文'); await clickTopbarAction(page, '显示译文');
     await clickTopbarAction(page, '窗口置顶'); await clickTopbarAction(page, '窗口置顶');
     await open(); assert(await page.locator('.control-panel').isVisible()); await close();
     await page.screenshot({ path: `${output}/${width === 600 ? 'topbar-small' : `topbar-small-${width}x${height}`}.png` });
-    checks.push(`${width}x${height} controls stay within viewport without overflow or overlap`, `${width}x${height} style, translation, pinning and settings controls are usable`);
+    checks.push(`${width}x${height} direct controls stay within viewport without overflow or overlap`, `${width}x${height} style, intensity, translation and pinning work directly while segmentation opens from settings and returns there`);
   }
   await page.setViewportSize({ width: 1280, height: 800 });
   console.log('PASS topbar / windowed hover / Escape fullscreen checks');

@@ -88,7 +88,9 @@ export async function verifyDesktopVisualSettings(page, song, output) {
       else { withPanel++; assert(await originalPanel.locator('input,button').count() > 0, `${mode.value}: the real registry panel exposes its own controls`); }
       assert.equal(await panel.locator(`button[data-visual-mode="${mode.value}"]`).getAttribute('aria-pressed'), 'true');
       const canSegment = ['classic', 'partita', 'sonnet', 'tempera', 'lumiere'].includes(mode.value);
-      assert.equal(await page.locator('.segmentation-shortcut').isDisabled(), !canSegment);
+      const grouping = await setTab('common');
+      assert.equal(await grouping.getByRole('button', { name: '本曲歌词分词', exact: true }).isDisabled(), !canSegment);
+      await setTab('visualizer');
       samples.push({ context: 'registry-card', ...mode, dedicatedPanel: !none, canSegment });
     }
     assert.equal(withPanel, 12); assert.equal(withoutPanel, 2);
@@ -253,7 +255,7 @@ export async function verifyDesktopVisualSettings(page, song, output) {
   } catch (error) {
     const focus = await page.evaluate(() => ({ active: document.activeElement?.outerHTML.slice(0, 500),
       rootClass: document.querySelector('.desktop-lyrics')?.className,
-      segmentationOpener: document.querySelector('.segmentation-shortcut')?.outerHTML }));
+      segmentationOpener: document.querySelector('.settings-segmentation-entry')?.outerHTML }));
     await writeFile(`${output}/visual-settings-primary-failure.json`, JSON.stringify({ stage, error: String(error), checks, focus, snapshot: await readVisual(page), samples }, null, 2));
     await page.screenshot({ path: `${output}/visual-settings-primary-failure.png` }); throw error;
   } finally {

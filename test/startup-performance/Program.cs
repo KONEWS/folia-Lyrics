@@ -130,6 +130,10 @@ void CheckSpectrum()
             throw new Exception($"Silence decay changed at {frame}");
     }
     Check(true, "24 no-signal packets: actual AudioSpectrum.Read byte/float equality");
+    var beforeReset = smooth.ToArray();
+    typeof(AudioSpectrum).GetMethod("Stop", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(audio, null);
+    Check(smooth.SequenceEqual(beforeReset), "device reset leaves reader-owned smoothing untouched");
+    Check(audio.Read().All(value => value == 0) && smooth.All(value => value == 0), "spectrum reader consumes device reset before publishing its next packet");
 }
 
 static void Window(float[] signal, float[] target, bool cached)

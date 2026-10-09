@@ -21,21 +21,19 @@ internal sealed class MediaMonitor : IDisposable
         manager ??= await GlobalSystemMediaTransportControlsSessionManager.RequestAsync().AsTask(token);
         var sessions = manager.GetSessions().ToArray(); var current = manager.GetCurrentSession();
         var sources = sessions.Select(s => new MediaSource(s.SourceAppUserModelId, s.SourceAppUserModelId)).DistinctBy(s => s.Id).ToArray();
-        var candidates = Candidates(sessions);
+        // A bound session wins even while paused; query other players' playback only when choosing a new binding.
+        var candidates = Candidates(sessions, false);
+        var eligible = preferred.Length == 0 ? candidates : candidates.Where(s => s.Source == preferred).ToArray();
+        if (binding.Find(eligible, binding.Id) is null) candidates = Candidates(sessions);
         var selection = binding.Select(candidates, current is null ? 0 : WindowsSessionIdentity.Get(current), preferred);
         var session = selection?.Value;
         if (session is null) { Invalidate(); return new("", "", "", "", "", false, 0, 0, 1, false, sources); }
         WatchCover(session, selection!.Identity);
         var props = await session.TryGetMediaPropertiesAsync().AsTask(token); var info = session.GetPlaybackInfo(); var timeline = session.GetTimelineProperties();
+        if (readRevision != revision) throw new OperationCanceledException();
         var key = WindowsMediaControlTarget.SongKey(session, props);
-        var cover = "";
-        try
-        {
-            cover = await covers.Read(selection.Identity, key, Interlocked.Read(ref coverRevision),
-                () => ReadCover(props.Thumbnail, token), () => readRevision == revision && !token.IsCancellationRequested);
-        }
-        catch (OperationCanceledException) when (readRevision != revision || token.IsCancellationRequested) { throw; }
-        catch (Exception e) { DataFiles.Log(e); cover = covers.Value; }
+        var cover = covers.Refresh(selection.Identity, key, Interlocked.Read(ref coverRevision),
+            () => Task.Run(() => ReadCover(props.Thumbnail, token), token), () => readRevision == revision && !token.IsCancellationRequested, DataFiles.Log);
         var playing = info.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing;
         var rate = info.PlaybackRate ?? 1; if (!double.IsFinite(rate) || rate <= 0) rate = 1;
         var duration = Math.Max(0, (timeline.EndTime - timeline.StartTime).TotalSeconds);

@@ -33,12 +33,13 @@ export function useImmersiveControls({ root, immersive, setImmersive, panel, has
     };
     const blurChrome = () => { if (footerFocused() || topFocused()) (document.activeElement as HTMLElement).blur(); };
     if (!immersive) { cursor(false); controls(false); topControls(false); }
-    if (panel || !hasLyrics || clickThrough) { blurChrome(); cursor(false); controls(false); topControls(false); return; }
+    if (panel || clickThrough) { blurChrome(); cursor(false); controls(false); topControls(false); return; }
     if (fullscreen) { if (immersive && topFocused()) (document.activeElement as HTMLElement).blur(); topControls(false); }
     if (!bottomHoverControls) controls(false);
     const arm = () => {
       window.clearTimeout(timer);
-      if (!autoImmersive && !immersive) return;
+      // Loading lyrics must not interrupt revealed controls; empty waiting pages only skip entering immersion automatically.
+      if ((!autoImmersive || !hasLyrics) && !immersive) return;
       const seconds = Number.isFinite(immersiveDelay) ? Math.min(3600, Math.max(1, immersiveDelay)) : 30;
       timer = window.setTimeout(() => {
         controls(false); topControls(false); cursor(true); blurChrome();
