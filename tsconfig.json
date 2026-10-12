@@ -31,6 +31,7 @@
     "node_modules",
     "dist",
     "release",
+    "test-results",
     "sync-server",
     "original"
   ]

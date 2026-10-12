@@ -400,7 +400,7 @@ describe('integrated subscriber: SVG path reaches SILENT_PATH before the loop pa
     const spectrumMv = makeMotionValue<Uint8Array>(new Uint8Array(1024));
     // Bridge the loop's spectrum.set() calls to the stand-in.
     const originalSet = m.runtime.audioBands.spectrum.set.bind(m.runtime.audioBands.spectrum);
-    (m.runtime.audioBands.spectrum as unknown as { set: (v: Uint8Array) => void }).set = (v: Uint8Array) => { spectrumMv.set(v); originalSet(v); };
+    m.runtime.audioBands.spectrum.set = (v: Parameters<typeof originalSet>[0]) => { spectrumMv.set(v); originalSet(v); };
     const sub = makeSubscriber(spectrumMv, () => state.playing, 48000, () => perf.t);
     return { perf, state, m, sub };
   }

@@ -32,6 +32,7 @@ function memoryStorage() {
   return { storage, values };
 }
 const commit = () => { hooks.effects.splice(0).forEach(effect => effect()); };
+const readSnapshot = (): DesktopOffsetSnapshot | null => hooks.snapshot;
 
 describe('desktop song-version offsets', () => {
   it('uses album and rounded duration, preserving version labels and ignoring media session tokens', () => {
@@ -179,7 +180,7 @@ describe('imported lyrics without a media session', () => {
     hooks.snapshot = null; hooks.memo = null;
     const recreated = useDesktopLyricOffset(manualSong, { ...packet, source: 'renamed-file.lrc' }, storage);
     expect(recreated.offset).toBe(1.6);
-    expect(hooks.snapshot?.identity.key).toBe(key);
+    expect(readSnapshot()?.identity.key).toBe(key);
   });
 
   it('isolates same-name versions immediately when imported timing content changes', () => {
