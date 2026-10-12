@@ -5,7 +5,7 @@ import { resolveThemeFontWeight } from '../../../utils/fontStacks';
 import type { GraphemeTiming } from '../../../utils/lyrics/graphemeTiming';
 import { getLineRenderEndTime } from '../../../utils/lyrics/renderHints';
 import { useFontsEpoch } from '../../../hooks/useFontsEpoch';
-import { colorWithAlpha, mixColors } from '../colorMix';
+import { colorWithAlpha, mixColors } from '../../../utils/colorMix';
 import { resolveMonetFillWidth, resolveMonetGlow, MONET_SCROLL_SPRING, MONET_SCALE_SPRING } from './monetLyricMotion';
 import {
     buildWordColorRangesFromMatchers,

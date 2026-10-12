@@ -1,4 +1,4 @@
-import { parseColorChannels } from '../components/visualizer/colorMix';
+import { parseColorChannels } from './colorMix';
 
 // src/utils/themeColorMath.ts
 // Hex-space color math for theme generation: RGB/HSL conversion, WCAG luminance and contrast,

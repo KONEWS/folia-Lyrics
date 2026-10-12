@@ -9,7 +9,7 @@ import type { PanelTab } from '../UnifiedPanel';
 import type { AppView, CommandFilterHandle } from '../../stores/useAppViewStore';
 import type { GridSurfaceHandle } from '../../types/gridCommandSurface';
 import { type SettingsModalInitialTab, type SettingsSubviewId, type VisualizerSettingsSection } from '../../stores/useSettingsModalStore';
-import type { SettingsAnchorId } from '../modal/settings/navigation/settingsAnchorModel';
+import type { SettingsAnchorId } from '../../types/settingsNavigation';
 import type { LyricStaffAbsorbMode, LyricStaffPolicy } from '../../utils/lyrics/staffCreditsPolicy';
 import type { AudioEqualizerModeId } from '../../utils/audioEqualizer';
 import type { ThemeGenerationSource } from '../../services/themePreferences';

@@ -1,5 +1,5 @@
 import React from 'react';
-import { colorWithAlpha } from '../../colorMix';
+import { colorWithAlpha } from '../../../../utils/colorMix';
 import type { VisualizerBackgroundSettingsProps } from '../definition';
 import BackgroundToggleRow from '../BackgroundToggleRow';
 

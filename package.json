@@ -60,6 +60,7 @@
     "build:desktop": "vite build --config vite.desktop.config.ts",
     "typecheck:desktop": "tsc -p tsconfig.desktop.json --noEmit",
     "test:desktop": "vitest run -c vitest.desktop.config.ts",
+    "check:desktop-version": "node tools/check-desktop-version.mjs",
     "test:desktop:ui": "node test/verify-renderers.mjs"
   },
   "build": {

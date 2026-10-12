@@ -12,7 +12,7 @@ import {
 import { resolveMonetWordColor } from '@/components/visualizer/monet/MonetLyricsRail';
 import { buildMonetDisplayTokens, resolveMonetLyricContext } from '@/components/visualizer/monet/VisualizerMonet';
 import { buildMonetVisibleLineEntries, measureMonetLineLayout, resolveMonetSweepEdgeSoftness, resolveMonetSweepEnd } from '@/components/visualizer/monet/monetLyricsModel';
-import { colorWithAlpha, mixColors, parseColorChannels } from '@/components/visualizer/colorMix';
+import { colorWithAlpha, mixColors, parseColorChannels } from '@/utils/colorMix';
 import { buildWordColorRanges, prepareWordColorMatchers, resolveTokenColorMap } from '@/components/visualizer/wordColoring';
 import { resolveStoredLatentBackgroundTuning, resolveStoredMonetBackgroundTuning, resolveStoredMonetTuning, resolveStoredNomandBackgroundTuning, resolveVisualizerBackgroundMode } from '@/stores/visualizerSettingsPersistence';
 

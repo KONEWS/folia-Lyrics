@@ -1,6 +1,6 @@
 import React from 'react';
 import type { NomandBackgroundTuning, Theme } from '../../../../types';
-import { colorWithAlpha } from '../../colorMix';
+import { colorWithAlpha } from '../../../../utils/colorMix';
 
 // src/components/visualizer/backgrounds/nomand/NomandBackgroundEffectPanel.tsx
 // Shares the panel contract and slider presentation used by each Nomand effect variant.

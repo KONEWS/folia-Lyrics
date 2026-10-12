@@ -1,0 +1,27 @@
+/* src/desktopLyrics/music-app-discovery.css — modal confirmation shares the desktop glass palette. */
+.music-app-discovery-dialog{box-sizing:border-box;width:min(520px,calc(100vw - 28px));max-height:calc(100dvh - 28px);padding:20px;margin:auto;border:1px solid var(--glass-line,rgba(255,255,255,.16));border-radius:18px;background:rgba(24,27,40,.97);color:var(--glass-text,#eef1fb);box-shadow:0 18px 70px #0008;overflow:hidden;overscroll-behavior:contain}
+.music-app-discovery-dialog[open]{display:flex;flex-direction:column}
+.music-app-discovery-dialog>header,.music-app-discovery-dialog>p,.music-app-discovery-dialog>footer{flex:none}
+.music-app-discovery-dialog::backdrop{background:#06081099;backdrop-filter:blur(5px)}
+.music-app-discovery-dialog header,.music-app-discovery-dialog footer{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.music-app-discovery-dialog h2{font-size:17px;font-weight:600;margin:0}
+.music-app-discovery-dialog p{font-size:12px;line-height:1.7;color:var(--glass-muted,#abb3cb);margin:10px 0 16px}
+.music-app-discovery-dialog button{display:flex;align-items:center;justify-content:center;gap:6px;min-height:34px;padding:7px 11px;font:inherit;font-size:12px;cursor:pointer}
+.music-app-discovery-list{display:grid;flex:1 1 auto;min-height:0;gap:9px;overflow-y:auto;overscroll-behavior:contain}
+.music-app-discovery-row{display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--glass-line,rgba(255,255,255,.12));border-radius:10px}
+.music-app-discovery-row label{display:flex;align-items:center;gap:10px;flex:1;min-width:0;cursor:pointer}
+.music-app-discovery-row label>span:last-child{display:grid;gap:4px;min-width:0}
+.music-app-discovery-row strong,.music-app-discovery-row small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.music-app-discovery-row strong{font-size:13px;font-weight:500}
+.music-app-discovery-row small{font-size:10px;color:var(--glass-muted,#abb3cb)}
+.music-app-discovery-row input{flex:none;accent-color:#b4c3ff}
+.music-app-discovery-dialog .music-app-discovery-footnote{font-size:11px;margin:14px 0}
+.music-app-discovery-dialog footer{justify-content:flex-end}
+.music-app-blocked{margin-top:14px;font-size:12px}
+.music-app-blocked>p{line-height:1.6}
+.music-app-blocked-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:8px 0}
+.music-app-blocked-row>span{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.music-app-blocked-row button{flex:none;font-size:11px}
+.high-contrast .music-app-discovery-dialog{background:Canvas;color:CanvasText;border-color:CanvasText}
+.solid-surfaces .music-app-discovery-dialog{background:#181b28}
+@media(max-width:450px),(max-height:400px){.music-app-discovery-dialog{padding:14px}.music-app-discovery-row{padding:8px;gap:7px}.music-app-discovery-row .music-app-block span{display:none}.music-app-discovery-row .music-app-icon{width:24px;height:24px}}

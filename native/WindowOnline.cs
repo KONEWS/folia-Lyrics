@@ -57,7 +57,14 @@ internal sealed partial class MainWindow
             }
             var local = resolved.Local;
             if (local is not null) { ApplyLyrics(local); OnlineStatus(new(target.Key, false, "已使用本地歌词；也可手动搜索在线版本", [], [], Phase: "ready")); return; }
-            if (cached is not null) { ApplyLyrics(cached.Lyrics); OnlineStatus(new(target.Key, false, "已读取在线歌词缓存", [], [], cached.CandidateKey, "ready")); return; }
+            if (cached is not null)
+            {
+                if (preferences.OnlineEnabled && EnabledSources().Contains("qq") && !cached.CandidateKey.StartsWith("qq:", StringComparison.Ordinal)
+                    && cached.PriorityPolicy < OnlineLyrics.PriorityPolicyVersion)
+                    await RefreshPreferredCache(target, work, cached);
+                else { ApplyLyrics(cached.Lyrics); OnlineStatus(new(target.Key, false, "已读取在线歌词缓存", [], [], cached.CandidateKey, "ready")); }
+                return;
+            }
             if (!preferences.OnlineEnabled) { OnlineStatus(new(target.Key, false, "在线匹配已关闭", [], [])); return; }
             await Task.Delay(350, work.Token);
             if (!Current(work, target)) return;
@@ -69,7 +76,10 @@ internal sealed partial class MainWindow
                 {
                     try
                     {
-                        var packet = await online.Fetch(candidate, target, work.Token);
+                        // A slow lyric download must not prevent trying the other reliable automatic matches.
+                        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(work.Token);
+                        deadline.CancelAfter(TimeSpan.FromSeconds(2));
+                        var packet = await online.Fetch(candidate, target, deadline.Token).WaitAsync(deadline.Token);
                         if (!Current(work, target)) return false;
                         if (packet is null) continue;
                         matched = packet; selectedCandidate = candidate; selectedKey = candidate.Key;
@@ -78,6 +88,7 @@ internal sealed partial class MainWindow
                         OnlineStatus(new(target.Key, false, "已自动匹配 · " + packet.Source + "；正在补全其他搜索结果", page, errors.ToArray(), candidate.Key, "ready")); return true;
                     }
                     catch (OperationCanceledException) when (work.Token.IsCancellationRequested) { throw; }
+                    catch (OperationCanceledException) { errors.Add(candidate.Provider + "：歌词获取超时"); }
                     catch (Exception e) { errors.Add(candidate.Provider + "：" + e.Message); }
                 }
                 return false;
@@ -88,8 +99,7 @@ internal sealed partial class MainWindow
             {
                 var completed = result.Candidates;
                 // Keep the early selection visible when later high-scoring pages fill the 40-row result limit.
-                if (selectedCandidate is not null && !completed.Any(c => c.Key == selectedKey)) completed = completed.Take(39).Append(selectedCandidate)
-                    .OrderByDescending(c => c.Score).ThenBy(c => Array.IndexOf(OnlineLyrics.ProviderIds, c.Provider)).ToArray();
+                if (selectedCandidate is not null && !completed.Any(c => c.Key == selectedKey)) completed = OnlineLyrics.OrderCandidates(completed.Take(39).Append(selectedCandidate)).ToArray();
                 OnlineStatus(new(target.Key, false, "已自动匹配 · " + matched.Source, completed, errors.ToArray(), selectedKey, "ready")); return;
             }
             OnlineStatus(new(target.Key, false, result.Candidates.Length > 0 ? "未找到足够可靠的自动匹配，请选择一个搜索结果" : "没有找到歌词，可修改歌名/歌手后搜索或导入本地歌词", result.Candidates, errors.ToArray(), Phase: result.Candidates.Length > 0 ? "choice" : "failed"));
@@ -98,8 +108,49 @@ internal sealed partial class MainWindow
         catch (Exception e) { if (Current(work, target)) OnlineStatus(new(target.Key, false, "匹配暂未完成，请重试", [], [e.Message], Phase: "failed")); }
     }
     private string[] EnabledSources() => (preferences.OnlineProviders ?? []).Where(OnlineLyrics.ProviderIds.Contains).Distinct().ToArray();
+    // Re-evaluate an older automatic cache once under QQ-first priority, keeping it as a bounded fallback and publishing only the final choice.
+    private async Task RefreshPreferredCache(Song target, Work work, CachedOnline cached)
+    {
+        var errors = new List<string>(); LyricCandidate[] candidates = [];
+        OnlineStatus(new(target.Key, true, "正在优先检查 QQ 音乐歌词…", [], [], Phase: "matching"));
+        try
+        {
+            using var searchDeadline = CancellationTokenSource.CreateLinkedTokenSource(work.Token);
+            searchDeadline.CancelAfter(TimeSpan.FromMilliseconds(750));
+            var result = await online.Search(LyricQuery.From(target), ["qq"], searchDeadline.Token).WaitAsync(searchDeadline.Token);
+            if (!Current(work, target)) return;
+            candidates = result.Candidates; errors.AddRange(result.Errors);
+            foreach (var candidate in candidates.Where(c => c.AutoEligible).Take(2))
+            {
+                try
+                {
+                    using var downloadDeadline = CancellationTokenSource.CreateLinkedTokenSource(work.Token);
+                    downloadDeadline.CancelAfter(TimeSpan.FromSeconds(2));
+                    var packet = await online.Fetch(candidate, target, downloadDeadline.Token).WaitAsync(downloadDeadline.Token);
+                    if (!Current(work, target)) return;
+                    if (packet is null) continue;
+                    ApplyLyrics(packet); await SaveOnline(target, packet, candidate.Key, false);
+                    if (Current(work, target)) OnlineStatus(new(target.Key, false, "已自动匹配 · " + packet.Source, candidates, errors.ToArray(), candidate.Key, "ready"));
+                    return;
+                }
+                catch (OperationCanceledException) when (work.Token.IsCancellationRequested) { throw; }
+                catch (OperationCanceledException) { errors.Add("qq：歌词获取超时"); }
+                catch (Exception e) { errors.Add("qq：" + e.Message); }
+            }
+        }
+        catch (OperationCanceledException) when (work.Token.IsCancellationRequested) { throw; }
+        catch (OperationCanceledException) { errors.Add("qq：优先搜索超时，继续使用已缓存歌词"); }
+        catch (Exception e) { errors.Add("qq：" + e.Message); }
+        if (!Current(work, target)) return;
+        ApplyLyrics(cached.Lyrics); await SaveOnline(target, cached.Lyrics, cached.CandidateKey, false);
+        if (Current(work, target)) OnlineStatus(new(target.Key, false, "已读取在线歌词缓存；QQ 音乐暂无可用匹配", candidates, errors.ToArray(), cached.CandidateKey, "ready"));
+    }
     private async Task SaveOnline(Song target, Lyrics packet, string candidateKey, bool manual)
-    { try { await onlineCache.SaveAsync(target, packet, candidateKey, manual); } catch (Exception e) { DataFiles.Log(e); } }
+    {
+        // A match made while QQ is disabled has not evaluated its priority; enabling QQ later must still allow the one-time refresh.
+        var priorityPolicy = !manual && preferences.OnlineEnabled && EnabledSources().Contains("qq") ? OnlineLyrics.PriorityPolicyVersion : 0;
+        try { await onlineCache.SaveAsync(target, packet, candidateKey, manual, priorityPolicy); } catch (Exception e) { DataFiles.Log(e); }
+    }
     private async Task SearchOnline(JsonElement value)
     {
         if (!preferences.OnlineEnabled) return;
@@ -163,9 +214,9 @@ internal sealed partial class MainWindow
         try
         {
             var imported = await Task.Run(() => library.Import(path, target));
-            if (!IsCurrentImport()) { Send("notice", new { text = "歌词已保存，播放器已切歌，未覆盖当前歌曲。" }); return; }
+            if (!IsCurrentImport()) { Send("notice", new { text = "歌词已保存，播放器已切歌，未覆盖当前歌曲。", target = new { id = "local-import" } }); return; }
             if (target is not null) await onlineCache.ForgetAsync(target);
-            if (!IsCurrentImport()) { Send("notice", new { text = "歌词已保存，播放器已切歌，未覆盖当前歌曲。" }); return; }
+            if (!IsCurrentImport()) { Send("notice", new { text = "歌词已保存，播放器已切歌，未覆盖当前歌曲。", target = new { id = "local-import" } }); return; }
             OnlineStatus(new(song?.Key ?? "", false, "已使用导入的本地歌词", [], [], Phase: "ready"));
             lyrics = imported; lyricKey = song?.Key ?? ""; Send("lyrics", imported); Send("library", library.Summary());
         }

@@ -22,13 +22,13 @@ const SLIDER_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 
 const LABELS = { common: 'options.previewCommonSettings', background: 'options.previewBackgroundSettings',
   visualizer: 'options.previewVisualizerSettings', subtitle: 'options.previewSubtitleSettings' } as const;
 type Props = { mode: VisualizerMode; onMode: (mode: VisualizerMode) => void; model: DesktopVisualSettingsModel;
-  onClose: () => void; initialSection?: DesktopVisualSection; onSegmentation?: () => void; canSegment?: boolean; returnFocus?: HTMLElement | null };
+  onClose: () => void; initialSection?: DesktopVisualSection; navigationSequence?: number; onSegmentation?: () => void; canSegment?: boolean; returnFocus?: HTMLElement | null };
 
 export default function DesktopVisualSettings(props: Props) {
   return <DesktopVisualLanguage><DesktopVisualSettingsSurface {...props}/></DesktopVisualLanguage>;
 }
 
-function DesktopVisualSettingsSurface({ mode, onMode, model, onClose, initialSection = 'visualizer', onSegmentation, canSegment, returnFocus }: Props) {
+function DesktopVisualSettingsSurface({ mode, onMode, model, onClose, initialSection = 'visualizer', navigationSequence, onSegmentation, canSegment, returnFocus }: Props) {
   const t = useVisualTranslation();
   const id = useId();
   const panel = useRef<HTMLElement>(null);
@@ -46,6 +46,13 @@ function DesktopVisualSettingsSurface({ mode, onMode, model, onClose, initialSec
     // Capture opening focus once; model values change as the settings are edited.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  useEffect(() => {
+    if (navigationSequence === undefined) return;
+    setSection(initialSection);
+    const scroll = panel.current?.querySelector<HTMLElement>('.desktop-visual-content');
+    if (scroll) scroll.scrollTop = 0;
+    (document.getElementById(`${id}-${initialSection}`) ?? closeButton.current)?.focus({ preventScroll: true });
+  }, [id, initialSection, navigationSequence]);
   // Original asset portals remain in this React tree; Escape respects their in-flight write lock.
   const keyboard = (event: KeyboardEvent<HTMLElement>) => {
     if (event.defaultPrevented) return;
@@ -68,11 +75,11 @@ function DesktopVisualSettingsSurface({ mode, onMode, model, onClose, initialSec
     else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
   };
   return <aside ref={panel} role="dialog" aria-modal="true" aria-label={title} data-desktop-visual-settings
-    className="control-panel desktop-visual-settings" onKeyDown={keyboard}
+    className={`control-panel desktop-visual-settings${backgroundOnly ? ' desktop-background-settings' : ''}`} onKeyDown={keyboard}
     onKeyDownCapture={event => { if (event.target instanceof HTMLInputElement && event.target.type === 'range' && SLIDER_KEYS.has(event.key)) model.beginSlider(); }}
     onKeyUpCapture={event => { if (event.target instanceof HTMLInputElement && event.target.type === 'range' && SLIDER_KEYS.has(event.key)) model.commitSlider(); }}
     onBlurCapture={event => { if (event.target instanceof HTMLInputElement && event.target.type === 'range') model.commitSlider(); }}>
-    <header className="desktop-visual-heading"><div><h2 id={`${id}-heading`}>{title}</h2><p>{t('desktopVisual.headingHint')}</p></div>
+    <header className={`desktop-visual-heading${backgroundOnly ? ' panel-heading' : ''}`}><div><h2 id={`${id}-heading`}>{title}</h2>{!backgroundOnly ? <p>{t('desktopVisual.headingHint')}</p> : null}</div>
       <button ref={closeButton} type="button" aria-label={t(backgroundOnly ? 'desktopVisual.backgroundClose' : 'desktopVisual.close')} onClick={() => { model.commitSlider(); onClose(); }}><X size={19}/></button></header>
     {!backgroundOnly ? <div role="tablist" aria-label={t('desktopVisual.tabs')} className="desktop-visual-tabs">
       {SECTIONS.map(value => <button key={value} type="button" role="tab" id={`${id}-${value}`} aria-selected={section === value}
@@ -84,7 +91,7 @@ function DesktopVisualSettingsSurface({ mode, onMode, model, onClose, initialSec
           setSection(SECTIONS[next]); document.getElementById(`${id}-${SECTIONS[next]}`)?.focus();
         }}>{t(LABELS[value])}</button>)}
     </div> : null}
-    <div role={backgroundOnly ? 'region' : 'tabpanel'} id={`${id}-content`} aria-labelledby={backgroundOnly ? `${id}-heading` : `${id}-${section}`} data-visual-section={section} className="desktop-visual-content" key={section}>
+    <div role={backgroundOnly ? 'region' : 'tabpanel'} id={`${id}-content`} aria-labelledby={backgroundOnly ? `${id}-heading` : `${id}-${section}`} data-visual-section={section} className={`desktop-visual-content${backgroundOnly ? ' desktop-settings-scroll' : ''}`} key={section}>
       {section === 'common' ? <DesktopVisualCommon model={model} mode={mode} onSegmentation={onSegmentation} canSegment={canSegment}/> : section === 'background' ? <DesktopVisualBackground model={model} mode={mode}/>
         : section === 'subtitle' ? <DesktopVisualSubtitle model={model}/> : <DesktopVisualModes model={model} mode={mode} onMode={onMode}/>}
       <DesktopVisualConfigActions model={model} mode={mode} onMode={onMode}/>

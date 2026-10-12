@@ -11,7 +11,8 @@
 .desktop-lyrics.cover-theme.immersive:not(.high-contrast) .audio-progress{opacity:.48}
 .immersive.controls-revealed .desktop-statusbar{opacity:1;visibility:visible;pointer-events:auto}
 .immersive .window-chrome{opacity:0;visibility:hidden;pointer-events:none}
-.immersive.top-controls-revealed:not(.native-fullscreen) :is(.window-chrome,.desktop-topbar){opacity:1;visibility:visible;pointer-events:auto}
+.immersive.top-controls-revealed .desktop-topbar{opacity:1;visibility:visible;pointer-events:auto}
+.immersive.top-controls-revealed:not(.native-fullscreen) .window-chrome{opacity:1;visibility:visible;pointer-events:auto}
 .desktop-lyrics.cursor-idle,.desktop-lyrics.cursor-idle *{cursor:none!important}
 .cursor-idle .restore-controls{opacity:0;visibility:hidden;pointer-events:none}
 .control-panel .immersion-delay{display:flex;align-items:center;gap:10px;margin:12px 0;font-size:11px;color:var(--glass-muted)}

@@ -1,5 +1,5 @@
 import { Boxes, Command, Database, FlaskConical, Gauge, Keyboard, Languages, PlayCircle, Server, Sparkles, Terminal, type LucideIcon } from 'lucide-react';
-import { SETTINGS_ANCHOR_DEFINITIONS, type SettingsAnchorId } from './settingsAnchorModel';
+import { SETTINGS_ANCHOR_DEFINITIONS, type SettingsAnchorId } from '../../../../types/settingsNavigation';
 // src/components/modal/settings/navigation/settingsNavModel.ts
 // Single source of truth for the options-tab sections: sidebar order, grouping, titles and descriptions.
 

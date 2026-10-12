@@ -30,6 +30,8 @@ import { verifyPopupMotion } from './verify-popup-motion.mjs';
 import { verifyDesktopTheme } from './verify-desktop-theme.mjs';
 import { verifySettingsDismiss } from './verify-settings-dismiss.mjs';
 import { verifySettingsTransparency } from './verify-settings-transparency.mjs';
+import { verifyDesktopOffsets } from './verify-desktop-offset.mjs';
+import { verifyFullscreenImmersion } from './verify-fullscreen-immersion.mjs';
 
 // test/verify-renderers.mjs
 const root = resolve('dist-desktop');
@@ -63,7 +65,7 @@ try {
   await page.goto(process.env.FOLIA_TEST_URL || `http://127.0.0.1:${server.address().port}/desktop.html`, { waitUntil: 'networkidle' });
   await page.locator('.waiting-screen h1').waitFor();
   if (process.env.FOLIA_CHECKS_ONLY === 'settings-transparency') assert.equal(await page.locator('.waiting-description').innerText(),
-    '打开支持 Windows 媒体接口的播放器，播放一首歌；也可在设置中选择播放器。');
+    '点击下方图标启动音乐软件，再播放一首歌。软件可自动发现，也可手动绑定。');
   assert(await page.getByRole('button', { name: '继续播放音乐', exact: true }).isDisabled());
   await page.screenshot({ path: `${output}/welcome.png` });
   const appearanceChecks = process.env.FOLIA_CHECKS_ONLY === 'ux-polish-baseline' ? [] : await verifyAppearance(page, output);
@@ -79,7 +81,13 @@ try {
     window.__foliaEmit('lyrics', onlinePacket ? { ...onlinePacket, key: song.key } : { key: song.key, title: song.title, artist: song.artist, content: raw, source: '内嵌歌词 · Reborn.flac', cover: '', embedded: true });
   }, { song, raw, onlinePacket });
   await page.locator('.waiting-screen').waitFor({ state: 'detached' });
-  if (process.env.FOLIA_CHECKS_ONLY === 'settings-transparency') {
+  if (process.env.FOLIA_CHECKS_ONLY === 'offset') {
+    const report = await verifyDesktopOffsets(page, song, output);
+    await writeFile(`${output}/desktop-offset-results.json`, JSON.stringify({ ...report, appearanceChecks, errors }, null, 2));
+    assert.equal(errors.length, 0, errors.join('\n'));
+    assert.equal(report.runtimeErrors.length, 0, report.runtimeErrors.join('\n'));
+    console.log(`PASS focused desktop lyric offsets: ${report.checks.length} checks`);
+  } else if (process.env.FOLIA_CHECKS_ONLY === 'settings-transparency') {
     const report = await verifySettingsTransparency(page, song, output);
     await writeFile(`${output}/settings-transparency-results.json`, JSON.stringify({ ...report, appearanceChecks, errors }, null, 2));
     assert.equal(errors.length, 0, errors.join('\n'));
@@ -182,6 +190,12 @@ try {
     await writeFile(`${output}/glass-results.json`, JSON.stringify({ checks, errors }, null, 2));
     assert.equal(errors.length, 0, errors.join('\n'));
     console.log('PASS focused unified glass / nested menus integration checks');
+  } else if (process.env.FOLIA_CHECKS_ONLY === 'fullscreen-immersion') {
+    const checks = await verifyFullscreenImmersion(page, song, output);
+    assert.equal(errors.length, 0, errors.join('\n'));
+    const report = JSON.parse(await readFile(`${output}/fullscreen-immersion-results.json`, 'utf8'));
+    await writeFile(`${output}/fullscreen-immersion-results.json`, JSON.stringify({ ...report, checks, appearanceChecks, errors }, null, 2));
+    console.log('PASS focused fullscreen immersive mouse edge integration checks');
   } else if (process.env.FOLIA_CHECKS_ONLY === 'topbar') {
     const checks = await verifyTopbar(page, song, output);
     assert.equal(errors.length, 0, errors.join('\n'));
@@ -294,6 +308,7 @@ try {
   await writeFile(`${output}/cover-immersion-results.json`, JSON.stringify(coverImmersionChecks, null, 2));
   const topbarChecks = await verifyTopbar(page, song, output);
   await writeFile(`${output}/topbar-results.json`, JSON.stringify({ checks: topbarChecks, errors }, null, 2));
+  const fullscreenImmersionChecks = await verifyFullscreenImmersion(page, song, output);
   const glassChecks = await verifyGlassUi(page, song, output);
   await writeFile(`${output}/glass-results.json`, JSON.stringify({ checks: glassChecks, errors }, null, 2));
   await page.evaluate(song => window.__foliaEmit('session', { ...song, key: 'next', title: '另一首歌' }), song);
@@ -318,7 +333,7 @@ try {
   await writeFile(`${output}/chrome-layout-results.json`, JSON.stringify({ checks: chromeLayoutChecks, errors }, null, 2));
   const parserFormatChecks = await verifyDesktopParserFormats(page, song, output);
   assert.equal(errors.length, 0, errors.join('\n'));
-  await writeFile(`${output}/results.json`, JSON.stringify({ modes: results, appearanceChecks, transportChecks, lumiereChecks, topbarChecks, glassChecks, playbackInputChecks, chromeLayoutChecks, settingsRefreshChecks, styleMenuChecks, uxPolishChecks, visualSettingsChecks, backgroundTopbarChecks, selectedControlsChecks, parserFormatChecks, checks: ['host handshake','mode mounts','paused mode switch initializes visible lyric without advancing time','offset','preference messages','pause','backward seek','immersion','no media element','track change clears lyrics','online source controls','manual search and selection','untimed result disabled','stale song and search results ignored'], errors }, null, 2));
+  await writeFile(`${output}/results.json`, JSON.stringify({ modes: results, appearanceChecks, transportChecks, lumiereChecks, topbarChecks, fullscreenImmersionChecks, glassChecks, playbackInputChecks, chromeLayoutChecks, settingsRefreshChecks, styleMenuChecks, uxPolishChecks, visualSettingsChecks, backgroundTopbarChecks, selectedControlsChecks, parserFormatChecks, checks: ['host handshake','mode mounts','paused mode switch initializes visible lyric without advancing time','offset','preference messages','pause','backward seek','immersion','no media element','track change clears lyrics','online source controls','manual search and selection','untimed result disabled','stale song and search results ignored'], errors }, null, 2));
   console.log('PASS desktop integration checks');
   }
   }

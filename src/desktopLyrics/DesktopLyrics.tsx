@@ -29,18 +29,23 @@ import type { DesktopVisualSection } from './DesktopVisualSettings';
 import i18n from '../i18n/config';
 import { useTypographySettingsStore } from '../stores/useTypographySettingsStore';
 import { useDesktopSettingsTransparency } from './useDesktopSettingsTransparency';
+import { useDesktopLyricOffset } from './useDesktopLyricOffset';
+import { useDesktopSettingsModules } from './useDesktopSettingsModules';
+import DesktopNotice from './DesktopNotice';
+import DesktopMusicAppDiscovery from './DesktopMusicAppDiscovery';
+import type { DesktopNoticeData, DesktopSettingsRequest, DesktopSettingsTarget } from '../types/desktopSettings';
 
 // src/desktopLyrics/DesktopLyrics.tsx
 const DesktopStage = lazy(() => Promise.all([import('./DesktopStage'), prepareDesktopFonts()]).then(([stage]) => stage));
-const DesktopVisualSettings = lazy(() => import('./DesktopVisualSettings'));
-const DesktopSegmentationSettings = lazy(() => import('./DesktopSegmentationSettings'));
 export default function DesktopLyrics() {
   const state = useDesktopState();
+  const { visual: DesktopVisualSettings, segmentation: DesktopSegmentationSettings, open: openSettingsModule, cancel: cancelSettingsOpening } = useDesktopSettingsModules();
   const glassSurface = useGlassHighlights();
   useDesktopSettingsTransparency(glassSurface);
   const footer = useRef<HTMLElement>(null);
   const [mode, setMode] = useState<VisualizerMode>(() => ALL_MODES.find(m => m.mode === localStorage.getItem('folia.desktop.mode.v1'))?.mode ?? 'classic');
-  const [panel, setPanel] = useState(false), [immersive, setImmersive] = useState(false), [offset, setOffset] = useState(0);
+  const [panel, setPanel] = useState(false), [immersive, setImmersive] = useState(false);
+  const [discoveryOpen, setDiscoveryOpen] = useState(false);
   const translated = useTypographySettingsStore(settings => settings.showSubtitleTranslation && settings.subtitleContentMode !== 'none' && !settings.hidePlayerTranslationSubtitle);
   const changeTranslated = useCallback((enabled: boolean) => {
     const saved = useTypographySettingsStore.getState();
@@ -48,19 +53,22 @@ export default function DesktopLyrics() {
     if (enabled && saved.hidePlayerTranslationSubtitle) saved.handleToggleHidePlayerTranslationSubtitle(false);
     if (saved.subtitleContentMode !== content || saved.showSubtitleTranslation !== enabled) saved.handleSetSubtitleContentMode(content);
   }, []);
-  const [panelSection, setPanelSection] = useState<'player' | 'online' | 'segmentation' | undefined>();
+  const [panelNavigation, setPanelNavigation] = useState<DesktopSettingsRequest>();
+  const navigationSequence = useRef(0);
   const [visualSection, setVisualSection] = useState<DesktopVisualSection | null>(null), [segmentationOpen, setSegmentationOpen] = useState(false);
-  const visualOpener = useRef<HTMLElement | null>(null), segmentationOpener = useRef<HTMLElement | null>(null);
+  const [visualNavigation, setVisualNavigation] = useState(0);
+  const mainOpener = useRef<HTMLElement | null>(null), visualOpener = useRef<HTMLElement | null>(null), segmentationOpener = useRef<HTMLElement | null>(null);
   const segmentationFromSettings = useRef(false);
   const [immersiveProgress, setImmersiveProgress] = useState(() => localStorage.getItem('folia.desktop.immersiveProgress.v1') === 'true');
   const [manual, setManual] = useState<ManualClock>({ enabled: false, playing: false, position: 0, received: performance.now() });
   const songIdentity = state.session.key || state.lyricInfo?.key || (state.lyricInfo ? `${state.lyricInfo.source}\n${state.lyricInfo.title}\n${state.lyricInfo.artist}` : '');
-  const segmentation = useDesktopSegmentation(songIdentity, state.lyrics);
-  const runtime = useVisualizerClock(segmentation.lyrics.lines, state.clock, state.spectrum, manual, offset, state.preferences.audioReactive);
   const title = state.session.title || state.lyricInfo?.title || '', artist = state.session.artist || state.lyricInfo?.artist || '', cover = state.session.cover || state.lyricInfo?.cover || '';
+  const { offset, changeOffset } = useDesktopLyricOffset({ ...state.session, title, artist }, state.lyricInfo);
+  const segmentation = useDesktopSegmentation(songIdentity, state.lyrics);
+  const runtime = useVisualizerClock(segmentation.lyrics.lines, state.clock, state.spectrum, manual, offset, state.preferences.audioReactive, state.frameDemand);
   const coverTheme = useCoverTheme(cover, state.preferences.coverTheme);
   const visual = useDesktopVisualSettings({ baseTheme: coverTheme.theme, cover, transparent: Boolean(state.appearance.transparent), translated, onTranslated: changeTranslated });
-  const anyPanel = panel || visualSection !== null || segmentationOpen;
+  const anyPanel = panel || visualSection !== null || segmentationOpen || discoveryOpen;
   const canSegment = Boolean(state.lyrics.lines.length && getVisualizerRegistryEntry(mode).usesWordSegmentation);
   const { cursorHidden, controlsRevealed, topControlsRevealed } = useImmersiveControls({ root: glassSurface, immersive, setImmersive, panel: anyPanel,
     hasLyrics: state.lyrics.lines.length > 0, clickThrough: state.clickThrough, fullscreen: state.fullscreen, restore: state.restore, preferences: state.preferences });
@@ -69,39 +77,63 @@ export default function DesktopLyrics() {
   useDesktopSubtitleLayout(glassSurface, footer, footerVisible);
   const playing = manual.enabled ? manual.playing : state.session.playing && state.session.hasTimeline && !state.connectionError;
   const duration = manual.enabled ? state.lyrics.lines.at(-1)?.endTime ?? 0 : state.session.duration;
-  const offsetKey = `folia.desktop.offset.v1:${title}\n${artist}`;
-  useEffect(() => { const n = Number(localStorage.getItem(offsetKey)); setOffset(Number.isFinite(n) ? n : 0); }, [offsetKey]);
-  useEffect(() => setImmersive(false), [state.restore]);
-  useEffect(() => { if (state.clickThrough) { setImmersive(true); setPanel(false); setVisualSection(null); setSegmentationOpen(false); } }, [state.clickThrough]);
-  useEffect(() => setSegmentationOpen(false), [songIdentity]);
-  const restoreControls = useCallback(() => { setPanel(false); setVisualSection(null); setSegmentationOpen(false); setImmersive(false); }, []);
+  useEffect(() => { cancelSettingsOpening(); setImmersive(false); }, [state.restore, cancelSettingsOpening]);
+  useEffect(() => { if (state.clickThrough) { cancelSettingsOpening(); setImmersive(true); setPanel(false); setVisualSection(null); setSegmentationOpen(false); } }, [state.clickThrough, cancelSettingsOpening]);
+  useEffect(() => { cancelSettingsOpening('segmentation'); setSegmentationOpen(false); }, [songIdentity, state.preferences.source, cancelSettingsOpening]);
+  useEffect(() => { if (!canSegment) { cancelSettingsOpening('segmentation'); setSegmentationOpen(false); } }, [canSegment, cancelSettingsOpening]);
+  const restoreControls = useCallback(() => { cancelSettingsOpening(); setPanel(false); setVisualSection(null); setSegmentationOpen(false); setImmersive(false); }, [cancelSettingsOpening]);
   useDesktopHotkeys(state.fullscreen, restoreControls);
   const mediaControls = useMediaControls(state.session, Boolean(state.connectionError));
   useDesktopPlaybackInput({ root: glassSurface, active: Boolean(state.session.key || state.lyrics.lines.length), panel: anyPanel,
     clickThrough: state.clickThrough, playing: state.session.playing, control: mediaControls.control });
   const changeMode = useCallback((next: VisualizerMode) => { if (ALL_MODES.some(entry => entry.mode === next)) { setMode(next); localStorage.setItem('folia.desktop.mode.v1', next); } }, []);
   const recoverStage = useCallback(() => changeMode('classic'), [changeMode]);
-  const changeOffset = (next: number) => { const n = Math.round(Math.min(120, Math.max(-120, next)) * 10) / 10; setOffset(n); localStorage.setItem(offsetKey, String(n)); };
   const changeImmersiveProgress = (next: boolean) => { setImmersiveProgress(next); localStorage.setItem('folia.desktop.immersiveProgress.v1', String(next)); };
-  const showSettings = (section?: 'player' | 'online') => { setVisualSection(null); setSegmentationOpen(false); setPanelSection(section); setPanel(true); setImmersive(false); };
+  const showSettings = (target?: DesktopSettingsTarget) => {
+    // Capture the clicked entry before the previous panel restores focus during unmount.
+    if (!panel) mainOpener.current = glassSurface.current?.querySelector<HTMLElement>('[data-settings-trigger]') ?? null;
+    cancelSettingsOpening(); setVisualSection(null); setSegmentationOpen(false);
+    setPanelNavigation(target ? { sequence: ++navigationSequence.current, target } : undefined); setPanel(true); setImmersive(false);
+  };
+  const settingsLoadError = () => state.setNotice({ text: i18n.t('desktopVisual.settingsLoadFailed', { lng: 'zh-CN' }), target: { id: 'visual-settings' } });
   // Capture before lazy loading and chrome blur; discarded menu/panel buttons return to the persistent style trigger.
   const captureVisualOpener = () => {
     const active = document.activeElement;
     return active instanceof HTMLElement && active !== document.body && !active.closest('.control-panel,.desktop-top-menu')
       ? active : glassSurface.current?.querySelector<HTMLElement>('.topbar-mode-picker [role="combobox"]') ?? null;
   };
-  const showVisualSettings = (section: DesktopVisualSection = 'visualizer') => { visualOpener.current = captureVisualOpener(); setPanel(false); setSegmentationOpen(false); setVisualSection(section); setImmersive(false); };
+  const showVisualSettings = (section: DesktopVisualSection = 'visualizer', stableOpener?: HTMLElement | null) => {
+    const opener = stableOpener ?? captureVisualOpener();
+    openSettingsModule('visual', () => { visualOpener.current = opener; setPanel(false); setSegmentationOpen(false); setVisualSection(section); setVisualNavigation(value => value + 1); setImmersive(false); },
+      () => state.setNotice({ text: i18n.t('desktopVisual.settingsLoadFailed', { lng: 'zh-CN' }), target: { id: section === 'background' ? 'background-settings' : 'visual-settings' } }));
+  };
+  const navigateSettings = (target?: DesktopSettingsTarget) => {
+    if (target?.id === 'visual-settings' || target?.id === 'background-settings') showVisualSettings(target.id === 'background-settings' ? 'background' : 'visualizer',
+      glassSurface.current?.querySelector<HTMLElement>(target.id === 'background-settings' ? '[data-background-settings-trigger]' : '[data-settings-trigger]'));
+    else showSettings(target);
+  };
+  useEffect(() => {
+    // Host navigation runs after the restore effect, so it cannot cancel its own deferred module opening.
+    if (state.settingsRequest) navigateSettings(state.settingsRequest.target);
+    // Each host message owns a fresh request; ordinary renders must preserve drafts and scroll position.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.settingsRequest]);
   // Return to the current-song settings entry when the editor was opened from that panel.
   const showSegmentation = () => {
     if (!canSegment) return;
-    segmentationFromSettings.current = panel;
-    segmentationOpener.current = panel && document.activeElement instanceof HTMLElement ? document.activeElement : captureVisualOpener();
-    setPanel(false); setVisualSection(null); setSegmentationOpen(true); setImmersive(false);
+    const fromSettings = panel, opener = panel && document.activeElement instanceof HTMLElement ? document.activeElement : captureVisualOpener();
+    openSettingsModule('segmentation', () => {
+      segmentationFromSettings.current = fromSettings; segmentationOpener.current = opener;
+      setPanel(false); setVisualSection(null); setSegmentationOpen(true); setImmersive(false);
+    }, settingsLoadError);
   };
   const closeSegmentation = () => {
+    cancelSettingsOpening();
     setSegmentationOpen(false);
-    if (segmentationFromSettings.current) { setPanelSection('segmentation'); setPanel(true); }
+    if (segmentationFromSettings.current) { setPanelNavigation({ sequence: ++navigationSequence.current, target: { id: 'segmentation' } }); setPanel(true); }
   };
+  const notice: DesktopNoticeData | null = state.notice ?? (state.connectionError ? { text: state.connectionError, target: { id: 'player-source' } }
+    : state.session.key && !state.session.hasTimeline && !manual.enabled ? { text: i18n.t('desktopLyrics.settings.noTimelineNotice', { lng: 'zh-CN' }), target: { id: 'manual-clock' } } : null);
   return <main ref={glassSurface} style={coverTheme.style} className={`desktop-lyrics ${coverTheme.active ? 'cover-theme' : ''} ${immersive ? 'immersive' : ''} ${cursorHidden ? 'cursor-idle' : ''} ${immersiveToggleHidden ? 'immersive-toggle-idle' : ''} ${controlsRevealed ? 'controls-revealed' : ''} ${topControlsRevealed ? 'top-controls-revealed' : ''} ${state.fullscreen ? 'native-fullscreen' : ''} ${state.appearance.acrylic ? 'native-acrylic' : ''} ${state.appearance.transparent ? 'transparent-background' : ''} ${state.appearance.solid ? 'solid-surfaces' : ''} ${state.appearance.highContrast ? 'high-contrast' : ''}`}>
     {state.appearance.transparent ? <div className="transparent-veil" aria-hidden="true"/> : <AcrylicBackdrop cover={cover}/>}<WindowChrome/><div className="desktop-stage">
     {state.lyrics.lines.length ? <Suspense fallback={null}><DesktopStage mode={mode} onRecover={recoverStage} currentTime={runtime.currentTime} currentLineIndex={runtime.lineIndex} lines={segmentation.lyrics.lines} theme={visual.mergedTheme}
@@ -110,9 +142,9 @@ export default function DesktopLyrics() {
       connectionError={state.connectionError} lyricStatus={state.lyricStatus} title={title} scanning={state.scan.active} onSettings={showSettings}/>}</div>
     <DesktopTopbar title={title} artist={artist} cover={cover} mode={mode} onMode={changeMode} translated={translated} onTranslated={changeTranslated}
       topmost={state.preferences.topmost} onTopmost={value => send('topmost', value)} playing={playing} connected={Boolean(state.session.key)} manual={manual.enabled}
-      panel={anyPanel} onPanel={() => { if (anyPanel) { setPanel(false); setVisualSection(null); setSegmentationOpen(false); } else showSettings(); }} immersive={immersive} onImmersive={() => { setImmersive(!immersive); setPanel(false); setVisualSection(null); setSegmentationOpen(false); }}
+      panel={panel} onPanel={() => { if (panel) { cancelSettingsOpening(); setPanel(false); } else showSettings(); }} immersive={immersive} onImmersive={() => { cancelSettingsOpening(); setImmersive(!immersive); setPanel(false); setVisualSection(null); setSegmentationOpen(false); }}
       onVisualSettings={() => showVisualSettings()} animationIntensity={visual.animationIntensity} onAnimationIntensity={visual.setAnimationIntensity}
-      onBackgroundSettings={() => { if (visualSection === 'background') setVisualSection(null); else showVisualSettings('background'); }}
+      onBackgroundSettings={() => { if (visualSection === 'background') { cancelSettingsOpening(); setVisualSection(null); } else showVisualSettings('background'); }}
       backgroundPanel={visualSection === 'background'} backgroundEnabled={visual.backgroundEnabled} backgroundSuppressed={visual.backgroundSuppressed}
       fullscreen={state.fullscreen} onFullscreen={() => send('fullscreen')} canRefreshTheme={coverTheme.canRefresh}
       refreshingTheme={coverTheme.refreshing} refreshThemeUnavailableReason={coverTheme.refreshUnavailableReason} onRefreshTheme={coverTheme.refresh}/>
@@ -122,14 +154,14 @@ export default function DesktopLyrics() {
       playing={playing} unavailable={Boolean(state.connectionError) || !manual.enabled && !state.session.hasTimeline}/> : null}
     {panel ? <ControlPanel mode={mode} onMode={changeMode} session={state.session} preferences={state.preferences} library={state.library} online={state.online} scan={state.scan} offset={offset} onOffset={changeOffset}
       translated={translated} onTranslated={changeTranslated} immersiveProgress={immersiveProgress} onImmersiveProgress={changeImmersiveProgress} manual={manual} setManual={setManual} audioStatus={state.audioStatus}
-      lyricSource={state.lyricInfo?.source} focusSection={panelSection} onVisualSettings={() => showVisualSettings()} canSegment={canSegment} onSegmentation={showSegmentation} onClose={() => setPanel(false)}/> : null}
-    {visualSection !== null || segmentationOpen ? <Suspense fallback={<aside className="control-panel" role="status">{i18n.t('desktopVisual.loadingSettings', { lng: 'zh-CN' })}</aside>}>
-      {visualSection !== null ? <DesktopVisualSettings key={visualSection === 'background' ? 'background' : 'visual'} initialSection={visualSection} mode={mode} onMode={changeMode} model={visual}
-        returnFocus={visualOpener.current} canSegment={canSegment} onSegmentation={showSegmentation} onClose={() => setVisualSection(null)}/> : <DesktopSegmentationSettings model={segmentation} returnFocus={segmentationOpener.current} onClose={closeSegmentation}/>}
-    </Suspense> : null}
-    {state.notice || state.connectionError || state.session.key && !state.session.hasTimeline && !manual.enabled ? <div className="desktop-notice" role="status">
-      {state.notice || state.connectionError || i18n.t('desktopLyrics.settings.noTimelineNotice', { lng: 'zh-CN' })}<button onClick={() => { state.setNotice(''); showSettings(); }}>{i18n.t('desktopLyrics.settings.noTimelineAction', { lng: 'zh-CN' })}</button></div> : null}
+      lyricSource={state.lyricInfo?.source} navigation={panelNavigation} returnFocus={mainOpener.current} onVisualSettings={() => showVisualSettings()} canSegment={canSegment} onSegmentation={showSegmentation} onClose={() => { cancelSettingsOpening(); setPanel(false); }}/> : null}
+    {visualSection !== null && DesktopVisualSettings ? <DesktopVisualSettings key={visualSection === 'background' ? 'background' : 'visual'} initialSection={visualSection} navigationSequence={visualNavigation} mode={mode} onMode={changeMode} model={visual}
+      returnFocus={visualOpener.current} canSegment={canSegment} onSegmentation={showSegmentation} onClose={() => { cancelSettingsOpening(); setVisualSection(null); }}/> : null}
+    {segmentationOpen && DesktopSegmentationSettings ? <DesktopSegmentationSettings model={segmentation} returnFocus={segmentationOpener.current} onClose={closeSegmentation}/> : null}
+    {notice ? <DesktopNotice text={notice.text}
+      action={notice.target ? i18n.t('desktopLyrics.settings.noTimelineAction', { lng: 'zh-CN' }) : '关闭'} onAction={() => { state.setNotice(''); if (notice.target) navigateSettings(notice.target); }}/> : null}
     {!isDesktop() ? <div className="desktop-host-warning">{i18n.t('desktopLyrics.settings.previewMode', { lng: 'zh-CN' })}</div> : null}
+    <DesktopMusicAppDiscovery enabled={!state.clickThrough} onOpenChange={setDiscoveryOpen}/>
     <SystemVolumeFeedback/>
   </main>;
 }

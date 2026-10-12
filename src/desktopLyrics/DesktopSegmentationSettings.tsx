@@ -51,11 +51,11 @@ export default function DesktopSegmentationSettings({ model, returnFocus, onClos
     }}>
     <div className="panel-heading"><strong>{text('segmentation')}</strong><button ref={close} aria-label={text('closeSegmentation')} onClick={onClose}><X size={18}/></button></div>
     <p className="hint">{text('segmentationHint')}</p>
-    <p className="hint">{model.record ? `${original('sourceManual')} · ${original('appliedCount', countAppliedSegmentationLines(model.lyrics, model.record))}` : original('statusDefault')}</p>
+    {!model.loading && !model.error ? <p className="hint">{model.record ? `${original('sourceManual')} · ${original('appliedCount', countAppliedSegmentationLines(model.lyrics, model.record))}` : original('statusDefault')}</p> : null}
     <label className="desktop-segmentation-editor">{text('segmentationInput')}<textarea value={draft} disabled={busy || model.loading} onChange={event => setDraft(event.target.value)}/></label>
     <div className="desktop-segmentation-actions"><button disabled={busy || model.loading || !model.songKey} onClick={() => { void apply(); }}>{text('applySegmentation')}</button>
       <button disabled={busy || model.loading || !model.record} onClick={() => { void reset(); }}>{original('reset')}</button>
       <button disabled={busy || model.loading} onClick={() => { void copy(); }}>{original('copyCurrent')}</button></div>
-    {model.loading || notice || model.error ? <p className="hint" role="status">{model.loading ? text('loadingSettings') : notice || model.error}</p> : null}
+    {notice || model.error ? <p className="hint" role="status">{model.error || notice}</p> : null}
   </aside>;
 }

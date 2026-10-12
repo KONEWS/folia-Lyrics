@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { SETTINGS_ANCHOR_DEFINITIONS, SETTINGS_ANCHOR_SECTION } from '../../../src/components/modal/settings/navigation/settingsAnchorModel';
+import { SETTINGS_ANCHOR_DEFINITIONS, SETTINGS_ANCHOR_SECTION } from '../../../src/types/settingsNavigation';
 
 // test/unit/settings/settingsAnchorCoverage.test.ts
 // The sidebar table of contents only lists sections wrapped in <SettingsAnchor>. Two of these live

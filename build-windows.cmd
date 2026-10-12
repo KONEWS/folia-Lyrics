@@ -31,10 +31,17 @@ call npm ci --ignore-scripts --no-audit --no-fund
 if errorlevel 1 exit /b 1
 call npm run typecheck:desktop
 if errorlevel 1 exit /b 1
+rem Stop before packaging when the documents and the program disagree about the version, or a desktop test fails.
+call npm run check:desktop-version
+if errorlevel 1 exit /b 1
+call npm run test:desktop
+if errorlevel 1 exit /b 1
 call npm run build:desktop
 if errorlevel 1 exit /b 1
 node tools/package-web.mjs
 if errorlevel 1 exit /b 1
+rem Rebuilding the same version must not leave files from the previous build behind.
+if exist "%FOLIA_OUTPUT%" rmdir /s /q "%FOLIA_OUTPUT%"
 dotnet publish native/FoliaLyrics.csproj -c Release -r win-x64 --self-contained true -o "%FOLIA_OUTPUT%"
 if errorlevel 1 exit /b 1
 for %%F in (LICENSE README-DESKTOP.md CHANGELOG-DESKTOP.md) do (
@@ -42,5 +49,7 @@ for %%F in (LICENSE README-DESKTOP.md CHANGELOG-DESKTOP.md) do (
   if errorlevel 1 exit /b 1
 )
 xcopy "licenses" "%FOLIA_OUTPUT%\licenses\" /e /i /y >nul
+if errorlevel 1 exit /b 1
+node tools/write-checksums.mjs "%FOLIA_OUTPUT%"
 if errorlevel 1 exit /b 1
 echo 编译完成：%FOLIA_OUTPUT%\FoliaLyrics.exe

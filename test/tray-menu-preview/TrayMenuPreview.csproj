@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Isolated real material preview: no MainWindow, preferences, WebView, music player or audio dependencies. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType><TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../native/TrayMenu.cs" Link="TrayMenu.cs"/>
+    <Compile Include="../../native/TrayMenuAccessibility.cs" Link="TrayMenuAccessibility.cs"/>
+    <Compile Include="../../native/TrayMenuDrawing.cs" Link="TrayMenuDrawing.cs"/>
+    <Compile Include="../../native/TrayMenuLayout.cs" Link="TrayMenuLayout.cs"/>
+    <Compile Include="../../native/AcrylicCanvas.cs" Link="AcrylicCanvas.cs"/>
+    <Compile Include="../../native/WindowAcrylicMaterial.cs" Link="WindowAcrylicMaterial.cs"/>
+  </ItemGroup>
+</Project>

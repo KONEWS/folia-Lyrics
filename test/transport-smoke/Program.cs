@@ -8,6 +8,9 @@ MediaControlRequest Request(string action = "pause") => new(Guid.NewGuid().ToStr
 Task<MediaControlResult> Run(FakeTarget target, string action = "pause") => new MediaTransport().Execute(Request(action), () => target, () => true);
 await CoverChecks.Run(Check);
 await AudioMaintenanceChecks.Run(Check);
+await MediaReadChecks.Run(Check);
+MediaClockChecks.Run(Check);
+await MetadataChecks.Run(Check);
 
 foreach (var action in new[] { "play", "pause", "previous", "next" })
 {

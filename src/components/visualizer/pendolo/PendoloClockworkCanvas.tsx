@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import type { MotionValue } from 'framer-motion';
-import { colorWithAlpha } from '../colorMix';
+import { colorWithAlpha } from '../../../utils/colorMix';
 import type { PendoloMotionProfile } from './pendoloMotionProfile';
 
 // src/components/visualizer/pendolo/PendoloClockworkCanvas.tsx

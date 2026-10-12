@@ -223,8 +223,9 @@ export async function verifyPlaybackInput(page, song, output) {
   await quiet(async () => { await keyEvent('Space'); await wheelEvent(-120); }, 'settings opened even when input targets the lyric stage');
   await quiet(() => sideEvents(4), 'outside side-button dismissal does not trigger playback or volume');
   await panel.waitFor({ state: 'detached' }); await openSettings();
-  await panel.evaluate(el => { el.scrollTop = 0; }); await panel.hover(); const scrollBefore = await panel.evaluate(el => el.scrollTop);
-  await quiet(async () => { await page.mouse.wheel(0, 120); await page.waitForFunction(before => document.querySelector('.control-panel')?.scrollTop > before, scrollBefore); }, 'settings wheel scrolls normally');
+  const panelScroll = panel.locator(':scope > .desktop-settings-scroll');
+  await panelScroll.evaluate(el => { el.scrollTop = 0; }); await panelScroll.hover(); const scrollBefore = await panelScroll.evaluate(el => el.scrollTop);
+  await quiet(async () => { await page.mouse.wheel(0, 120); await page.waitForFunction(before => document.querySelector('.desktop-main-settings > .desktop-settings-scroll')?.scrollTop > before, scrollBefore); }, 'settings wheel scrolls normally');
   const player = desktopSelect(page, '选择播放器'); await player.scrollIntoViewIfNeeded();
   let menu = await openDesktopMenu(page, '选择播放器');
   await quiet(async () => { await page.keyboard.press('ArrowDown'); await page.keyboard.press('ArrowLeft'); await page.keyboard.press('ArrowRight'); await wheelEvent(-120, {}, '[role="listbox"]'); }, 'player menu navigation');

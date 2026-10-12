@@ -12,7 +12,7 @@ import { resolvePonderAnchors } from '../../utils/ponder/resolvePonderAnchors';
 import { fitRectsToStage } from '../../utils/ponder/fitRectsToStage';
 import { refreshPonderDomRectSnapshot, type PonderDomRectSnapshot } from '../../utils/ponder/ponderDomRectSnapshot';
 import { findPonderTarget } from './ponderRegistry';
-import { type SettingsAnchorId } from '../modal/settings/navigation/settingsAnchorModel';
+import { type SettingsAnchorId } from '../../types/settingsNavigation';
 import { openSettingsFromPonder, openVisualizerSettingsFromPonder } from '../../services/ponder/pagePonderTarget';
 import type { VisualizerSettingsSection } from '../../stores/useSettingsModalStore';
 import { openPonderActionUrl } from '../../services/ponder/ponderActionUrl';

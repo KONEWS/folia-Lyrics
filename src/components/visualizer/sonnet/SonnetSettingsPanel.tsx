@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { DEFAULT_SONNET_TUNING, type SonnetOuterFrameMode, type SonnetTuning } from '../../../types';
-import { colorWithAlpha } from '../colorMix';
+import { colorWithAlpha } from '../../../utils/colorMix';
 import type { VisualizerSettingsPanelProps } from '../definition';
 import VisualizerPresetGroup, { type VisualizerPresetOption } from '../VisualizerPresetGroup';
 import { SonnetRangeControl, SonnetSettingsSection } from './SonnetSettingsControls';

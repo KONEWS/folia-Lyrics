@@ -37,8 +37,24 @@ describe('desktop packet identities', () => {
     expect(mergeDesktopPreferences(DEFAULT_PREFERENCES, {})).toBe(DEFAULT_PREFERENCES);
     expect(mergeDesktopPreferences(DEFAULT_PREFERENCES, { ...DEFAULT_PREFERENCES, onlineProviders: [...DEFAULT_PREFERENCES.onlineProviders] })).toBe(DEFAULT_PREFERENCES);
     expect(mergeDesktopPreferences(DEFAULT_PREFERENCES, { closeToTaskbar: true }).closeToTaskbar).toBe(true);
+    expect(DEFAULT_PREFERENCES.showMusicAppAddButton).toBe(true);
+    expect(DEFAULT_PREFERENCES.autoDiscoverMusicApps).toBe(true);
+    expect(mergeDesktopPreferences(DEFAULT_PREFERENCES, { autoDiscoverMusicApps: false }).autoDiscoverMusicApps).toBe(false);
+    expect(mergeDesktopPreferences(DEFAULT_PREFERENCES, { showMusicAppAddButton: false }).showMusicAppAddButton).toBe(false);
     expect(mergeDesktopPreferences(DEFAULT_PREFERENCES, { immersiveDelay: 180 }).immersiveDelay).toBe(180);
     expect(mergeDesktopPreferences(DEFAULT_PREFERENCES, { onlineProviders: [] }).onlineProviders).toEqual([]);
     expect(mergeDesktopPreferences(DEFAULT_PREFERENCES, { onlineProviders: [...DEFAULT_PREFERENCES.onlineProviders].reverse() })).not.toBe(DEFAULT_PREFERENCES);
+  });
+  it('retains bound apps across partial packets and accepts replacement, icon changes and removal', () => {
+    const app = { slot: 0, name: 'Music', path: 'C:\\Music\\Player.exe', icon: 'data:image/png;base64,icon' };
+    const saved = { ...DEFAULT_PREFERENCES, musicApps: [app] };
+    expect(mergeDesktopPreferences(saved, { topmost: true }).musicApps).toBe(saved.musicApps);
+    expect(mergeDesktopPreferences(saved, { musicApps: [{ ...app }] })).toBe(saved);
+    for (const field of ['slot', 'name', 'path', 'icon'] as const) {
+      const replacement = { ...app, [field]: field === 'slot' ? 1 : 'changed' };
+      expect(mergeDesktopPreferences(saved, { musicApps: [replacement] }).musicApps).toEqual([replacement]);
+    }
+    expect(mergeDesktopPreferences(saved, { musicApps: [] }).musicApps).toEqual([]);
+    expect(mergeDesktopPreferences(DEFAULT_PREFERENCES, { topmost: true }).musicApps).toEqual([]);
   });
 });

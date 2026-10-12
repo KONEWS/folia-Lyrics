@@ -1,5 +1,5 @@
 import { Theme } from '../../types';
-import { colorWithAlpha, mixColors } from './colorMix';
+import { colorWithAlpha, mixColors } from '../../utils/colorMix';
 
 interface ViewportSize {
     width: number;

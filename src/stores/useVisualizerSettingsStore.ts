@@ -6,7 +6,7 @@
 // ./visualizerSettingsPersistence; this file owns the state and the actions only.
 
 import { create } from 'zustand';
-import { getVisualizerModeLabel } from '../components/visualizer/registry';
+import { resolveVisualizerModeLabel } from '../utils/visualizerModeLabel';
 import { DEFAULT_CADENZA_TUNING, DEFAULT_CAPPELLA_TUNING, DEFAULT_CLADDAGH_TUNING, DEFAULT_CLASSIC_TUNING, DEFAULT_DIORAMA_TUNING, DEFAULT_FUME_TUNING, DEFAULT_LATENT_BACKGROUND_TUNING, DEFAULT_LUMIERE_TUNING, DEFAULT_MONET_BACKGROUND_TUNING, DEFAULT_MONET_TUNING, DEFAULT_NOMAND_BACKGROUND_TUNING, DEFAULT_PARTITA_TUNING, DEFAULT_PENDOLO_TUNING, DEFAULT_SONNET_TUNING, DEFAULT_SORA_BACKGROUND_TUNING, DEFAULT_TEMPERA_TUNING, DEFAULT_TILT_TUNING, type CadenzaTuning, type CappellaTuning, type CladdaghTuning, type ClassicTuning, type DioramaTuning, type FumeTuning, type LatentBackgroundTuning, type LumiereTuning, type MonetBackgroundTuning, type MonetTuning, type NomandBackgroundTuning, type PartitaTuning, type PendoloTuning, type SonnetTuning, type SoraBackgroundTuning, type TemperaTuning, type TiltTuning, type UrlBackgroundItem, type VisualizerBackgroundMode, type VisualizerFrameRate, type VisualizerMode } from '../types';
 import { VISUALIZER_FRAME_RATE_STORAGE_KEY, setGlobalVisualizerFrameRate } from '../utils/frameRateLimiter';
 import { GLOW_BLUR_QUANTIZE_STORAGE_KEY, readStoredGlowBlurQuantize, setGlowBlurQuantized } from '../utils/glowBlurQuantize';
@@ -259,7 +259,7 @@ export const useVisualizerSettingsStore = create<VisualizerSettingsState>((set, 
             setStatusMessage({
                 type: 'info',
                 text: i18n.t('notifications.visualizerSwitched', {
-                    mode: getVisualizerModeLabel(mode, key => i18n.t(key)),
+                    mode: resolveVisualizerModeLabel(mode, key => i18n.t(key)),
                 }),
             });
         }

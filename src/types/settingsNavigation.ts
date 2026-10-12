@@ -1,11 +1,17 @@
-import type { SettingsSubviewId } from '../../../../stores/useSettingsModalStore';
-
-// src/components/modal/settings/navigation/settingsAnchorModel.ts
+// src/types/settingsNavigation.ts
+// Settings navigation contract. It lives in the types layer, not in stores/ or components/, because
+// both the store (initialSubview / initialAnchor) and the table below need each other's types: put
+// in either place it closes a store <-> model cycle that storeContract.test.ts rejects, and from
+// components/ it made services/ depend on a UI directory.
+//
 // Which options-tab section each <SettingsAnchor> lives in and which translated label its expanded
 // sidebar entry uses. Commands and inactive sidebar sections both need this information before the
 // destination panel exists, so it is declared once here. settingsAnchorCoverage.test.ts holds the
 // table against the anchors actually rendered, so a section cannot silently drift away from its
 // navigation destination.
+
+// useSettingsModalStore re-exports this so existing importers keep working.
+export type SettingsSubviewId = 'appearance' | 'general' | 'playback' | 'interaction' | 'integration' | 'storage' | 'desktop' | 'graphics' | 'mods' | 'lab' | 'visualizer' | 'themePark' | 'lyricFilter' | 'globalLyricOffset';
 
 export const SETTINGS_ANCHOR_DEFINITIONS = {
     // AppearanceSettingsSubview

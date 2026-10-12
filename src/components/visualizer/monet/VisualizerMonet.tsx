@@ -4,7 +4,7 @@ import { motion, useMotionValueEvent, useDragControls, useMotionValue } from 'fr
 import { RotateCcw } from 'lucide-react';
 import { useElementWidth } from '../../../hooks/useElementWidth';
 import { DEFAULT_MONET_TUNING } from '../../../types';
-import { colorWithAlpha } from '../colorMix';
+import { colorWithAlpha } from '../../../utils/colorMix';
 import { type VisualizerSharedProps } from '../definition';
 import { useVisualizerRuntime } from '../runtime';
 import VisualizerShell from '../VisualizerShell';

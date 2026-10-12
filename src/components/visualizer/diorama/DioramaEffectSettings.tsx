@@ -1,7 +1,7 @@
 import React, { useId, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { type Theme } from '../../../types';
-import { colorWithAlpha } from '../colorMix';
+import { colorWithAlpha } from '../../../utils/colorMix';
 import { DioramaSettingsToggle } from './DioramaSettingsToggle';
 
 // src/components/visualizer/diorama/DioramaEffectSettings.tsx

@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Offline tests compile the real tray command and geometry modules against harmless window stand-ins. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType><TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Using Include="System.Drawing"/><Using Include="System.Windows.Forms"/>
+    <Compile Include="../../native/TrayMenuLayout.cs" Link="TrayMenuLayout.cs"/>
+    <Compile Include="../../native/WindowTray.cs" Link="WindowTray.cs"/>
+  </ItemGroup>
+</Project>

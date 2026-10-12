@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Search, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Theme } from '../../../../types';
-import type { SettingsAnchorId } from './settingsAnchorModel';
+import type { SettingsAnchorId } from '../../../../types/settingsNavigation';
 import type { SettingsNavAnchor, SettingsNavGroup, SettingsSectionId } from './settingsNavModel';
 import { searchSettingsNav } from './settingsNavSearch';
 // src/components/modal/settings/navigation/SettingsSidebarWide.tsx

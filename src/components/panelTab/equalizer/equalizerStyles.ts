@@ -1,5 +1,5 @@
 import type { Theme } from '../../../types';
-import { mixColors } from '../../visualizer/colorMix';
+import { mixColors } from '../../../utils/colorMix';
 
 // src/components/panelTab/equalizer/equalizerStyles.ts
 // Resolves the shared daylight/dark class names used across the audio effect dialog sections.

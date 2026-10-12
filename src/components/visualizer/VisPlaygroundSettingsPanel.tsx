@@ -20,7 +20,7 @@ import {
     type DioramaTuning,
     type VisualizerMode,
 } from '../../types';
-import { colorWithAlpha } from './colorMix';
+import { colorWithAlpha } from '../../utils/colorMix';
 import FontFallbackStackControl from './FontFallbackStackControl';
 import { VISUALIZER_REGISTRY, getVisualizerModeLabel, type VisualizerRegistryEntry } from './registry';
 import { type VisPlaygroundEditSection } from './VisPlaygroundPreviewHotspots';

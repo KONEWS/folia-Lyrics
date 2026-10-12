@@ -52,7 +52,7 @@ export default function DesktopTopbar(p: Props) {
       title={i18n.t('desktopVisual.intensityHint', { lng: 'zh-CN', state: intensityLabel })}
       onClick={() => p.onAnimationIntensity(nextIntensity)}>{intensityLabel}</button>
     <div className="topbar-actions">
-      <button type="button" className={`icon-button background-settings-button ${p.backgroundPanel ? 'selected' : ''}`}
+      <button type="button" data-background-settings-trigger className={`icon-button background-settings-button ${p.backgroundPanel ? 'selected' : ''}`}
         aria-label={visualText('backgroundTitle')} aria-expanded={p.backgroundPanel}
         title={i18n.t('desktopVisual.backgroundStatus', { lng: 'zh-CN', state: visualText(p.backgroundSuppressed ? 'backgroundTransparentPriority' : p.backgroundEnabled ? 'enabled' : 'disabled') })}
         onClick={p.onBackgroundSettings}><Wallpaper size={18}/></button>

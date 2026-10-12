@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { DEFAULT_TEMPERA_TUNING, type TemperaColorMode, type TemperaTuning } from '../../../types';
-import { colorWithAlpha } from '../colorMix';
+import { colorWithAlpha } from '../../../utils/colorMix';
 import type { VisualizerSettingsPanelProps } from '../definition';
 import VisualizerPresetGroup, { type VisualizerPresetOption } from '../VisualizerPresetGroup';
 import { TemperaRangeControl, TemperaSettingsSection } from './TemperaSettingsControls';

@@ -11,7 +11,7 @@ import {
     DIORAMA_PARTICLE_SIZE_STEP,
     type Theme,
 } from '../../../types';
-import { colorWithAlpha } from '../colorMix';
+import { colorWithAlpha } from '../../../utils/colorMix';
 import { DioramaSettingsToggle } from './DioramaSettingsToggle';
 
 // src/components/visualizer/diorama/DioramaParticleAppearanceSettings.tsx

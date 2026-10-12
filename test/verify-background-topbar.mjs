@@ -3,6 +3,7 @@ import { writeFile } from 'node:fs/promises';
 import { desktopSelect, selectDesktopOption } from './desktop-select.mjs';
 import { visualDialog, backgroundDialog, visualFrame, emitVisual, openVisualSettings, closeVisualSettings,
   openBackgroundSettings, closeBackgroundSettings, readVisual, waitVisual, dragVisualRange, reloadVisualSong } from './desktop-visual-fixture.mjs';
+import { verifyColdSettingsOpen, verifySettingsSurfaceParity } from './desktop-settings-surface-checks.mjs';
 
 // test/verify-background-topbar.mjs — direct desktop background entry, compact spacing and unchanged original rendering/settings persistence.
 export async function verifyBackgroundTopbar(page, song, output) {
@@ -16,6 +17,13 @@ export async function verifyBackgroundTopbar(page, song, output) {
   const packet = { key: song.key, title: song.title, artist: song.artist, cover: '', source: '独立背景设置验证', format: 'lrc',
     content: '[00:01.000]保留原版歌词画面\n[00:33.000]背景设置直接打开\n[00:42.000]下一行歌词' };
   const opener = () => page.getByRole('button', { name: '背景设置', exact: true });
+  // Each settings entry reflects only its own panel, including when switching directly between them.
+  const activeEntry = async active => {
+    for (const [name, button] of [['background', opener()], ['main', page.locator('[data-settings-trigger]')]]) {
+      assert.equal(await button.getAttribute('aria-expanded'), String(active === name), `${name}: expanded state belongs to its own panel`);
+      assert.equal(await button.evaluate(element => element.classList.contains('selected')), active === name, `${name}: only the open panel's entry is highlighted`);
+    }
+  };
   const windowState = (fullscreen = false, maximized = false) => emitVisual(page, 'windowState', { fullscreen, maximized, clickThrough: false });
   const focusedOpener = async () => {
     await page.waitForFunction(() => document.activeElement?.classList.contains('background-settings-button'));
@@ -74,6 +82,8 @@ export async function verifyBackgroundTopbar(page, song, output) {
   };
   let stage = 'fixture';
   try {
+    stage = 'cold-first-open'; await verifyColdSettingsOpen(page, checks, samples);
+    stage = 'fixture';
     await page.evaluate(() => {
       localStorage.setItem('folia.desktop.mode.v1', 'classic'); localStorage.removeItem('folia.desktop.backgroundEnabled.v1');
       sessionStorage.setItem('folia.test.mockPreferences', JSON.stringify({ autoImmersive: false, audioReactive: false, transparentBackground: false }));
@@ -87,12 +97,36 @@ export async function verifyBackgroundTopbar(page, song, output) {
     assert.equal(await opener().locator('.lucide-wallpaper').count(), 1);
     await opener().locator('svg').click(); await backgroundDialog(page).waitFor();
     assert.equal(await opener().getAttribute('aria-expanded'), 'true'); assert.equal(await visualDialog(page).count(), 0);
+    await activeEntry('background');
     assert.equal(await backgroundDialog(page).getByRole('tablist').count(), 0); await geometry('window');
     await closeBackgroundSettings(page); await focusedOpener();
+    await activeEntry(null);
     await openVisualSettings(page, 'common');
     assert.deepEqual(await visualDialog(page).getByRole('tab').allTextContents(), ['通用', '歌词动画', '字幕']);
-    assert.equal(await visualDialog(page).getByRole('tab', { name: '背景', exact: true }).count(), 0); await closeVisualSettings(page);
+    assert.equal(await visualDialog(page).getByRole('tab', { name: '背景', exact: true }).count(), 0);
+    await activeEntry(null); await closeVisualSettings(page);
     checks.push('one permanent topbar Wallpaper button opens a standalone labelled background region; more visual settings retain only the common, lyric-animation and subtitle tabs');
+
+    stage = 'independent-entry-state';
+    for (const [width, height] of [[1280, 800], [450, 300]]) {
+      await page.setViewportSize({ width, height });
+      await openBackgroundSettings(page); await activeEntry('background');
+      await page.locator('[data-settings-trigger]').click(); await page.locator('.desktop-main-settings').waitFor();
+      assert.equal(await backgroundDialog(page).count(), 0); await activeEntry('main');
+      assert(await page.locator('[data-settings-trigger]').evaluate(element => element === document.activeElement), 'switching panels keeps focus on the clicked main settings entry');
+      await page.keyboard.press('Escape'); await page.locator('.desktop-main-settings').waitFor({ state: 'detached' }); await activeEntry(null);
+      assert(await page.locator('[data-settings-trigger]').evaluate(element => element === document.activeElement), 'switching from background keeps the main entry as the main panel return focus');
+      await page.locator('[data-settings-trigger]').click(); await page.locator('.desktop-main-settings').waitFor(); await activeEntry('main');
+      await opener().click(); await backgroundDialog(page).waitFor();
+      assert.equal(await page.locator('.desktop-main-settings').count(), 0); await activeEntry('background');
+      await opener().click(); await backgroundDialog(page).waitFor({ state: 'detached' }); await activeEntry(null);
+      await focusedOpener();
+      await page.locator('[data-settings-trigger]').click(); await page.locator('.desktop-main-settings').waitFor(); await activeEntry('main');
+      await page.locator('[data-settings-trigger]').click(); await page.locator('.desktop-main-settings').waitFor({ state: 'detached' }); await activeEntry(null);
+    }
+    checks.push('wide and narrow windows highlight only the open settings entry; main/background switch in one click and repeat clicks close the matching panel');
+
+    stage = 'shared-settings-surfaces'; await verifySettingsSurfaceParity(page, output, checks, samples);
 
     stage = 'compact-and-fullscreen';
     for (const [context, width, height, fullscreen, maximized] of [

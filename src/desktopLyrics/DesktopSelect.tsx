@@ -8,7 +8,7 @@ type Props = { value: string; onChange: (value: string) => void; options: Custom
 export default function DesktopSelect({ value, onChange, options, label, placeholder, topbar = false, triggerPrefix, menuAction }: Props) {
     const root = useRef<HTMLDivElement>(null);
     const portal = useCallback(() => root.current?.closest<HTMLElement>('.desktop-lyrics') ?? null, []);
-    const clip = useCallback(() => root.current?.closest<HTMLElement>('.control-panel') ?? null, []);
+    const clip = useCallback(() => root.current?.closest<HTMLElement>('.desktop-settings-scroll,.control-panel') ?? null, []);
     // Anchor a compound style picker to its complete capsule, including its icon and padding.
     const anchor = useCallback(() => root.current?.closest<HTMLElement>('.topbar-mode-picker') ?? null, []);
     return <div ref={root} className="desktop-select-host"><CustomSelect value={value} onChange={onChange} options={options} ariaLabel={label} placeholder={placeholder}

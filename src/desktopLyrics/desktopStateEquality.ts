@@ -22,6 +22,15 @@ export function mergeDesktopPreferences(previous: Preferences, next: Partial<Pre
   const changed = (Object.keys(next) as (keyof Preferences)[]).some(key => key === 'onlineProviders'
     ? previous.onlineProviders.length !== next.onlineProviders?.length
       || next.onlineProviders?.some((provider, index) => provider !== previous.onlineProviders[index])
-    : previous[key] !== next[key]);
+    : key === 'musicApps' || key === 'blockedMusicApps'
+      ? previous[key].length !== next[key]?.length
+        || next[key]?.some((app, index) => {
+          const saved = previous[key][index];
+          return !saved || ('slot' in app && (!('slot' in saved) || app.slot !== saved.slot))
+            || ('id' in app && (!('id' in saved) || app.id !== saved.id))
+            || app.name !== saved.name || app.path !== saved.path || app.icon !== saved.icon
+            || app.launchKind !== saved.launchKind || app.appUserModelId !== saved.appUserModelId;
+        })
+      : previous[key] !== next[key]);
   return changed ? { ...previous, ...next } : previous;
 }

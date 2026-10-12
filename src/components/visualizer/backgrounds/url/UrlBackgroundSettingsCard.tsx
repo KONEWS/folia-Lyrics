@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { Globe, Plus, Pencil, Trash2, Check, X } from 'lucide-react';
 import type { Theme, UrlBackgroundItem } from '../../../../types';
-import { colorWithAlpha } from '../../colorMix';
+import { colorWithAlpha } from '../../../../utils/colorMix';
 import { normalizeUrlBackgroundUrl } from '../../../../utils/urlBackground';
 
 // src/components/visualizer/backgrounds/url/UrlBackgroundSettingsCard.tsx

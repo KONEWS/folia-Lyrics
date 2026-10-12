@@ -1,5 +1,6 @@
 import { type VisualizerMode } from '../../types';
 import { BUILTIN_VISUALIZER_MODES, DEFAULT_VISUALIZER_MODE, assertBuiltinModeList } from '../../types/visualizerModes';
+import { registerVisualizerModeLabelResolver } from '../../utils/visualizerModeLabel';
 import {
     type VisualizerEntryModule,
     type VisualizerRegistryEntry,
@@ -64,6 +65,9 @@ export const getVisualizerModeLabel = (mode: VisualizerMode, t: (key: string) =>
     const translated = t(entry.labelKey);
     return !translated || translated === entry.labelKey ? entry.labelFallback : translated;
 };
+
+// 让 store 等叶子层不必 import 本文件也能拿到模式名称（见 utils/visualizerModeLabel.ts）。
+registerVisualizerModeLabelResolver(getVisualizerModeLabel);
 
 export const getVisualizerPreviewStartOffset = (mode: VisualizerMode, loopDuration: number) => {
     if (loopDuration <= 0) {

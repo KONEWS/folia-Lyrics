@@ -6,8 +6,8 @@ import { emitVisual, visualFrame } from './desktop-visual-fixture.mjs';
 // test/secondary-contrast-fixture.mjs — compare actual foreground and backdrop PNG pixels under extreme desktop backgrounds.
 const colorsUrl = new URL('../src/utils/themeColorMath.ts', import.meta.url).href;
 const colorLoader = registerHooks({ resolve(specifier, context, next) {
-  return next(context.parentURL === colorsUrl && specifier === '../components/visualizer/colorMix'
-    ? new URL('../src/components/visualizer/colorMix.ts', import.meta.url).href : specifier, context);
+  return next(context.parentURL === colorsUrl && specifier === './colorMix'
+    ? new URL('../src/utils/colorMix.ts', import.meta.url).href : specifier, context);
 } });
 let getContrastRatio;
 try { ({ getContrastRatio } = await import(colorsUrl)); } finally { colorLoader.deregister(); }

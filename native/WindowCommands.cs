@@ -10,8 +10,8 @@ internal sealed partial class MainWindow
     {
         switch (cmd.GetProperty("type").GetString())
         {
-            case "ready": ready = true; FocusLyricsIfActive(); SendWindowState(); presentedSong = null; SendAppearance(); Send("preferences", preferences); Send("library", library.Summary());
-                if (song is not null) Send("session", song); if (lyrics is not null) Send("lyrics", lyrics); Send("online", onlineState); mediaTimer.Start(); audioTimer.Start(); await Poll(); break;
+            case "ready": NormalizeMusicApps(); ready = true; UpdateAudioCapture(); FocusLyricsIfActive(); windowStateSent = false; SendWindowState(); presentedSong = null; SendAppearance(); Send("preferences", preferences); Send("library", library.Summary());
+                if (song is not null) Send("session", song); if (lyrics is not null) Send("lyrics", lyrics); Send("online", onlineState); SendMusicAppDiscovery(); SendPendingTraySettings(); mediaTimer.Start(); ApplyBackgroundStateForCurrentWindow(); StartMusicAppDiscovery(); await Poll(); break;
             case "import":
                 using (var dialog = new OpenFileDialog { Title = "读取音乐文件中的歌词或独立歌词（不会播放）", Filter = "音乐或歌词|*.flac;*.mp3;*.m4a;*.mp4;*.ogg;*.opus;*.wav;*.ape;*.wma;*.aiff;*.lrc;*.ttml;*.yrc;*.qrc;*.fia|所有文件|*.*" })
                 {
@@ -25,15 +25,26 @@ internal sealed partial class MainWindow
             case "rescan": await Scan(null); break;
             case "source":
                 StartWork(); sourceRevision++; media.Invalidate();
-                song = new("", "", "", "", "", false, 0, 0, 1, false, song?.Sources ?? []);
+                song = new("", "", "", "", "", false, 0, 0, 1, false, song?.Sources ?? [], Sequence: ++clockSequence);
                 Send("session", song); preferences.Source = cmd.GetProperty("value").GetString() ?? "";
                 lyricKey = "\0"; presentedSong = null; SavePreferences(); await Poll(); break;
+            case "addMusicApp": await ChooseMusicApp(null); break;
+            case "bindMusicApp": await ChooseMusicApp(MusicAppLauncher.ReadSlot(cmd)); break;
+            case "removeMusicApp": RemoveMusicApp(MusicAppLauncher.ReadSlot(cmd)); break;
+            case "launchMusicApp": await LaunchMusicApp(MusicAppLauncher.ReadSlot(cmd)); break;
+            case "showMusicAppAddButton": preferences.ShowMusicAppAddButton = cmd.GetProperty("value").GetBoolean(); SavePreferences(); break;
+            case "autoDiscoverMusicApps": SetMusicAppDiscovery(cmd.GetProperty("value").GetBoolean()); break;
+            case "scanMusicApps": await DiscoverMusicApps(installed: true, notify: true); break;
+            case "confirmMusicApps": ConfirmMusicApps(cmd.GetProperty("value")); break;
+            case "dismissMusicAppDiscovery": DismissMusicAppDiscovery(cmd.GetProperty("value")); break;
+            case "blockMusicApp": BlockMusicApp(cmd.GetProperty("value")); break;
+            case "unblockMusicApp": await UnblockMusicApp(cmd.GetProperty("value")); break;
             case "window": WindowCommand(cmd.GetProperty("value")); break;
             case "mediaControl": await ControlMedia(cmd.GetProperty("value")); break;
             case "systemVolume": ChangeSystemVolume(cmd); break;
             case "topmost": TopMost = preferences.Topmost = cmd.GetProperty("value").GetBoolean(); SavePreferences(); break;
             case "closeToTaskbar": preferences.CloseToTaskbar = cmd.GetProperty("value").GetBoolean(); SavePreferences(); break;
-            case "audioReactive": preferences.AudioReactive = cmd.GetProperty("value").GetBoolean(); audio.Ensure(preferences.AudioReactive); SavePreferences(); break;
+            case "audioReactive": preferences.AudioReactive = cmd.GetProperty("value").GetBoolean(); UpdateAudioCapture(); ApplyBackgroundStateForCurrentWindow(); SavePreferences(); break;
             case "transparentBackground": preferences.TransparentBackground = cmd.GetProperty("value").GetBoolean(); ApplyAppearance(); SavePreferences(); break;
             case "coverTheme": preferences.CoverTheme = cmd.GetProperty("value").GetBoolean(); SavePreferences(); break;
             case "autoImmersive": preferences.AutoImmersive = cmd.GetProperty("value").GetBoolean(); SavePreferences(); break;
@@ -64,12 +75,12 @@ internal sealed partial class MainWindow
             () => !IsDisposed && currentRevision == sourceRevision && song?.SessionId == request.SessionId && song.Key == request.SongKey && media.IsCurrent(request), lifetime.Token);
         MediaDiagnostics.Write($"action={request.Action}; success={result.Success}; result={result.Message}");
         Send("transport", result);
-        await Poll();
+        RequestMediaPoll();
     }
     private async Task Scan(string? folder)
     {
         if (scanning) return; scanning = true; Send("scan", new { active = true, text = "正在扫描本地目录…" });
-        try { await library.Scan(folder, text => Send("scan", new { active = true, text }), lifetime.Token); lyricKey = "\0"; Send("library", library.Summary()); Send("notice", new { text = "目录已更新，歌词将自动匹配。" }); }
+        try { await library.Scan(folder, text => Send("scan", new { active = true, text }), lifetime.Token); lyricKey = "\0"; Send("library", library.Summary()); Send("notice", new { text = "目录已更新，歌词将自动匹配。", target = new { id = "local-folders" } }); }
         catch (OperationCanceledException) { }
         finally { scanning = false; Send("scan", new { active = false, text = "" }); }
     }
@@ -102,6 +113,8 @@ internal sealed partial class MainWindow
         if (message.Msg == 0x312 && message.WParam.ToInt32() == 1) RestoreInteraction();
         base.WndProc(ref message);
         if (message.Msg is 0x31E or 0x31A or 0x1A) ApplyAppearance();
+        // WM_SIZE: the size type says whether the window was minimized, restored or maximized.
+        if (message.Msg == 0x5) OnSizeMessage(message.WParam.ToInt64());
     }
     [DllImport("user32.dll")] private static extern bool RegisterHotKey(IntPtr window, int id, uint modifiers, uint key);
     [DllImport("user32.dll")] private static extern bool UnregisterHotKey(IntPtr window, int id);

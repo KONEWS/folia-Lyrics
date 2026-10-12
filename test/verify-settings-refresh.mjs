@@ -105,7 +105,7 @@ export async function verifySettingsRefresh(page, song, output) {
     await setPreferences({ coverTheme: true, autoImmersive: false, immersiveDelay: 30, onlineEnabled: true, onlineProviders: ['kugou', 'qq', 'netease', 'lrclib'] });
     await selectDesktopOption(page, '歌词样式', { value: 'classic' });
     await open();
-    const first = await page.locator('.control-panel').evaluate(panel => ({ tag: panel.firstElementChild?.tagName,
+    const first = await page.locator('.desktop-main-settings > .desktop-settings-scroll').evaluate(panel => ({ tag: panel.firstElementChild?.tagName,
       text: panel.firstElementChild?.querySelector('label')?.textContent.trim() }));
     assert.deepEqual(first, { tag: 'SECTION', text: '播放页面透明背景' });
     assert.equal(await page.locator('.control-panel .section-label').filter({ hasText: '歌词样式' }).count(), 0);

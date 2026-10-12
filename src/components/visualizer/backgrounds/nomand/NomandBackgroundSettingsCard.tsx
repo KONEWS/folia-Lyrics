@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Trash2, Upload } from 'lucide-react';
 import { DEFAULT_NOMAND_BACKGROUND_TUNING, type MonetBackgroundImage, type NomandBackgroundSource, type NomandBackgroundTuning, type Theme } from '../../../../types';
-import { colorWithAlpha } from '../../colorMix';
+import { colorWithAlpha } from '../../../../utils/colorMix';
 import BackgroundToggleRow from '../BackgroundToggleRow';
 import NomandBackgroundEffectSettings from './NomandBackgroundEffectSettings';
 

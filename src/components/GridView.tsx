@@ -9,7 +9,7 @@ import { getNavidromeConfig, navidromeApi } from '../services/navidromeService';
 import { formatSongName } from '../utils/songNameFormatter';
 import { getSizedCoverUrl } from '../utils/coverUrl';
 import { getSongCoverUrl } from '../services/onlineMusic/songMetadata';
-import { colorWithAlpha } from './visualizer/colorMix';
+import { colorWithAlpha } from '../utils/colorMix';
 import { saveToCache, getFromCache, removeFromCache } from '../services/db';
 import { omni } from '../services/onlineMusic/omni';
 import { getProviderCacheKey, getProviderCacheWithLegacyMigration } from '../services/onlineMusic/providerStorage';

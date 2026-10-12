@@ -12,9 +12,11 @@ folia-Lyrics 基于 [Folia](https://github.com/chthollyphile/folia-major) 的歌
 
 界面会从歌曲封面中取色，让玻璃控制栏、进度频谱和歌词动效使用同一套配色。想换个感觉，可以点顶栏的“刷新主题色”。底部频谱跟随 Windows 默认输出设备的声音变化。
 
-0.4.30 继续把桌面端的等待和切歌路径拆开处理：窗口先连接播放器，歌词字体、封面和歌词匹配在后台准备，封面晚一点到也不会挡住歌曲信息。频谱静音后会自然收回，音频设备维护、在线歌词缓存和本地歌词库保存移出界面线程，操作时更少出现短暂停顿。
+0.4.37 修复暂停时的最后进度同步，暂停中拖动进度也能刷新歌词；提示里的“查看设置”直接定位相关控件。新发现的音乐软件先询问是否添加，支持微软商店应用；托盘提供显示窗口、恢复鼠标操作、置顶、歌词设置、音乐软件管理和退出六项操作，并使用系统亚克力材质。
 
-歌词会优先从本地查找，也可以在线匹配网易云、QQ 音乐、酷狗和 LRCLIB。没找到合适的版本时，可以手动选择搜索结果，或加载自己的歌词文件。
+本次发布同时包含 0.4.31–0.4.36 的改进：全屏沉浸时从屏幕边缘呼出控件，首页音乐软件图标快捷启动，统一设置面板，以及更少的后台声音采集和空闲动画开销。手动选择的歌词与普通缓存分开保存，歌词时间校准按歌曲版本记住。
+
+歌词会优先从本地查找，没有本地歌词时优先在线匹配 QQ 音乐，再使用酷狗、网易云和 LRCLIB 回退。没找到合适的版本时，可以手动选择搜索结果，或加载自己的歌词文件。
 
 - 支持音乐内嵌歌词和本地 `.lrc`、`.yrc`、`.qrc`、`.ttml`、`.fia` 文件。在线酷狗 KRC 由适配层解码，本地加密容器需要先转换。
 - 在线歌词有本地缓存，减少同一首歌的重复请求。
@@ -25,7 +27,7 @@ folia-Lyrics 基于 [Folia](https://github.com/chthollyphile/folia-major) 的歌
 
 面向 Windows 11 x64。原生亚克力效果需要 Windows 11 22H2（22621）或更新版本，并开启系统透明效果；不满足条件时，界面会使用回退效果。
 
-当前版本是 [0.4.30](https://github.com/KONEWS/folia-Lyrics/releases/tag/desktop-v0.4.30)。从 Releases 下载 Windows x64 包，解压后运行 `FoliaLyrics.exe`，再打开播放器播放一首歌。运行界面需要 Microsoft Edge WebView2 Runtime，发布包自带 .NET 运行时。
+当前版本是 [0.4.37](https://github.com/KONEWS/folia-Lyrics/releases/tag/desktop-v0.4.37)。从 Releases 下载 `FoliaLyrics-0.4.37-win-x64.zip`，解压后运行 `FoliaLyrics.exe`，再打开播放器播放一首歌。也可以先确认添加发现的音乐软件，再点击首页图标启动播放器。运行界面需要 Microsoft Edge WebView2 Runtime，发布包自带 .NET 运行时。
 
 窗口没显示歌词时，先确认选中了正在播放的播放器，再尝试重新匹配或加载本地歌词。某些播放器没有公开媒体会话，或没有提供完整进度，这种情况下自动同步会受到限制。
 
@@ -52,11 +54,13 @@ folia-Lyrics 基于 [Folia](https://github.com/chthollyphile/folia-major) 的歌
 build-windows.cmd
 ```
 
-脚本会按锁文件安装依赖、检查桌面 TypeScript、构建界面并发布 Windows 宿主。完成后，程序位于：
+脚本会按锁文件安装依赖、检查桌面版本和 TypeScript、运行桌面单测、构建界面并发布 Windows 宿主。完成后，程序位于：
 
 ```text
-release/win-x64/FoliaLyrics.exe
+release/0.4.37/win-x64/FoliaLyrics.exe
 ```
+
+输出目录中的版本来自 `native/FoliaLyrics.csproj`，每个版本独立保存；发布目录包含使用说明、许可证和 `SHA256SUMS.txt`。
 
 只想看看界面，可以运行浏览器预览：
 
@@ -73,6 +77,7 @@ npm exec vite -- --config vite.desktop.config.ts --open /desktop.html
 
 ```bash
 npm run test:desktop
+npm run check:desktop-version
 npm run typecheck:desktop
 npm run build:desktop
 npm run test:desktop:ui
@@ -95,6 +100,6 @@ dotnet run --project test/transport-smoke/TransportSmoke.csproj
 
 这是从 [chthollyphile/folia-major](https://github.com/chthollyphile/folia-major) 派生的独立项目。感谢上游提供歌词渲染器和视觉效果；这个分支主要加入 Windows 桌面宿主、外部播放器连接、在线歌词匹配，以及围绕桌面使用的界面和操作。
 
-当前桌面宿主版本为 **0.4.30**，上游源码基线为 **v0.7.11**（`6fe68d89abb7031eb266d71fda01b36a0fa0573e`）。两套版本号独立，本项目不是上游官方发行版。
+当前桌面宿主版本为 **0.4.37**，上游源码基线为 **v0.7.11**（`6fe68d89abb7031eb266d71fda01b36a0fa0573e`）。两套版本号独立，本项目不是上游官方发行版。
 
 项目继续使用 [AGPL-3.0](LICENSE) 许可证。第三方许可证见 [licenses/](licenses/)，在线资源来源见 [ONLINE-SOURCES.md](ONLINE-SOURCES.md)。使用在线歌词、封面和音乐资源时，请遵守对应服务条款与版权要求。

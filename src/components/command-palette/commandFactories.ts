@@ -3,7 +3,7 @@ import type { AppLanguagePreference } from '../../i18n/config';
 import type { PanelTab } from '../UnifiedPanel';
 import type { AudioEqualizerModeId } from '../../utils/audioEqualizer';
 import type { GridSurfaceActionId } from '../../types/gridCommandSurface';
-import { settingsAnchorSubview, type SettingsAnchorId } from '../modal/settings/navigation/settingsAnchorModel';
+import { settingsAnchorSubview, type SettingsAnchorId } from '../../types/settingsNavigation';
 import type { CommandPaletteCommand, CommandPaletteContext, CommandPaletteGroup } from './types';
 
 // src/components/command-palette/commandFactories.ts

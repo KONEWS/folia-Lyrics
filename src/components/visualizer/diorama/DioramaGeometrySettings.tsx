@@ -4,7 +4,7 @@ import {
     type DioramaGeometryVisibility,
     type Theme,
 } from '../../../types';
-import { colorWithAlpha } from '../colorMix';
+import { colorWithAlpha } from '../../../utils/colorMix';
 import { DioramaParticleAppearanceSettings } from './DioramaParticleAppearanceSettings';
 import { DioramaSettingsToggle } from './DioramaSettingsToggle';
 

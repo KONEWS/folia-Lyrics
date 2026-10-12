@@ -76,9 +76,18 @@ internal sealed partial class MainWindow
     protected override void OnResize(EventArgs e)
     {
         base.OnResize(e);
-        if (dispatcher is not null) SendWindowState();
+        if (dispatcher is not null) { UpdateAudioCapture(); SendWindowState(); }
     }
-    private void SendWindowState() => Send("windowState", new { maximized = WindowState == FormWindowState.Maximized, fullscreen, clickThrough });
+    private bool windowStateSent, sentMaximized, sentFullscreen, sentClickThrough;
+    // Dragging a window edge raises resize notifications dozens of times a second; the page only needs the three flags when one of
+    // them changes. The page's ready message clears windowStateSent, so a (re)loaded page always receives the current state.
+    private void SendWindowState()
+    {
+        var maximized = WindowState == FormWindowState.Maximized;
+        if (windowStateSent && sentMaximized == maximized && sentFullscreen == fullscreen && sentClickThrough == clickThrough) return;
+        windowStateSent = true; sentMaximized = maximized; sentFullscreen = fullscreen; sentClickThrough = clickThrough;
+        Send("windowState", new { maximized, fullscreen, clickThrough });
+    }
     [StructLayout(LayoutKind.Sequential)] private struct NativePoint(int x, int y) { public int X = x, Y = y; }
     [StructLayout(LayoutKind.Sequential)] private struct NativeRect { public int Left, Top, Right, Bottom; }
     [StructLayout(LayoutKind.Sequential)] private struct MinMaxInfo { public NativePoint Reserved, MaxSize, MaxPosition, MinTrackSize, MaxTrackSize; }

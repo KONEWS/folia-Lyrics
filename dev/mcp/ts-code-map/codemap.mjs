@@ -65,7 +65,7 @@ const BOUNDARY_RULES = [
 /**
  * 哪些模块在运行时真的会把 React 拉进来。
  *
- * 规则只能看路径，而路径会撒谎：`components/visualizer/colorMix.ts` 是零依赖的纯色彩数学，
+ * 规则只能看路径，而路径会撒谎：`components/visualizer/diorama/dioramaMoteField.ts` 是不含 UI 的纯数学，
  * 只是住在 components 目录下。反过来 `components/visualizer/registry.tsx` 看着人畜无害，
  * 实际用 eager glob 拉进 13 个 renderer。所以「是不是 UI」要从依赖图推，不能从目录猜。
  *

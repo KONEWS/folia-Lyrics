@@ -82,6 +82,42 @@
 .desktop-visual-dialogs .desktop-visual-asset-dialog :is(button,input,textarea,select):focus-visible{outline:2px solid var(--desktop-glass-accent);outline-offset:2px}
 .desktop-visual-dialogs .desktop-visual-asset-dialog input[type=range]{appearance:auto;width:100%;height:22px;padding:0;background:transparent!important;box-shadow:none}
 .desktop-visual-solid .desktop-visual-asset-dialog>[role=dialog]{background:var(--desktop-glass-base)!important;backdrop-filter:none}
+/* Background settings share the main panel's sizing and rhythm; scrollbars stay inside the rounded shell. */
+.desktop-lyrics .desktop-background-settings{--visual-card-gap:var(--desktop-settings-group-gap,20px);--visual-item-gap:var(--desktop-settings-item-gap,14px);top:var(--desktop-settings-top);bottom:var(--desktop-settings-bottom-edge);right:var(--desktop-settings-right);width:var(--desktop-settings-width)}
+.desktop-background-settings .desktop-visual-heading{position:static;margin:0;padding:18px var(--desktop-settings-inline,22px);box-shadow:none}
+.desktop-lyrics .desktop-background-settings .desktop-visual-heading>button{width:32px;height:32px}
+.desktop-background-settings .desktop-visual-content{margin:var(--desktop-settings-scroll-inset,6px);padding:0 calc(var(--desktop-settings-inline,22px) - var(--desktop-settings-scroll-inset,6px)) calc(var(--desktop-settings-group-gap,20px) - var(--desktop-settings-scroll-inset,6px));gap:0}
+.desktop-lyrics .desktop-background-settings .desktop-visual-card{padding:var(--desktop-settings-group-gap,20px) 0}
+.desktop-lyrics .desktop-background-settings .desktop-visual-card:first-child{padding-block-start:calc(var(--desktop-settings-group-gap,20px) - 2px)}
+.desktop-background-settings .desktop-visual-checkbox{margin:0;cursor:pointer}
+.desktop-background-settings .desktop-background-type{flex-direction:row;align-items:center;gap:12px}
+.desktop-background-type>span{flex:none}
+.desktop-background-type>.desktop-select-host{flex:1;min-width:0}
+.desktop-lyrics .desktop-background-settings button.desktop-visual-reset{width:100%;min-height:var(--desktop-control-height);align-self:stretch}
+/* Original registry cards retain their own rows and grids, with a single divider and padding per section. */
+.desktop-lyrics .desktop-background-settings .desktop-visual-content>.desktop-visual-original-panel{gap:0;padding:0;border-top:0}
+.desktop-background-settings .desktop-visual-original-panel>div{padding:var(--desktop-settings-group-gap,20px) 0;border-top:1px solid var(--glass-line)!important}
+.desktop-background-settings .desktop-visual-original-panel>div:last-of-type{padding-block-end:var(--visual-field-gap)}
+.desktop-background-settings .desktop-background-asset-hint{margin:0 0 var(--desktop-settings-group-gap,20px)}
+.desktop-background-settings .desktop-visual-original-panel :is(.space-y-1,.space-y-1\.5){row-gap:var(--visual-field-gap)}
+.desktop-background-settings .desktop-visual-original-panel :is(.grid,.flex){min-width:0}
+.desktop-background-settings .desktop-visual-original-panel button:not(.h-6.w-12){min-height:var(--desktop-control-height);white-space:normal;overflow-wrap:anywhere}
+.desktop-background-settings .desktop-visual-original-panel div:has(>button.h-6.w-12){align-items:flex-start;gap:12px}
+.desktop-background-settings .desktop-visual-original-panel div:has(>button.h-6.w-12)>.space-y-1{flex:1;min-width:0}
+.desktop-background-settings .desktop-visual-original-panel div:has(>button.h-6.w-12)>.space-y-1>.font-medium{font-weight:400}
+/* Match the main checkbox switch instead of letting generic button padding displace the original thumb. */
+.desktop-lyrics .desktop-background-settings .desktop-visual-original-panel button.h-6.w-12{width:36px;height:22px;min-height:22px;padding:2px;border-radius:99px;flex:none;transform:none}
+.desktop-background-settings .desktop-visual-original-panel button.h-6.w-12>div{width:16px;height:16px;border-radius:50%;box-shadow:none;transform:translateX(0)!important}
+.desktop-background-settings .desktop-visual-original-panel button.h-6.w-12[aria-pressed=true]>div{transform:translateX(14px)!important}
+.desktop-lyrics .desktop-background-settings .desktop-visual-config{padding:var(--desktop-settings-group-gap,20px) 0 0;border-top:1px solid var(--glass-line);font-size:11px;line-height:1.65}
+.desktop-background-settings .desktop-visual-config>summary{color:var(--glass-muted);font-size:11px;line-height:1.6}
+.desktop-background-settings .desktop-visual-config[open]{gap:var(--desktop-settings-item-gap,14px)}
+@media(forced-colors:none){
+  .desktop-lyrics:not(.high-contrast) .desktop-background-settings .desktop-visual-original-panel button.h-6.w-12[aria-pressed=true]{background:var(--theme-active,var(--desktop-glass-selected))!important;border-color:var(--desktop-control-selected-border)!important}
+  .desktop-lyrics:not(.high-contrast) .desktop-background-settings .desktop-visual-original-panel button.h-6.w-12>div{background:var(--glass-text)!important}
+  .desktop-lyrics:not(.high-contrast) .desktop-background-settings .desktop-visual-original-panel button.h-6.w-12[aria-pressed=true]>div{background:var(--theme-primary-light,var(--glass-text))!important}
+  .desktop-lyrics:not(.high-contrast) .desktop-background-settings .desktop-visual-original-panel .font-mono:not([style*="background-color"]){color:var(--glass-muted)!important;opacity:1;font-variant-numeric:tabular-nums}
+}
 /* Read explicit selection state rather than serialized inline shadows, and keep it visible on hover. */
 .desktop-lyrics .desktop-visual-settings button:is([aria-pressed=true],[aria-checked=true],[aria-selected=true]),.desktop-visual-dialogs .desktop-visual-asset-dialog button:is([aria-pressed=true],[aria-checked=true],[aria-selected=true]){background:var(--desktop-glass-selected)!important;border-color:var(--desktop-control-selected-border)!important;color:var(--glass-text)!important;font-weight:600;box-shadow:none!important}
 .desktop-lyrics .desktop-visual-settings button[aria-pressed=false],.desktop-visual-dialogs .desktop-visual-asset-dialog button[aria-pressed=false]{font-weight:400}
@@ -93,14 +129,23 @@
 .desktop-visual-high-contrast .desktop-visual-asset-dialog>[role=dialog]>button{background:ButtonFace!important;color:ButtonText!important;border:1px solid ButtonText!important}
 .desktop-visual-high-contrast .desktop-visual-asset-dialog>[role=dialog] button:is([aria-pressed=true],[aria-selected=true],[aria-checked=true]){border:3px double Highlight!important}
 @media(max-width:640px){
-  .desktop-lyrics .desktop-visual-settings{--visual-card-gap:20px;--visual-item-gap:12px;top:40px;bottom:9px;right:9px;width:calc(100% - 18px)}
+  .desktop-lyrics .desktop-visual-settings:not(.desktop-background-settings){--visual-card-gap:20px;--visual-item-gap:12px;top:40px;bottom:9px;right:9px;width:calc(100% - 18px)}
   .desktop-visual-heading{padding:14px 18px 12px}.desktop-visual-tabs{padding:10px 18px;gap:6px}.desktop-visual-content{padding:18px}
   .desktop-visual-mode-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
+@media(max-width:850px){
+  .desktop-lyrics .desktop-background-settings{top:var(--desktop-settings-top);right:var(--desktop-settings-right);width:var(--desktop-settings-width)}
+}
+@media(max-height:600px){
+  .desktop-lyrics .desktop-background-settings{bottom:var(--desktop-settings-bottom-edge)}
+  .desktop-background-settings .desktop-visual-heading{padding-block:14px}
+}
 @media(max-height:400px){
-  .desktop-lyrics .desktop-visual-settings{top:38px;bottom:7px}.desktop-visual-heading{padding-block:8px}.desktop-visual-heading p{display:none}
+  .desktop-lyrics .desktop-visual-settings:not(.desktop-background-settings){top:38px;bottom:7px}.desktop-visual-heading{padding-block:8px}.desktop-visual-heading p{display:none}
   .desktop-visual-tabs{padding-block:6px}.desktop-lyrics .desktop-visual-tabs>button{padding-block:6px}.desktop-visual-content{padding-block:9px}
   .desktop-visual-dialogs .desktop-visual-asset-dialog{padding:8px}.desktop-visual-dialogs .desktop-visual-asset-dialog>[role=dialog]{padding:14px;max-height:calc(100dvh - 16px)}
+  .desktop-lyrics .desktop-background-settings{top:var(--desktop-settings-top);bottom:var(--desktop-settings-bottom-edge)}
+  .desktop-background-settings .desktop-visual-heading{padding-block:10px}
 }
 @media(forced-colors:active){
   .desktop-lyrics .desktop-visual-settings,.desktop-visual-dialogs .desktop-visual-asset-dialog>[role=dialog]{background:Canvas!important;color:CanvasText!important;border:1px solid CanvasText!important;box-shadow:none!important;backdrop-filter:none}
@@ -109,4 +154,8 @@
   .desktop-visual-dialogs .desktop-visual-asset-dialog>[role=dialog] :is(button,input,textarea,select){background:ButtonFace!important;color:ButtonText!important;border:1px solid ButtonText!important;box-shadow:none!important}
   .desktop-visual-dialogs .desktop-visual-asset-dialog>[role=dialog]>button{background:ButtonFace!important;color:ButtonText!important;border:1px solid ButtonText!important}
   .desktop-lyrics .desktop-visual-settings button:is([aria-selected=true],[aria-checked=true],[aria-pressed=true]),.desktop-visual-dialogs .desktop-visual-asset-dialog button:is([aria-selected=true],[aria-checked=true],[aria-pressed=true]){background:ButtonFace!important;color:ButtonText!important;border:3px double Highlight!important;box-shadow:none!important}
+  .desktop-background-settings .desktop-visual-original-panel button.h-6.w-12>div{background:ButtonText!important}
+  .desktop-background-settings .desktop-visual-original-panel button.h-6.w-12[aria-pressed=true]>div{width:12px;height:12px}
 }
+.desktop-lyrics.high-contrast .desktop-background-settings .desktop-visual-original-panel button.h-6.w-12>div{background:ButtonText!important}
+.desktop-lyrics.high-contrast .desktop-background-settings .desktop-visual-original-panel button.h-6.w-12[aria-pressed=true]>div{width:12px;height:12px}

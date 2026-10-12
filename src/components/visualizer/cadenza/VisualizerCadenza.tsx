@@ -6,7 +6,7 @@ import { AudioBands, DEFAULT_CADENZA_TUNING, Line, Theme, Word as WordType, type
 import { buildWordGraphemeTimings, type GraphemeTiming } from '../../../utils/lyrics/graphemeTiming';
 import { getLineRenderEndTime, getLineTransitionTiming, type LineTransitionTiming } from '../../../utils/lyrics/renderHints';
 import { resolveThemeFontStack, resolveThemeFontWeight } from '../../../utils/fontStacks';
-import { colorWithAlpha, mixColors } from '../colorMix';
+import { colorWithAlpha, mixColors } from '../../../utils/colorMix';
 import { isGlowBlurQuantized, quantizeShadowBlur } from '../../../utils/glowBlurQuantize';
 import { prepareActiveAndUpcoming, useVisualizerRuntime } from '../runtime';
 import { type VisualizerSharedProps } from '../definition';

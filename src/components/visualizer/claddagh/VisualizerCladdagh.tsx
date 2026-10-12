@@ -8,7 +8,7 @@ import { buildLineGraphemeTimeline } from '../../../utils/lyrics/graphemeTiming'
 import { resolveThemeFontStack, resolveThemeFontWeight } from '../../../utils/fontStacks';
 import { type VisualizerSharedProps } from '../definition';
 import { useVisualizerRuntime } from '../runtime';
-import { colorWithAlpha, mixColors } from '../colorMix';
+import { colorWithAlpha, mixColors } from '../../../utils/colorMix';
 import { isGlowBlurQuantized, quantizeShadowBlur } from '../../../utils/glowBlurQuantize';
 import VisualizerShell from '../VisualizerShell';
 import VisualizerSubtitleOverlay from '../VisualizerSubtitleOverlay';

@@ -109,12 +109,12 @@
 .desktop-top-menu>div{padding:4px}
 .desktop-top-menu button:is([role=option],[role=menuitem],[role=menuitemcheckbox]){padding-inline:12px}
 .desktop-top-menu button:is([role=option],[role=menuitem],[role=menuitemcheckbox])>span{margin-right:4px}
-.desktop-lyrics .control-panel,.desktop-glass-menu,.desktop-glass-menu .custom-scrollbar{scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--glass-muted) 40%,transparent) transparent}
+.desktop-lyrics :is(.control-panel,.desktop-settings-scroll),.desktop-glass-menu,.desktop-glass-menu .custom-scrollbar{scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--glass-muted) 40%,transparent) transparent}
 .desktop-lyrics .control-panel::-webkit-scrollbar,.desktop-glass-menu::-webkit-scrollbar,.desktop-glass-menu .custom-scrollbar::-webkit-scrollbar{width:7px;height:7px}
 .desktop-lyrics .control-panel::-webkit-scrollbar-thumb,.desktop-lyrics .desktop-visual-content::-webkit-scrollbar-thumb,.desktop-glass-menu::-webkit-scrollbar-thumb,.desktop-glass-menu .custom-scrollbar::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--glass-muted) 40%,transparent);border-radius:99px;border:2px solid transparent;background-clip:padding-box}
 /* Chromium's standard scrollbar styling otherwise takes precedence over its button pseudo-elements. */
 @supports selector(::-webkit-scrollbar){
-  .desktop-lyrics :is(.control-panel,.desktop-visual-content,.desktop-glass-menu,.custom-scrollbar):not(.desktop-top-menu,.desktop-top-menu *),.desktop-visual-dialogs .desktop-visual-asset-dialog :is([role=dialog],.desktop-glass-menu,.custom-scrollbar,textarea){scrollbar-width:auto!important;scrollbar-color:auto!important}
+  .desktop-lyrics :is(.control-panel,.desktop-settings-scroll,.desktop-visual-content,.desktop-glass-menu,.custom-scrollbar):not(.desktop-top-menu,.desktop-top-menu *),.desktop-visual-dialogs .desktop-visual-asset-dialog :is([role=dialog],.desktop-glass-menu,.custom-scrollbar,textarea){scrollbar-width:auto!important;scrollbar-color:auto!important}
   .desktop-lyrics *::-webkit-scrollbar,.desktop-visual-dialogs .desktop-visual-asset-dialog *::-webkit-scrollbar{width:7px;height:7px}
   .desktop-lyrics *::-webkit-scrollbar-track,.desktop-visual-dialogs .desktop-visual-asset-dialog *::-webkit-scrollbar-track{background:transparent}
   .desktop-lyrics *::-webkit-scrollbar-thumb,.desktop-visual-dialogs .desktop-visual-asset-dialog *::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--glass-muted) 40%,transparent);border-radius:99px;border:2px solid transparent;background-clip:padding-box}

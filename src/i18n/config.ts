@@ -5,26 +5,17 @@ import en from './locales/en.ts';
 import zhCN from './locales/zh-CN.ts';
 import ind from './locales/in.ts';
 import { resolveMissingTranslation } from './missingTranslation';
+import { flattenLocale } from './flattenLocale';
 
 /*
  * Hardcoded Chinese fallback dictionary.
  * Flattened at build-time from zh-CN.ts so every key has a Chinese fallback
  * baked directly into the JS bundle — no dependency on i18next resource loading.
  */
-function flattenLocale(obj: Record<string, any>, prefix = ''): Record<string, string> {
-  let result: Record<string, string> = {};
-  for (const [key, value] of Object.entries(obj)) {
-    const path = prefix ? `${prefix}.${key}` : key;
-    if (typeof value === 'object' && value !== null) {
-      result = { ...result, ...flattenLocale(value, path) };
-    } else {
-      result[path] = String(value);
-    }
-  }
-  return result;
-}
-
-const ZH_FALLBACKS: Record<string, string> = flattenLocale(zhCN);
+// The dotted-key table is built the first time a key is missing from every language, not at module load: most sessions never
+// ask for one, and building it eagerly cost tens of milliseconds of startup plus about 4,100 retained strings.
+let zhFallbacks: Record<string, string> | undefined;
+const getZhFallbacks = (): Record<string, string> => (zhFallbacks ??= flattenLocale(zhCN));
 
 export type AppLanguagePreference = 'system' | 'en' | 'zh-CN' | 'in';
 export const APP_LANGUAGE_STORAGE_KEY = 'folia_app_language';
@@ -98,7 +89,7 @@ i18n
     },
     fallbackLng: 'en',
     parseMissingKeyHandler: (key: string, defaultValue?: string): string => (
-      resolveMissingTranslation(ZH_FALLBACKS, key, defaultValue)
+      resolveMissingTranslation(getZhFallbacks(), key, defaultValue)
     ),
     supportedLngs: ['en', 'zh-CN', 'in'],
     ...(initialLanguagePreference !== 'system' ? { lng: initialLanguagePreference } : {}),

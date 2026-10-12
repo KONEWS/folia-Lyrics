@@ -1,4 +1,4 @@
-import { colorWithAlpha, parseColorChannels } from '../colorMix';
+import { colorWithAlpha, parseColorChannels } from '../../../utils/colorMix';
 import type { MonetBackgroundImage, MonetBackgroundTuning, Theme } from '../../../types';
 
 // src/components/visualizer/monet/monetBackgroundPipeline.ts

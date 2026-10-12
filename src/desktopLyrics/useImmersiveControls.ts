@@ -34,7 +34,8 @@ export function useImmersiveControls({ root, immersive, setImmersive, panel, has
     const blurChrome = () => { if (footerFocused() || topFocused()) (document.activeElement as HTMLElement).blur(); };
     if (!immersive) { cursor(false); controls(false); topControls(false); }
     if (panel || clickThrough) { blurChrome(); cursor(false); controls(false); topControls(false); return; }
-    if (fullscreen) { if (immersive && topFocused()) (document.activeElement as HTMLElement).blur(); topControls(false); }
+    // Fullscreen keeps the window caption hidden while allowing the lyric toolbar to be revealed.
+    if (fullscreen && surface.querySelector('.window-chrome')?.contains(document.activeElement)) (document.activeElement as HTMLElement).blur();
     if (!bottomHoverControls) controls(false);
     const arm = () => {
       window.clearTimeout(timer);
@@ -52,14 +53,14 @@ export function useImmersiveControls({ root, immersive, setImmersive, panel, has
       const menu = event.target instanceof Element && Boolean(event.target.closest('.desktop-top-menu'));
       const topChrome = event.target instanceof Element && Boolean(event.target.closest('.desktop-topbar-shell,.window-chrome,.desktop-top-menu'));
       const bottom = !menu && event.clientY >= window.innerHeight - Math.min(160, window.innerHeight / 3);
-      const top = !fullscreen && (topChrome || event.clientY <= Math.min(128, window.innerHeight / 3) || immersive && menuBridge(event));
+      const top = topChrome || event.clientY <= Math.min(128, window.innerHeight / 3) || immersive && menuBridge(event);
       if (immersive && !bottom && footerFocused()) (document.activeElement as HTMLElement).blur();
       if (immersive && !top && !menu && topFocused()) (document.activeElement as HTMLElement).blur();
       controls(immersive && bottomHoverControls && bottom);
       topControls(immersive && top);
       arm();
     };
-    const activity = () => { cursor(false); if (immersive && footerFocused()) controls(true); if (immersive && !fullscreen && topFocused()) topControls(true); arm(); };
+    const activity = () => { cursor(false); if (immersive && footerFocused()) controls(true); if (immersive && topFocused()) topControls(true); arm(); };
     const leave = () => {
       if (footerFocused()) (document.activeElement as HTMLElement).blur();
       controls(false);

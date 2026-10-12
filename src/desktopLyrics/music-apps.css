@@ -1,0 +1,28 @@
+/* src/desktopLyrics/music-apps.css — native app icons and bindings use the shared desktop glass controls. */
+/* Bound the launcher scrollport between the toolbar and playback controls, even when the list grows. */
+.desktop-lyrics .waiting-screen[data-wait-state="no-player"]{position:absolute;inset:104px 0 84px;height:auto;padding:16px 45px;justify-content:safe center;overflow-y:auto;overscroll-behavior:contain}
+.waiting-screen[data-wait-state="no-player"]>*{flex-shrink:0}
+.music-app-shortcuts{display:flex;flex-direction:column;align-items:center;gap:12px;max-width:100%;flex:none}
+.music-app-buttons{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;max-width:min(100%,440px);max-height:240px;overflow-y:auto;overscroll-behavior:contain;padding:4px;scrollbar-width:thin;scrollbar-color:var(--glass-line) transparent}
+.desktop-lyrics .music-app-shortcut{display:grid;place-items:center;flex:0 0 60px;width:60px;height:60px;padding:12px}
+.music-app-icon{display:grid;place-items:center;width:32px;height:32px;flex:none}
+.music-app-icon img{display:block;width:100%;height:100%;object-fit:contain}
+.desktop-lyrics .music-app-manage{min-height:32px;padding:5px 10px;font-size:11px;line-height:1.5;color:var(--glass-muted)}
+.music-app-settings{margin-bottom:18px}
+.music-app-settings-title{font-size:12px;line-height:1.5;color:var(--glass-text)}
+.music-app-settings>.hint{margin-top:5px}
+.music-app-discovery-hint{margin-bottom:8px}
+.music-app-scan{display:flex;align-items:center;justify-content:center;gap:6px}
+.music-app-bindings{display:grid;gap:14px;margin-top:12px}
+.music-app-binding{min-width:0}
+.music-app-info{display:flex;gap:10px;align-items:center;min-width:0}
+.music-app-details{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1;text-align:left}
+.music-app-details strong{font-size:12px;font-weight:500;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.music-app-details>span{font-size:10px;line-height:1.5;color:var(--glass-muted);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.music-app-binding-actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}
+.music-app-binding-actions button{display:flex;align-items:center;justify-content:center;gap:5px;min-height:32px;padding:6px 10px;font-size:11px;line-height:1.5}
+.music-app-add-binding{display:flex;align-items:center;justify-content:center;gap:6px}
+@media(max-height:400px),(max-width:400px){.music-app-shortcuts{gap:6px}.music-app-buttons{gap:8px;max-height:112px}.desktop-lyrics .music-app-shortcut{flex-basis:44px;width:44px;height:44px;padding:8px}.music-app-shortcut .music-app-icon{width:25px;height:25px}.music-app-shortcut .music-app-icon svg{width:23px;height:23px}}
+@media(max-width:850px){.desktop-lyrics .waiting-screen[data-wait-state="no-player"]{top:98px;padding-inline:25px}}
+@media(max-width:640px),(max-height:400px){.desktop-lyrics .waiting-screen[data-wait-state="no-player"]{bottom:76px;padding:8px 20px}}
+@media(max-width:520px){.desktop-lyrics .waiting-screen[data-wait-state="no-player"]{top:var(--two-row-chrome-bottom,124px);padding-top:8px}}

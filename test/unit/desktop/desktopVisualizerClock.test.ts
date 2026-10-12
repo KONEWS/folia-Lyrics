@@ -3,6 +3,7 @@ import { MotionValue } from 'framer-motion';
 import { useVisualizerClock } from '../../../src/desktopLyrics/useVisualizerClock';
 import { EMPTY } from '../../../src/desktopLyrics/bridge';
 import type { ManualClock } from '../../../src/desktopLyrics/clock';
+import { createFrameDemand, type FrameDemand } from '../../../src/desktopLyrics/frameDemand';
 
 // test/unit/desktop/desktopVisualizerClock.test.ts — drive the real desktop clock without reducing its frame cadence.
 const hooks = vi.hoisted(() => ({ effects: [] as (() => (() => void) | void)[], states: [] as unknown[] }));
@@ -23,14 +24,14 @@ vi.mock('framer-motion', async importOriginal => {
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); hooks.effects.length = 0; hooks.states.length = 0; });
 
 // The RAF stub executes each requested frame once and exposes cleanup cancellation.
-function mount(reactive: boolean) {
+function mount(reactive: boolean, demand?: FrameDemand) {
   const scheduled = new Map<number, FrameRequestCallback>(); let identifier = 0;
   vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => { scheduled.set(++identifier, callback); return identifier; });
   vi.stubGlobal('cancelAnimationFrame', (id: number) => scheduled.delete(id));
   const clock = { current: { ...EMPTY, hasTimeline: true, position: 2, duration: 180, received: 1000 } };
   const input = { current: { bins: new Uint8Array(1024).fill(128), sampleRate: 48000, received: 1000 } };
   const manual: ManualClock = { enabled: false, playing: false, position: 0, received: 1000 };
-  const runtime = useVisualizerClock([], clock, input, manual, 0, reactive);
+  const runtime = useVisualizerClock([], clock, input, manual, 0, reactive, demand);
   const cleanup = hooks.effects.at(-1)!();
   const tick = (now: number) => {
     const pending = scheduled.entries().next().value!;
@@ -39,6 +40,25 @@ function mount(reactive: boolean) {
   return { clock, input, runtime, tick, cleanup, scheduled };
 }
 describe('desktop clock audio work', () => {
+  it('publishes the exact pause and seek positions synchronously before a renderer stops its draw loop', () => {
+    const demand = createFrameDemand(), mounted = mount(false, demand);
+    mounted.clock.current = { ...mounted.clock.current, position: 42, playing: true };
+    mounted.tick(1500);
+    expect(mounted.runtime.currentTime.get()).toBe(42.5);
+    mounted.clock.current = { ...mounted.clock.current, position: 42.8, playing: false, received: 1800 };
+    vi.stubGlobal('performance', { now: () => 1800 });
+    demand.request();
+    // A renderer's setPaused/renderOnce can now read the final timestamp before the pending desktop RAF runs.
+    expect(mounted.runtime.currentTime.get()).toBe(42.8);
+    expect(mounted.runtime.playbackTime.get()).toBe(42.8);
+    expect(mounted.scheduled.size).toBe(1);
+    mounted.tick(5000);
+    expect(mounted.runtime.currentTime.get()).toBe(42.8);
+    mounted.clock.current = { ...mounted.clock.current, position: 4 };
+    demand.request();
+    expect(mounted.runtime.currentTime.get()).toBe(4);
+    mounted.cleanup?.();
+  });
   it('keeps 60 immutable spectrum snapshots and exact band values while scanning only 20 new FFT packets', () => {
     const mounted = mount(true), pow = vi.spyOn(Math, 'pow');
     const snapshots: Uint8Array[] = [];

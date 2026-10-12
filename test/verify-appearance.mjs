@@ -47,8 +47,8 @@ export async function verifyAppearance(page, output) {
   await page.locator('.window-buttons').waitFor({state:'detached'});
   assert.equal(await page.locator('.window-buttons').count(),0);
   await page.evaluate(()=>window.__foliaEmit('windowState',{maximized:false,fullscreen:false}));
-  const button=page.locator('.waiting-primary-action');
-  await button.hover(); await page.waitForFunction(()=>document.querySelector('.waiting-primary-action')?.style.getPropertyValue('--light-opacity')==='1');
+  const button=page.locator('.waiting-screen [data-music-app-add]').first();
+  await button.hover(); await page.waitForFunction(()=>document.querySelector('.waiting-screen [data-music-app-add]')?.style.getPropertyValue('--light-opacity')==='1');
   await page.mouse.move(5,5); assert.equal(await button.evaluate(el=>el.style.getPropertyValue('--light-opacity')),'');
   await page.emulateMedia({reducedMotion:'reduce'}); await button.hover();
   assert.equal(await button.evaluate(el=>el.style.getPropertyValue('--light-opacity')),'');
@@ -59,7 +59,7 @@ export async function verifyAppearance(page, output) {
   const panel=page.locator('.control-panel');
   const [a,b]=await Promise.all([panel.boundingBox(),page.locator('.desktop-statusbar').boundingBox()]);
   assert(a&&b&&a.y+a.height<b.y,`Settings must not cover transport at minimum client size: ${JSON.stringify({panel:a,transport:b})}`);
-  assert(await panel.evaluate(el=>el.scrollHeight>el.clientHeight));
+  assert(await panel.locator(':scope > .desktop-settings-scroll').evaluate(el=>el.scrollHeight>el.clientHeight));
   const last=page.getByRole('button',{name:'启用鼠标穿透',exact:true}); await last.scrollIntoViewIfNeeded();
   const c=await last.boundingBox(); assert(c&&c.y>=a.y&&c.y+c.height<=a.y+a.height);
   await page.screenshot({path:`${output}/settings-small.png`});

@@ -42,27 +42,35 @@ internal sealed class AudioSpectrum : IDisposable
         capturing = false;
         if (e.Exception is not null) status = "声音响应中断，正在重新连接";
     }
+    // Runs on the NAudio capture thread: a malformed packet is dropped and logged, an exception here must never escape
+    // (it would end the recording) and the frame loop must always advance while the lock is held.
     private void OnData(object? sender, WaveInEventArgs e)
     {
-        if (sender is not WasapiLoopbackCapture source) return;
-        var format = source.WaveFormat; var bytes = format.BitsPerSample / 8;
-        var floating = format.Encoding == WaveFormatEncoding.IeeeFloat || format is WaveFormatExtensible ext && ext.SubFormat == new Guid("00000003-0000-0010-8000-00aa00389b71");
-        if (bytes is < 2 or > 4) return;
-        lock (gate)
+        try
         {
-            for (var offset = 0; offset + format.BlockAlign <= e.BytesRecorded; offset += format.BlockAlign)
+            if (sender is not WasapiLoopbackCapture source) return;
+            var format = source.WaveFormat; var bytes = format.BitsPerSample / 8;
+            // BlockAlign <= 0 would make "offset += BlockAlign" spin forever inside the lock; zero channels would divide by zero.
+            if (format.BlockAlign <= 0 || format.Channels <= 0) return;
+            var floating = format.Encoding == WaveFormatEncoding.IeeeFloat || format is WaveFormatExtensible ext && ext.SubFormat == new Guid("00000003-0000-0010-8000-00aa00389b71");
+            if (bytes is < 2 or > 4) return;
+            lock (gate)
             {
-                float value = 0;
-                for (var channel = 0; channel < format.Channels; channel++)
+                for (var offset = 0; offset + format.BlockAlign <= e.BytesRecorded; offset += format.BlockAlign)
                 {
-                    var p = offset + channel * bytes;
-                    value += floating && bytes == 4 ? BitConverter.ToSingle(e.Buffer, p) : bytes == 2 ? BitConverter.ToInt16(e.Buffer, p) / 32768f
-                        : bytes == 4 ? BitConverter.ToInt32(e.Buffer, p) / 2147483648f : ((e.Buffer[p] << 8 | e.Buffer[p + 1] << 16 | e.Buffer[p + 2] << 24) >> 8) / 8388608f;
+                    float value = 0;
+                    for (var channel = 0; channel < format.Channels; channel++)
+                    {
+                        var p = offset + channel * bytes;
+                        value += floating && bytes == 4 ? BitConverter.ToSingle(e.Buffer, p) : bytes == 2 ? BitConverter.ToInt16(e.Buffer, p) / 32768f
+                            : bytes == 4 ? BitConverter.ToInt32(e.Buffer, p) / 2147483648f : ((e.Buffer[p] << 8 | e.Buffer[p + 1] << 16 | e.Buffer[p + 2] << 24) >> 8) / 8388608f;
+                    }
+                    ring[cursor] = float.IsFinite(value) ? value / format.Channels : 0; cursor = (cursor + 1) & 2047;
                 }
-                ring[cursor] = float.IsFinite(value) ? value / format.Channels : 0; cursor = (cursor + 1) & 2047;
+                lastSamples = Stopwatch.GetTimestamp();
             }
-            lastSamples = Stopwatch.GetTimestamp();
         }
+        catch (Exception error) { try { DataFiles.Log(error); } catch { } }
     }
     public byte[] Read()
     {

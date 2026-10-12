@@ -8,14 +8,16 @@ import { create } from 'zustand';
 import i18n from '../i18n/config';
 
 
-import { normalizePinnedCommandIds, readPinnedCommandIds, writePinnedCommandIds, type PinnedCommandIds } from '../components/command-palette/pinnedCommandPreferences';
+import { normalizePinnedCommandIds, readPinnedCommandIds, writePinnedCommandIds, type PinnedCommandIds } from '../services/commandPalette/pinnedCommandPreferences';
 import { applyAppLanguagePreference, readStoredAppLanguagePreference, type AppLanguagePreference } from '../i18n/config';
 import { setStatusMessage } from './useStatusMessageStore';
-import type { SettingsAnchorId } from '../components/modal/settings/navigation/settingsAnchorModel';
+import type { SettingsAnchorId, SettingsSubviewId } from '../types/settingsNavigation';
 
 export type SettingsModalInitialTab = 'help' | 'options';
 
-export type SettingsSubviewId = 'appearance' | 'general' | 'playback' | 'interaction' | 'integration' | 'storage' | 'desktop' | 'graphics' | 'mods' | 'lab' | 'visualizer' | 'themePark' | 'lyricFilter' | 'globalLyricOffset';
+// The union moved to types/settingsNavigation.ts (it and the anchor table need each other, so
+// neither may live in this directory); re-exported here so existing importers keep working.
+export type { SettingsSubviewId };
 
 /** 歌词动画调参台的四页。列成数组是为了让「思索」的设置直达在单测里能核对 section 真实存在。 */
 export const VISUALIZER_SETTINGS_SECTIONS = ['common', 'background', 'visualizer', 'subtitle'] as const;

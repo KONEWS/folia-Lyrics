@@ -601,6 +601,9 @@ const TabButton: React.FC<{
     );
 };
 
+// 调试面板时间读数的最小刷新步长（秒）。
+const LIVE_TIME_STEP_SEC = 0.1;
+
 const DevDebugOverlay: React.FC<DevDebugOverlayProps> = ({
     snapshot,
     currentTime,
@@ -623,11 +626,20 @@ const DevDebugOverlay: React.FC<DevDebugOverlayProps> = ({
     const [baselineDomNodes, setBaselineDomNodes] = useState<number | null>(null);
     const previousUsedHeapRef = useRef<number | null>(null);
 
+    // 调试面板只需要约 10Hz 的读数：不节流时整张 1000 行的面板会随播放时间每帧重渲染。
+    // 与上次已提交的值相差不足 LIVE_TIME_STEP_SEC 就跳过，拖动进度（大跨度）仍会立即更新。
+    const committedCurrentTimeRef = useRef(liveCurrentTime);
+    const committedLyricTimeRef = useRef(liveLyricCurrentTime);
+
     useMotionValueEvent(currentTime, 'change', latest => {
+        if (Math.abs(latest - committedCurrentTimeRef.current) < LIVE_TIME_STEP_SEC) return;
+        committedCurrentTimeRef.current = latest;
         setLiveCurrentTime(latest);
     });
 
     useMotionValueEvent(lyricCurrentTime, 'change', latest => {
+        if (Math.abs(latest - committedLyricTimeRef.current) < LIVE_TIME_STEP_SEC) return;
+        committedLyricTimeRef.current = latest;
         setLiveLyricCurrentTime(latest);
     });
 

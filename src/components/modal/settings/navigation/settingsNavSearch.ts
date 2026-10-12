@@ -1,6 +1,6 @@
 import { COMMAND_PALETTE_COMMANDS, matchCommandsExactly } from '../../../command-palette/commandRegistry';
 import { normalizeSearchText } from '../../../command-palette/search/normalize';
-import type { SettingsAnchorId } from './settingsAnchorModel';
+import type { SettingsAnchorId } from '../../../../types/settingsNavigation';
 import type { SettingsNavGroup, SettingsSectionId } from './settingsNavModel';
 
 // src/components/modal/settings/navigation/settingsNavSearch.ts

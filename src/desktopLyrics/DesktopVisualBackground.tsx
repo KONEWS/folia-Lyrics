@@ -11,10 +11,10 @@ export default function DesktopVisualBackground({ model, mode }: { model: Deskto
   const resolved = resolveVisualizerBackgroundMode(model.backgroundConfig.mode, mode);
   const entry = getVisualizerBackgroundRegistryEntry(resolved);
   return <>
-    <VisualCard title={t('options.previewBackgroundSettings')}>
-      <VisualToggle label={t('desktopVisual.originalBackground')} checked={model.backgroundEnabled} onChange={model.setBackgroundEnabled}/>
+    <VisualCard>
+      <VisualToggle label={t('desktopVisual.originalBackground')} checked={model.backgroundEnabled} onChange={model.setBackgroundEnabled} checkbox/>
       <p className="desktop-visual-hint">{t(model.backgroundSuppressed ? 'desktopVisual.backgroundSuppressed' : 'desktopVisual.backgroundHint')}</p>
-      <label className="desktop-visual-field"><span>{t('options.visualizerBackgroundMode')}</span><DesktopSelect label={t('options.visualizerBackgroundMode')}
+      <label className="desktop-visual-field desktop-background-type"><span>{t('options.visualizerBackgroundMode')}</span><DesktopSelect label={t('options.visualizerBackgroundMode')}
         value={resolved} onChange={value => model.backgroundActions.onModeChange?.(value as typeof resolved)}
         options={VISUALIZER_BACKGROUND_REGISTRY.map(item => ({ value: item.mode, label: getVisualizerBackgroundModeLabel(item.mode, t) }))}/></label>
       {entry.resetSettings ? <button type="button" className="desktop-visual-reset" onClick={() => entry.resetSettings?.(model.backgroundActions)}>{t('ui.default')}</button> : null}
@@ -23,7 +23,7 @@ export default function DesktopVisualBackground({ model, mode }: { model: Deskto
       {entry.renderSettingsPanel?.({ config: model.backgroundConfig, actions: model.backgroundActions, t,
         theme: model.mergedTheme, isDaylight: false, controlCardBg: 'transparent', rangeInputClass: 'desktop-visual-native-range',
         onSliderPointerDown: model.beginSlider, onSliderCommit: model.commitSlider })}
+      <p className="desktop-visual-hint desktop-background-asset-hint">{t('desktopVisual.assetHint')}</p>
     </div>
-    <p className="desktop-visual-hint">{t('desktopVisual.assetHint')}</p>
   </>;
 }

@@ -14,9 +14,11 @@ internal sealed class OnlineHttp : IDisposable
     private readonly ConcurrentDictionary<string, DateTimeOffset> nextRequest = new();
     public OnlineHttp(HttpMessageHandler? handler = null)
     {
-        client = new(handler ?? new HttpClientHandler { AutomaticDecompression = DecompressionMethods.All }) { Timeout = TimeSpan.FromSeconds(12) };
-        client.DefaultRequestHeaders.UserAgent.ParseAdd("folia-Lyrics/0.4.30 (+https://github.com/KONEWS/folia-Lyrics; standalone-derivative)");
+        client = new(handler ?? new HttpClientHandler { AutomaticDecompression = DecompressionMethods.All, MaxAutomaticRedirections = 3 }) { Timeout = TimeSpan.FromSeconds(12) };
+        client.DefaultRequestHeaders.UserAgent.ParseAdd($"folia-Lyrics/{AppVersion()} (+https://github.com/KONEWS/folia-Lyrics; standalone-derivative)");
     }
+    // 版本号取自程序集（即 FoliaLyrics.csproj 的 <Version>），User-Agent 不会再落后于发布版本。
+    private static string AppVersion() => typeof(OnlineHttp).Assembly.GetName().Version is { } v ? $"{v.Major}.{v.Minor}.{v.Build}" : "0";
     public static string Url(string endpoint, params (string, object)[] parameters) => endpoint + "?" + string.Join('&', parameters.Select(p =>
         Uri.EscapeDataString(p.Item1) + "=" + Uri.EscapeDataString(Convert.ToString(p.Item2, CultureInfo.InvariantCulture) ?? "")));
     public Task<JsonDocument> Get(string url, CancellationToken token, string? referer = null) => Request(url, token, referer, null);
@@ -46,7 +48,10 @@ internal sealed class OnlineHttp : IDisposable
             if (response.StatusCode == HttpStatusCode.TooManyRequests)
             {
                 var retry = response.Headers.RetryAfter;
-                nextRequest[host] = retry?.Date ?? DateTimeOffset.UtcNow.Add(retry?.Delta ?? TimeSpan.FromMinutes(1));
+                var until = retry?.Date ?? DateTimeOffset.UtcNow.Add(retry?.Delta ?? TimeSpan.FromMinutes(1));
+                // 服务端给出的等待时间设上限，异常的 Retry-After 不会让该来源在整个运行期间一直被判定为限流。
+                var latest = DateTimeOffset.UtcNow.AddMinutes(5);
+                nextRequest[host] = until < latest ? until : latest;
                 throw new IOException("服务限流，请稍后重试");
             }
             response.EnsureSuccessStatusCode();

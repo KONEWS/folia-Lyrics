@@ -1,5 +1,5 @@
 import React from 'react';
-import { colorWithAlpha } from './colorMix';
+import { colorWithAlpha } from '../../utils/colorMix';
 import { type VisualizerSettingsPanelProps } from './definition';
 
 // src/components/visualizer/VisualizerPresetGroup.tsx

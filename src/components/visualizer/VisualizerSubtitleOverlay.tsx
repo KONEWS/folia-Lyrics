@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Line, SubtitleContentMode, Theme } from '../../types';
 import { resolveThemeFontWeight, resolveThemeTranslationFontStack } from '../../utils/fontStacks';
 import { resolveLyricAlternateText, resolveSubtitleContentMode } from '../../utils/lyrics/alternateText';
-import { colorWithAlpha } from './colorMix';
+import { colorWithAlpha } from '../../utils/colorMix';
 import { usePlayerSubtitleBottomPx } from '../../hooks/usePlayerBottomBarBottomPx';
 
 // Some songs' lyric data carries pure marker/separator lines ("//", "●●●", dashes, stray slashes from

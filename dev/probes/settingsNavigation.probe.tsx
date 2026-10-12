@@ -4,7 +4,7 @@ import { SettingsAnchor, SettingsAnchorProvider, useSettingsAnchorList, useSetti
 import SettingsSectionHeading from '../../src/components/modal/settings/navigation/SettingsSectionHeading';
 import SettingsSidebarChips from '../../src/components/modal/settings/navigation/SettingsSidebarChips';
 import SettingsSidebarWide from '../../src/components/modal/settings/navigation/SettingsSidebarWide';
-import type { SettingsAnchorId } from '../../src/components/modal/settings/navigation/settingsAnchorModel';
+import type { SettingsAnchorId } from '../../src/types/settingsNavigation';
 import { buildSettingsNavGroups, type SettingsSectionId } from '../../src/components/modal/settings/navigation/settingsNavModel';
 import { useMediaQuery } from '../../src/hooks/useMediaQuery';
 import { useSettingsScrollSpy } from '../../src/hooks/useSettingsScrollSpy';

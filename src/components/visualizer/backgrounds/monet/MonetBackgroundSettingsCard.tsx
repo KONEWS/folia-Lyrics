@@ -10,7 +10,7 @@ import {
     type MonetBackgroundWashColorMode,
     type Theme,
 } from '../../../../types';
-import { colorWithAlpha } from '../../colorMix';
+import { colorWithAlpha } from '../../../../utils/colorMix';
 import BackgroundToggleRow from '../BackgroundToggleRow';
 
 // src/components/visualizer/backgrounds/monet/MonetBackgroundSettingsCard.tsx

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type React from 'react';
 import { PlayerState, type ActiveLocalLyricsSource, type LyricData, type PlaybackContext, type ReplayGainMode, type SongResult } from '../types';
-import { createCoverUrlResolver } from '../components/app/playback/createCoverUrlResolver';
+import { createCoverUrlResolver } from '../services/onlineMusic/createCoverUrlResolver';
 
 /** The now-playing picture, frozen for as long as a transition is running. */
 export interface TransitionDisplay {

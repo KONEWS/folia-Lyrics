@@ -8,7 +8,9 @@ export function useDesktopSettingsDismiss(panel: RefObject<HTMLElement | null>, 
   useLayoutEffect(() => { latestClose.current = onClose; }, [onClose]);
   useEffect(() => {
     let gesture: Gesture | null = null;
-    const asset = () => Array.from(document.querySelectorAll<HTMLElement>('.desktop-visual-asset-dialog')).at(-1) ?? null;
+    // Let each persistent settings entry own its toggle without an outside-close reopening it.
+    const settingsEntry = '[data-settings-trigger],[data-background-settings-trigger],[data-settings-navigation-trigger]';
+    const asset = () => Array.from(document.querySelectorAll<HTMLElement>('.desktop-visual-asset-dialog,.music-app-discovery-dialog[open]')).at(-1) ?? null;
     const menu = (owner: HTMLElement | null) => {
       if (!owner) return null;
       const nested = owner.querySelector<HTMLElement>('[role="menu"]');
@@ -26,7 +28,7 @@ export function useDesktopSettingsDismiss(panel: RefObject<HTMLElement | null>, 
       const target = event.target, surface = panel.current;
       if (!(target instanceof Element) || !surface) return;
       const child = asset(), popup = menu(child ?? surface);
-      const outside = !surface.contains(target) && !target.closest('[data-settings-trigger]');
+      const outside = !surface.contains(target) && !target.closest(settingsEntry);
       if (event.button !== 0) {
         if (outside && !child && !popup) {
           const focused = document.activeElement;
@@ -49,7 +51,7 @@ export function useDesktopSettingsDismiss(panel: RefObject<HTMLElement | null>, 
       }
       const target = event.target, surface = panel.current;
       if (!started.outside || !(target instanceof Element) || !surface || surface.contains(target)
-        || target.closest('[data-settings-trigger]') || asset() || menu(surface)) return;
+        || target.closest(settingsEntry) || asset() || menu(surface)) return;
       latestClose.current();
       // Consume blank-space dismissal so the same click cannot reach the lyric/player surface.
       if (!target.closest('button,a,input,textarea,select,[role="combobox"],[role="menuitem"]')) {

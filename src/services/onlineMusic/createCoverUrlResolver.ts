@@ -1,8 +1,8 @@
-import type { SongResult } from '../../../types';
-import { getSongCoverUrl } from '../../../services/onlineMusic/songMetadata';
-import { toSafeRemoteUrl } from '../../../utils/appPlaybackHelpers';
+import type { SongResult } from '../../types';
+import { getSongCoverUrl } from './songMetadata';
+import { toSafeRemoteUrl } from '../../utils/appPlaybackHelpers';
 
-// src/components/app/playback/createCoverUrlResolver.ts
+// src/services/onlineMusic/createCoverUrlResolver.ts
 
 // Resolves the effective cover URL by preferring the cached cover over remote metadata.
 export const createCoverUrlResolver = (

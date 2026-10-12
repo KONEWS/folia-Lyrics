@@ -1,6 +1,6 @@
-import type { CommandPaletteCommand } from './types';
+import type { CommandPaletteCommand } from '../../components/command-palette/types';
 
-// src/components/command-palette/pinnedCommandPreferences.ts
+// src/services/commandPalette/pinnedCommandPreferences.ts
 // Normalizes and persists the three positional command palette shortcuts.
 
 export type PinnedCommandIds = [

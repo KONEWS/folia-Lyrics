@@ -1,0 +1,202 @@
+# .github/workflows/desktop-checks.yml: Validate the desktop UI and native host without publishing or installing Electron.
+name: Desktop Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-checks-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  web:
+    name: Desktop UI checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v6
+
+      - name: Install Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      # Keep script-free desktop dependencies separate from the upstream Electron test cache.
+      - name: Restore desktop dependencies
+        id: desktop-dependencies
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: desktop-node-modules-${{ runner.os }}-node24-noscripts-${{ hashFiles('package-lock.json') }}
+
+      - name: Install desktop dependencies
+        if: steps.desktop-dependencies.outputs.cache-hit != 'true'
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Check desktop version consistency
+        run: npm run check:desktop-version
+
+      - name: Typecheck desktop UI
+        run: npm run typecheck:desktop
+
+      - name: Run desktop unit tests
+        run: npm run test:desktop
+
+      - name: Build desktop UI
+        run: npm run build:desktop
+
+      - name: Package desktop web assets
+        run: node tools/package-web.mjs
+
+      - name: Save web assets for native compilation
+        uses: actions/upload-artifact@v6
+        with:
+          name: desktop-web-assets
+          path: native/web-assets.zip
+          if-no-files-found: error
+          retention-days: 1
+
+      # Chromium is downloaded on every run otherwise; the system packages below are still installed each time.
+      - name: Restore Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Chromium and browser dependencies
+        run: npx playwright install --with-deps chromium
+
+      - name: Run desktop lyric offset browser regression
+        run: npm run test:desktop:ui
+        env:
+          FOLIA_CHECKS_ONLY: offset
+          FOLIA_UI_OUTPUT: test-results/desktop-offset-ci
+
+      - name: Run music app shortcut browser regression
+        run: node test/verify-music-apps.mjs
+        env:
+          FOLIA_UI_OUTPUT: test-results/music-apps-ci
+
+      - name: Run desktop notice timing and layout regression
+        run: node test/verify-desktop-notices.mjs
+        env:
+          FOLIA_UI_OUTPUT: test-results/desktop-notices-ci
+
+      - name: Run desktop pause synchronization regression
+        run: node test/verify-desktop-pause.mjs
+        env:
+          FOLIA_UI_OUTPUT: test-results/desktop-pause-ci
+
+      - name: Run precise desktop settings navigation regression
+        run: node test/verify-desktop-settings-navigation.mjs
+        env:
+          FOLIA_UI_OUTPUT: test-results/desktop-settings-navigation-ci
+
+      - name: Run music app discovery confirmation regression
+        run: node test/verify-music-app-discovery.mjs
+        env:
+          FOLIA_UI_OUTPUT: test-results/music-app-discovery-ci
+
+      - name: Run complete desktop browser regression with one renderer
+        run: npm run test:desktop:ui
+        env:
+          FOLIA_MODE_INDEX: '0'
+          FOLIA_UI_OUTPUT: test-results/desktop-ci
+
+      - name: Save desktop browser diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: desktop-browser-diagnostics
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  native:
+    name: Native desktop checks
+    runs-on: windows-latest
+    needs: web
+    # Native offline checks remain useful when the web job fails a browser assertion.
+    if: ${{ !cancelled() }}
+    timeout-minutes: 20
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+      DOTNET_NOLOGO: '1'
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v6
+
+      - name: Install .NET SDK
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore native dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: desktop-nuget-${{ runner.os }}-dotnet10-${{ hashFiles('native/**/*.csproj', 'test/transport-smoke/*.csproj', 'test/lyric-performance/*.csproj', 'test/window-close-smoke/*.csproj', 'test/music-app-smoke/*.csproj', 'test/window-background-smoke/*.csproj', 'test/tray-menu-smoke/*.csproj') }}
+          restore-keys: desktop-nuget-${{ runner.os }}-dotnet10-
+
+      - name: Run transport smoke checks
+        run: dotnet run --project test/transport-smoke/TransportSmoke.csproj -c Release
+
+      - name: Run offline lyric checks
+        run: dotnet run --project test/lyric-performance/LyricPerformance.csproj -c Release -- test-results/native/lyric-checks.json --logic-only
+
+      - name: Run window lifecycle smoke checks
+        run: dotnet run --project test/window-close-smoke/WindowCloseSmoke.csproj -c Release
+
+      - name: Run music app binding smoke checks
+        run: dotnet run --project test/music-app-smoke/MusicAppSmoke.csproj -c Release
+
+      # Exercise native tray geometry, commands and readable fallback without WebView, audio or player actions.
+      - name: Run offline tray menu smoke checks
+        run: dotnet run --project test/tray-menu-smoke/TrayMenuSmoke.csproj -c Release
+
+      # Minimize/restore transitions of the real WindowBackgroundState.cs against stand-ins; no window, WebView or audio device.
+      - name: Run window background state checks
+        run: dotnet run --project test/window-background-smoke/WindowBackgroundSmoke.csproj -c Release
+
+      # The measurement tool runs on both PowerShell editions Windows ships; the checks use a simulated process world and window.
+      - name: Check the background cost measurement tool (Windows PowerShell 5.1)
+        shell: powershell
+        run: ./tools/test-background-cost.ps1
+
+      - name: Check the background cost measurement tool (PowerShell 7)
+        shell: pwsh
+        run: ./tools/test-background-cost.ps1
+
+      # The web job uploads the assets only when it reaches that step; when it failed earlier there is nothing to
+      # download, and the resulting "artifact not found" error would hide the real failure.
+      - name: Download desktop web assets
+        if: ${{ needs.web.result == 'success' }}
+        uses: actions/download-artifact@v7
+        with:
+          name: desktop-web-assets
+          path: native
+
+      - name: Compile the real Windows host
+        if: ${{ needs.web.result == 'success' }}
+        run: dotnet build native/FoliaLyrics.csproj -c Release
+
+      - name: Save native check diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: desktop-native-diagnostics
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7

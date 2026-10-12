@@ -6,7 +6,7 @@ import { DEFAULT_CAPPELLA_TUNING, type AudioBands, type CappellaEmojiImage, type
 import { resolveThemeFontStack, resolveThemeFontWeight } from '../../../utils/fontStacks';
 import { buildLineGraphemeTimeline, buildWordGraphemeTimings, splitLyricGraphemes } from '../../../utils/lyrics/graphemeTiming';
 import { getLineRenderEndTime, getLineRenderHints } from '../../../utils/lyrics/renderHints';
-import { mixColors } from '../colorMix';
+import { mixColors } from '../../../utils/colorMix';
 import { shouldPreheatLine, useVisualizerRuntime, type VisualizerPreheatWindow } from '../runtime';
 import { type VisualizerSharedProps } from '../definition';
 import VisualizerShell from '../VisualizerShell';

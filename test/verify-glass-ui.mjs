@@ -214,7 +214,9 @@ export async function verifyGlassUi(page, song, output) {
   assert.equal(await style(menu, 'backgroundColor'), await style(panel, 'backgroundColor'));
   const blurs = await Promise.all([menu, panel].map(surface => style(surface, 'backdropFilter')));
   assert(blurs.every(blur => blur !== 'none' && blur === blurs[0]), 'settings and floating menus retain the same glass backdrop');
-  assert.notEqual(await style(menu, 'backgroundImage'), 'none'); assert.notEqual(await style(panel, 'boxShadow'), 'none');
+  // The current transparency material uses the theme background as a uniform fill on both surfaces.
+  assert.equal(await style(menu, 'backgroundImage'), 'none'); assert.equal(await style(panel, 'backgroundImage'), 'none');
+  assert.notEqual(await style(panel, 'boxShadow'), 'none');
   await quietChrome('floating menu open');
   await dismiss(menu);
   await selectDesktopOption(page, '选择播放器', { label: '椒盐音乐' });
@@ -224,14 +226,31 @@ export async function verifyGlassUi(page, song, output) {
   menu = await menuFor('选择播放器');
   assert.equal(await menu.locator('[aria-selected="true"]').getAttribute('data-value'), 'glass-salt');
   const beforeTrigger = await player.boundingBox(), beforeMenu = await menu.boundingBox();
-  await panel.evaluate(el => { el.scrollTop += el.scrollTop > 20 ? -12 : 12; });
-  await page.waitForFunction(({ beforeTrigger, beforeMenu }) => {
-    const trigger = document.querySelector('[role="combobox"][aria-label="选择播放器"]')?.getBoundingClientRect();
-    const menu = document.querySelector('[role="listbox"][aria-label="选择播放器"]')?.getBoundingClientRect();
-    return trigger && menu && Math.abs(trigger.y - beforeTrigger.y) > 1
-      && Math.abs((trigger.y - beforeTrigger.y) - (menu.y - beforeMenu.y)) < 2;
-  }, { beforeTrigger, beforeMenu });
-  await panel.evaluate(el => { el.scrollTop = el.scrollHeight; });
+  const scroll = await panel.locator(':scope > .desktop-settings-scroll').evaluate(el => {
+    const before = el.scrollTop; el.scrollTop += before > 20 ? -12 : 12;
+    return { before, after: el.scrollTop, max: el.scrollHeight - el.clientHeight };
+  });
+  assert(Math.abs(scroll.after - scroll.before) > 1, `the settings panel must actually scroll: ${JSON.stringify(scroll)}`);
+  // A small scroll may cross the available-space threshold and legitimately flip the menu to the other side.
+  try {
+    await page.waitForFunction(({ beforeTrigger }) => {
+      const trigger = document.querySelector('[role="combobox"][aria-label="选择播放器"]')?.getBoundingClientRect();
+      const element = document.querySelector('[role="listbox"][aria-label="选择播放器"]'), bounds = element?.getBoundingClientRect();
+      if (!trigger || !bounds || Math.abs(trigger.y - beforeTrigger.y) <= 1) return false;
+      return element.dataset.menuPlacement === 'top' ? Math.abs(bounds.bottom - trigger.top + 4) < 2
+        : element.dataset.menuPlacement === 'viewport' ? Math.abs(bounds.top - 8) < 2
+          : Math.abs(bounds.top - trigger.bottom - 4) < 2;
+    }, { beforeTrigger }, { timeout: 5000 });
+  } catch {
+    const after = await page.evaluate(() => {
+      const trigger = document.querySelector('[role="combobox"][aria-label="选择播放器"]');
+      const menu = document.querySelector('[role="listbox"][aria-label="选择播放器"]');
+      return { trigger: trigger?.getBoundingClientRect().toJSON(), menu: menu?.getBoundingClientRect().toJSON(),
+        placement: menu?.dataset.menuPlacement, viewport: { width: innerWidth, height: innerHeight } };
+    });
+    assert.fail(`the scrolled menu must remain anchored after any placement flip: ${JSON.stringify({ beforeTrigger, beforeMenu, scroll, after })}`);
+  }
+  await panel.locator(':scope > .desktop-settings-scroll').evaluate(el => { el.scrollTop = el.scrollHeight; });
   await menu.waitFor({ state: 'detached' });
   await player.scrollIntoViewIfNeeded(); await selectDesktopOption(page, '选择播放器', { value: originalSource });
   await closeSettings();

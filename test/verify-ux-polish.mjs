@@ -83,7 +83,7 @@ export async function verifyUxPolish(page, song, output) {
 
     await page.setViewportSize({ width: 1280, height: 800 }); await open();
     assert.deepEqual(await page.locator('.control-panel [data-settings-section]').evaluateAll(elements => elements.map(element => element.dataset.settingsSection)), ['transparency', 'sync', 'player', 'immersion', 'window-sound', 'online', 'local']);
-    assert.equal(await page.locator('.control-panel').evaluate(element => element.firstElementChild.dataset.settingsSection), 'transparency');
+    assert.equal(await page.locator('.desktop-main-settings > .desktop-settings-scroll').evaluate(element => element.firstElementChild.dataset.settingsSection), 'transparency');
     assert.equal(await page.locator('.control-panel .panel-heading').count(), 0);
     assert.equal(await page.locator('.control-panel [aria-label="歌词样式"]').count(), 0);
     await hit(page.getByRole('checkbox', { name: '播放页面透明背景', exact: true }), 'first transparent setting', true);
@@ -96,10 +96,10 @@ export async function verifyUxPolish(page, song, output) {
       await help.locator(':scope > summary').click(); assert(await help.locator('p').first().isVisible()); await help.locator(':scope > summary').click();
     }
     assert.equal(await page.locator('.lyric-source-settings').getAttribute('open'), null);
-    await page.locator('.control-panel').evaluate(element => { element.scrollTop = 0; }); await shoot('settings-folded');
+    await page.locator('.desktop-main-settings > .desktop-settings-scroll').evaluate(element => { element.scrollTop = 0; }); await shoot('settings-folded');
     await close(); await page.setViewportSize({ width: 450, height: 300 }); await open();
     for (const control of [page.getByRole('checkbox', { name: '播放页面透明背景', exact: true }), page.getByRole('button', { name: '歌词提前 0.2 秒', exact: true }), page.getByRole('combobox', { name: '选择播放器', exact: true })]) await hit(control, 'short panel reachable setting', true);
-    await page.locator('.control-panel').evaluate(element => { element.scrollTop = 0; }); await shoot('settings-450x300'); await close();
+    await page.locator('.desktop-main-settings > .desktop-settings-scroll').evaluate(element => { element.scrollTop = 0; }); await shoot('settings-450x300'); await close();
     checks.push('seven settings groups prioritize transparency, sync and player; six long explanations fold by default and still open in a short window');
 
     await page.setViewportSize({ width: 1280, height: 800 });
@@ -157,17 +157,23 @@ export async function verifyUxPolish(page, song, output) {
     const waitingSong = { ...song, key: 'ux-wait-song', title: '等待状态测试歌曲', artist: '状态测试歌手' };
     const fixture = async (session, online) => { await close(); await emit(page, 'session', session); await emit(page, 'online', online); await frame(page); };
     const waiting = async (kind, context) => {
-      await page.locator(`.waiting-screen[data-wait-state="${kind}"]`).waitFor(); const primary = page.locator('.waiting-primary-action');
+      await page.locator(`.waiting-screen[data-wait-state="${kind}"]`).waitFor(); const primary = kind === 'no-player'
+        ? page.locator('.waiting-screen [data-music-app-add]').first() : page.locator('.waiting-primary-action');
       assert.equal(await primary.count(), 1); assert(await primary.isEnabled());
-      assert.equal(await page.locator('.waiting-alternatives').getAttribute('open'), null);
+      if (kind === 'no-player') {
+        assert.equal(await page.locator('.waiting-screen [data-music-app-add]').count(), 3);
+        assert.equal(await page.locator('.waiting-alternatives').count(), 0);
+        await hit(page.locator('.waiting-screen [data-music-app-add]').last(), `${context} third shortcut`, true);
+      } else assert.equal(await page.locator('.waiting-alternatives').getAttribute('open'), null);
       assert((await page.locator('.waiting-screen h1').innerText()).trim()); assert((await page.locator('.waiting-description').innerText()).trim());
-      await hit(primary, `${context} primary`, true); const sample = await page.locator('.waiting-screen').evaluate(element => ({ state: element.dataset.waitState, text: element.innerText, action: element.querySelector('.waiting-primary-action').textContent.trim(), scrollTop: element.scrollTop }));
+      await hit(primary, `${context} primary`, true); const sample = await page.locator('.waiting-screen').evaluate(element => ({ state: element.dataset.waitState, text: element.innerText, action: element.querySelector('.waiting-primary-action,[data-music-app-add]').getAttribute('aria-label') || element.querySelector('.waiting-primary-action')?.textContent.trim(), scrollTop: element.scrollTop }));
       samples.push({ context, ...sample }); await shoot(context); return primary;
     };
     for (const [width, height] of [[1280, 800], [450, 300]]) {
       await page.setViewportSize({ width, height });
       await fixture(noPlayer, empty); let primary = await waiting('no-player', `waiting-no-player-${width}x${height}`); await primary.click();
-      await hit(page.getByRole('combobox', { name: '选择播放器', exact: true }), 'no-player action scrolls to player');
+      await hit(page.locator('.music-app-add-binding'), 'no-player action reveals new music app binding');
+      await hit(page.getByRole('combobox', { name: '选择播放器', exact: true }), 'player selection remains reachable below music app bindings', true);
       await hit(page.locator('.desktop-topbar [data-settings-trigger]'), 'focused player panel keeps its topbar toggle reachable'); await close();
       await fixture(waitingSong, { ...empty, key: waitingSong.key }); primary = await waiting('connected-empty', `waiting-connected-${width}x${height}`); await primary.click();
       for (const control of [page.getByLabel('在线搜索歌名'), page.getByLabel('在线搜索歌手'), page.locator('.control-panel').getByRole('button', { name: '搜索在线歌词', exact: true }), page.locator('.desktop-topbar [data-settings-trigger]')]) await hit(control, 'connected action reveals online form and topbar toggle'); await close();
@@ -177,7 +183,7 @@ export async function verifyUxPolish(page, song, output) {
       assert.match(await page.locator('.waiting-track').innerText(), /等待状态测试歌曲/); const before = await page.evaluate(() => window.__foliaCommands.filter(command => command.type === 'resetOnline').length); await primary.click();
       assert.equal(await page.evaluate(() => window.__foliaCommands.filter(command => command.type === 'resetOnline').length), before + 1);
     }
-    checks.push('both viewport sizes expose one actionable primary for no-player, connected-empty, matching and explicit no-result failure');
+    checks.push('both viewport sizes expose three initial add slots and one actionable primary for connected-empty, matching and explicit no-result failure');
     await fixture(waitingSong, { ...empty, key: waitingSong.key, phase: 'matching', busy: false }); await page.locator('.waiting-screen[data-wait-state="matching"]').waitFor();
     await fixture(waitingSong, { ...empty, key: waitingSong.key, phase: 'ready', errors: ['另一歌词源部分失败'] }); await page.locator('.waiting-screen[data-wait-state="connected-empty"]').waitFor();
     const legacy = { ...empty, key: waitingSong.key }; delete legacy.phase; await fixture(waitingSong, legacy); await page.locator('.waiting-screen[data-wait-state="connected-empty"]').waitFor();

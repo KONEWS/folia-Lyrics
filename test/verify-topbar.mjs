@@ -148,8 +148,9 @@ export async function verifyTopbar(page, song, output) {
   assert.equal(await countCommands(), beforeWindowEscape + 1, 'the fullscreen button remains usable');
   await page.getByRole('button', { name: '沉浸显示', exact: true }).click();
   await page.mouse.move(500, 300); await page.mouse.move(500, 18);
-  assert.equal(await page.locator('.top-controls-revealed').count(), 0, 'fullscreen immersion must not reveal window controls');
-  await waitVisibility('.desktop-topbar', false);
+  await page.locator('.immersive.top-controls-revealed').waitFor();
+  await waitVisibility('.desktop-topbar', true);
+  await waitVisibility('.window-chrome', false);
   assert.equal(await page.locator('.window-buttons').count(), 0);
   await page.mouse.move(500, 780); await page.locator('.controls-revealed').waitFor();
   await page.dispatchEvent('body', 'keydown', { key: 'Escape', repeat: true });
@@ -162,7 +163,7 @@ export async function verifyTopbar(page, song, output) {
   assert.equal(await page.evaluate(() => window.__foliaCommands.filter(m => ['fullscreen', 'exitFullscreen'].includes(m.type)).at(-1).type), 'exitFullscreen');
   await page.keyboard.press('Escape');
   assert.equal(await countCommands(), beforeWindowEscape + 2, 'Escape after exit remains windowed');
-  checks.push('windowed Escape exits immersion and closes settings without fullscreen', 'F11 blocked without fullscreen toggle', 'fullscreen button still works', 'fullscreen immersion keeps caption buttons hidden but bottom transport available', 'repeated Escape ignored and normal Escape exits fullscreen once');
+  checks.push('windowed Escape exits immersion and closes settings without fullscreen', 'F11 blocked without fullscreen toggle', 'fullscreen button still works', 'fullscreen immersion reveals top shortcuts and bottom transport independently while keeping caption buttons hidden', 'repeated Escape ignored and normal Escape exits fullscreen once');
 
   await open();
   const bottomHover = page.getByRole('checkbox', { name: '沉浸时移到底部呼出播放控件', exact: true });

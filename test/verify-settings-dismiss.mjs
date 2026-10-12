@@ -94,7 +94,7 @@ export async function verifySettingsDismiss(page, song, output) {
     await selectDesktopOption(page, '背景类型', { value: mode });
     await content.locator(`[data-background-settings="${mode}"]`).waitFor();
     assert(await backgroundDialog(page).isVisible(), `${mode}: selector selection stays in background settings`);
-    await content.locator('h3').first().click(); assert(await backgroundDialog(page).isVisible());
+    await content.locator('.desktop-visual-hint').first().click(); assert(await backgroundDialog(page).isVisible());
     await outside(); await backgroundDialog(page).waitFor({ state: 'detached' });
     await focus('.background-settings-button');
     assert.equal(await page.locator('.background-settings-button').getAttribute('aria-expanded'), 'false');

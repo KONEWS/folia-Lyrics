@@ -1,5 +1,5 @@
 import type { Filter } from 'pixi.js';
-import { parseColorChannels } from '../colorMix';
+import { parseColorChannels } from '../../../utils/colorMix';
 
 // src/components/visualizer/tempera/temperaDifferenceFilter.ts
 // Single-pass threshold inversion for the lyric layer: it samples the already-rendered

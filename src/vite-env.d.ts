@@ -9,6 +9,8 @@ declare global {
   const __APP_VERSION_LABEL__: string;
   const __APP_RELEASE_CHANNEL__: string;
   const __DOCKER_STACK_VERSION__: string;
+  // 仅桌面构建注入（vite.desktop.config.ts，取自 native/FoliaLyrics.csproj 的 <Version>）。
+  const __DESKTOP_VERSION__: string | undefined;
 
   interface Window {
     __FOLIA_RUNTIME_CONFIG__?: {

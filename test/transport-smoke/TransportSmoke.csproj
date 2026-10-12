@@ -3,4 +3,6 @@
   <ItemGroup><Compile Include="../../native/MediaTransport.cs" Link="MediaTransport.cs"/><Compile Include="../../native/MediaModels.cs" Link="MediaModels.cs"/><Compile Include="../../native/MediaSessionBinding.cs" Link="MediaSessionBinding.cs"/><Compile Include="../../native/UiDispatcher.cs" Link="UiDispatcher.cs"/><Compile Include="../../native/LyricLibrary.cs" Link="LyricLibrary.cs"/><Compile Include="../../native/LyricFiles.cs" Link="LyricFiles.cs"/><PackageReference Include="TagLibSharp" Version="2.3.0"/></ItemGroup>
   <ItemGroup><Compile Include="../../native/CoverImage.cs" Link="CoverImage.cs"/><Compile Include="../../native/MediaCoverCache.cs" Link="MediaCoverCache.cs"/><Compile Include="../../native/MediaPresentation.cs" Link="MediaPresentation.cs"/></ItemGroup>
   <ItemGroup><Compile Include="../../native/AudioCaptureMaintenance.cs" Link="AudioCaptureMaintenance.cs"/></ItemGroup>
+  <ItemGroup><Compile Include="../../native/MediaReadDeadline.cs" Link="MediaReadDeadline.cs"/></ItemGroup>
+  <ItemGroup><Compile Include="../../native/MediaPlaybackClock.cs" Link="MediaPlaybackClock.cs"/><Compile Include="../../native/MediaMetadataCache.cs" Link="MediaMetadataCache.cs"/></ItemGroup>
 </Project>

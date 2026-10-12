@@ -38,7 +38,7 @@ import { buildDebugSnapshot } from './components/app/presentation/buildDebugSnap
 import { buildHomeSurfacePresentation } from './components/app/presentation/buildHomeSurfacePresentation';
 import { buildPlayerViewFlags } from './components/app/presentation/buildPlayerViewFlags';
 import { buildVisualizerTheme } from './components/app/presentation/buildVisualizerTheme';
-import { createCoverUrlResolver } from './components/app/playback/createCoverUrlResolver';
+import { createCoverUrlResolver } from './services/onlineMusic/createCoverUrlResolver';
 import { createLyricsSetter } from './components/app/playback/createLyricsSetter';
 import { createLyricSegmentationActions } from './components/app/playback/createLyricSegmentationActions';
 import { useLyricWordSegmentation } from './hooks/useLyricWordSegmentation';

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Theme } from '@/types';
-import { colorWithAlpha } from '@/components/visualizer/colorMix';
+import { colorWithAlpha } from '@/utils/colorMix';
 import type { FoliumLabel, FoliumMount, FoliumParam, FoliumParamAccess, FoliumSettingsPanelContext } from './contract';
 import { toFoliumTheme } from './dto';
 import { resolveFoliumLabel } from './params';

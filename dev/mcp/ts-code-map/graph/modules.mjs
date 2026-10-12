@@ -29,7 +29,7 @@ const TYPE_ONLY = /^\s*(?:import|export)\s+type\b/;
 
 /**
  * UI 层的种子。值导入了这些包就是 UI 模块，由此沿依赖边向上传染。
- * 用途：分层检查不能只看路径——`components/visualizer/colorMix.ts` 零依赖纯数学，
+ * 用途：分层检查不能只看路径——`components/visualizer/diorama/dioramaMoteField.ts` 不含 UI 的纯数学，
  * 住在 components 下面不代表它是 UI。
  */
 const UI_PACKAGES = /^(react|react-dom)(\/|$)/;

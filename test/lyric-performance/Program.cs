@@ -23,6 +23,8 @@ measurements["processorCount"] = Environment.ProcessorCount;
 measurements["runtimeVersion"] = Environment.Version.ToString();
 measurements["runTimestampUtc"] = DateTimeOffset.UtcNow;
 var baseline = args.Contains("--baseline");
+var preferredProvider = baseline ? "kugou" : "qq";
+var fallbackProvider = baseline ? "qq" : "kugou";
 var logicOnly = args.Contains("--logic-only");
 Directory.CreateDirectory(DataFiles.Root);
 try
@@ -97,7 +99,9 @@ try
         Check(TestProviders.Searches.IsEmpty, "manual cache avoids all provider requests");
         if (!baseline) Check(host.Status.Phase == "ready" && !host.Status.Busy, "manual cached lyrics publish ready without changing Busy");
     }
-    DataFiles.Reset(); Seed(new Entry(localPath, target.Title, target.Artist)); await cache.SaveAsync(target, Cached("automatic"), "qq:auto", false);
+    DataFiles.Reset(); Seed(new Entry(localPath, target.Title, target.Artist));
+    await cache.ForgetAsync(target); // Start the automatic-cache scenario without the preceding user binding.
+    await cache.SaveAsync(target, Cached("automatic"), "qq:auto", false);
     using (var host = new MainWindow())
     {
         var elapsed = Stopwatch.StartNew(); await host.Resolve(target); elapsed.Stop();
@@ -195,7 +199,7 @@ try
         measurements["onlineReplyDelayMs"] = 800;
         measurements["onlinePendingAfterFirstPacket"] = !pending.IsCompleted;
         await pending; measurements["onlineCompleteResultsMs"] = elapsed.Elapsed.TotalMilliseconds;
-        Check(host.Packets.Single().Source == "kugou", "online first match retains highest provider priority");
+        Check(host.Packets.Single().Source == preferredProvider, "online first match retains highest provider priority");
         Check(host.Status.Candidates.Length == 3 && host.Status.Errors.Length == 1, "late complete results preserve every successful source and provider error");
     }
 
@@ -205,7 +209,7 @@ try
     TestProviders.SearchHandler = async (query, providers, _) =>
     {
         var provider = providers.Single();
-        if (provider == "kugou") await highGate.Task;
+        if (provider == preferredProvider) await highGate.Task;
         else lowerReady.TrySetResult();
         return new([new(provider, "priority", query.Title, query.Artist, query.Album, query.Duration, "timed")], []);
     };
@@ -215,20 +219,20 @@ try
         await lowerReady.Task.WaitAsync(TimeSpan.FromSeconds(3));
         Check(TestProviders.Fetches.IsEmpty, "faster lower-priority source waits for a higher-priority search");
         highGate.SetResult(); await pending;
-        Check(host.Packets.Single().Source == "kugou", "slow but eligible preferred source still wins");
+        Check(host.Packets.Single().Source == preferredProvider, "slow but eligible preferred source still wins");
     }
 
     DataFiles.Reset(); Seed();
-    TestProviders.SearchHandler = (query, providers, _) => Task.FromResult(new OnlineSearchResult(providers.Single() == "kugou"
-        ? Enumerable.Range(1, 3).Select(i => new LyricCandidate("kugou", "attempt" + i, query.Title, query.Artist, query.Album, query.Duration, "timed")).ToArray()
+    TestProviders.SearchHandler = (query, providers, _) => Task.FromResult(new OnlineSearchResult(providers.Single() == preferredProvider
+        ? Enumerable.Range(1, 3).Select(i => new LyricCandidate(preferredProvider, "attempt" + i, query.Title, query.Artist, query.Album, query.Duration, "timed")).ToArray()
         : [new(providers.Single(), "fallback", query.Title, query.Artist, query.Album, query.Duration, "timed")], []));
-    TestProviders.FetchHandler = (candidate, song, _) => candidate.Provider == "kugou"
+    TestProviders.FetchHandler = (candidate, song, _) => candidate.Provider == preferredProvider
         ? candidate.Id == "attempt1" ? Task.FromResult<Lyrics?>(null) : Task.FromException<Lyrics?>(new IOException("synthetic fetch failure"))
         : Task.FromResult<Lyrics?>(new(song.Key, song.Title, song.Artist, "[00:01.00]fallback", candidate.Provider, "", false));
     using (var host = new MainWindow())
     {
         await host.Resolve(SongOf("Fallback", key: "fallback"));
-        Check(TestProviders.Fetches.Count(provider => provider == "kugou") == 2 && host.Packets.Single().Source == "qq", "automatic fetch retains two attempts per source and falls through to the next priority");
+        Check(TestProviders.Fetches.Count(provider => provider == preferredProvider) == 2 && host.Packets.Single().Source == fallbackProvider, "automatic fetch retains two attempts per source and falls through to the next priority");
         Check(host.Status.Errors.Any(error => error.Contains("synthetic fetch failure")), "automatic fetch errors remain in the completed result");
     }
 
@@ -248,16 +252,39 @@ try
         TestProviders.SearchHandler = (query, providers, _) =>
         {
             var provider = providers.Single();
-            return Task.FromResult(new OnlineSearchResult(provider == "kugou"
+            return Task.FromResult(new OnlineSearchResult(provider == "qq"
                 ? [new(provider, "early-low-score", query.Title, query.Artist, "", query.Duration, "timed")]
                 : Enumerable.Range(0, 30).Select(i => new LyricCandidate(provider, "high-score" + i, query.Title, query.Artist, query.Album, query.Duration, "timed")).ToArray(), []));
         };
         using (var host = new MainWindow())
         {
             await host.Resolve(SongOf("MoreThanForty", key: "many-results"));
-            Check(host.Packets.Single().Source == "kugou" && host.Status.SelectedKey == "kugou:early-low-score", "automatic matching retains an early preferred selection with more than 40 results");
+            Check(host.Packets.Single().Source == "qq" && host.Status.SelectedKey == "qq:early-low-score", "automatic matching retains an early preferred selection with more than 40 results");
             Check(host.Status.Candidates.Length == 40 && host.Status.Candidates.Any(candidate => candidate.Key == host.Status.SelectedKey), "completed automatic results retain the selected row within the 40-result limit");
             Check(host.Status.Candidates.Select(candidate => candidate.Key).Distinct().Count() == 40, "retaining the selected row cannot duplicate a completed result");
+        }
+        DataFiles.Reset(); Seed();
+        var lateQq = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestProviders.SearchHandler = async (query, providers, _) =>
+        {
+            var provider = providers.Single();
+            if (provider == "qq") { await lateQq.Task; return new(Enumerable.Range(0, 45).Select(i => new LyricCandidate("qq", "late" + i, query.Title, query.Artist, query.Album, query.Duration, "timed")).ToArray(), []); }
+            return new(provider == "kugou" ? [new("kugou", "early-fallback", query.Title, query.Artist, query.Album, query.Duration, "timed")] : [], []);
+        };
+        using (var host = new MainWindow())
+        {
+            var pending = host.Resolve(SongOf("MoreThanFortyQq", key: "many-qq-results"));
+            try
+            {
+                await host.FirstSelection.Task.WaitAsync(TimeSpan.FromSeconds(4));
+                Check(host.Packets.Single().Source == "kugou", "a ready fallback can display before a held QQ search exceeds its grace window");
+            }
+            finally { lateQq.TrySetResult(); }
+            await pending;
+            Check(host.Status.Candidates.Length == 40 && host.Status.Candidates.Take(39).All(candidate => candidate.Provider == "qq")
+                && host.Status.Candidates.Last().Key == "kugou:early-fallback" && host.Status.SelectedKey == "kugou:early-fallback",
+                "QQ-first completed candidates retain the selected fallback row when late QQ results fill the 40-row limit");
+            Check(host.Packets.Count == 1, "late QQ candidates never replace the already accepted fallback lyrics");
         }
         foreach (var manual in new[] { false, true })
         {
@@ -275,18 +302,18 @@ try
             {
                 await host.FirstPacket.Task.WaitAsync(TimeSpan.FromSeconds(3));
                 await host.FirstSelection.Task.WaitAsync(TimeSpan.FromSeconds(3));
-                Check(!pending.IsCompleted && host.Status.SelectedKey == "kugou:early", "preferred lyrics appear while a lower-priority result is held: manual=" + manual);
+                Check(!pending.IsCompleted && host.Status.SelectedKey == "qq:early", "preferred lyrics appear while a lower-priority result is held: manual=" + manual);
                 Check(host.Status.Phase == "ready" && !host.Status.Busy, "early automatic lyrics remain ready while lower-priority results are pending: manual=" + manual);
                 if (manual)
                 {
-                    await host.Select("kugou:alternative", progressiveSong.Key);
+                    await host.Select("qq:alternative", progressiveSong.Key);
                     Check(await cache.ReadAsync(progressiveSong) is { Manual: true }, "early manual selection is persisted as a manual binding");
                 }
                 else await host.Resolve(target);
             }
             finally { lowGate.TrySetResult(); }
             await pending;
-            Check(manual ? host.Status.SelectedKey == "kugou:alternative" && host.Packets.Last().Content.Contains("alternative") : host.Status.Key == target.Key && host.Packets.Last().Key == target.Key,
+            Check(manual ? host.Status.SelectedKey == "qq:alternative" && host.Packets.Last().Content.Contains("alternative") : host.Status.Key == target.Key && host.Packets.Last().Key == target.Key,
                 "late result completion cannot overwrite " + (manual ? "a manual selection" : "the new song"));
         }
     }
@@ -326,6 +353,10 @@ try
     }
 
     if (!baseline) await ResponsivenessChecks.Run(Check, measurements);
+    if (!baseline) await OnlineCacheChecks.Run(Check);
+    if (!baseline) await ProgressiveSearchChecks.Run(Check);
+    if (!baseline) await AutomaticFetchChecks.Run(Check);
+    if (!baseline) await PreferredCacheChecks.Run(Check);
 
     // Measure lookup work separately; --logic-only preserves the previously recorded baseline and optimized data.
     if (!logicOnly)
@@ -349,7 +380,8 @@ try
     }
     measurements["logicOnly"] = logicOnly;
     measurements["failures"] = 0;
-    var output = args.Length > 0 ? Path.GetFullPath(args[0]) : Path.Combine("validation", "performance", "lyric-optimized.json");
+    var outputArgument = args.FirstOrDefault(argument => !argument.StartsWith("--", StringComparison.Ordinal));
+    var output = outputArgument is not null ? Path.GetFullPath(outputArgument) : Path.Combine("validation", "performance", "lyric-optimized.json");
     Directory.CreateDirectory(Path.GetDirectoryName(output)!);
     File.WriteAllText(output, JsonSerializer.Serialize(new { checks, measurements }, new JsonSerializerOptions { WriteIndented = true }));
     Console.WriteLine(JsonSerializer.Serialize(measurements)); Console.WriteLine($"{checks.Count} lyric checks passed");

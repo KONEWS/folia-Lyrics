@@ -1,5 +1,6 @@
 using Windows.Media.Control;
 using Windows.Storage.Streams;
+using System.Diagnostics;
 
 // native/MediaMonitor.cs
 namespace FoliaLyrics;
@@ -12,13 +13,22 @@ internal sealed class MediaMonitor : IDisposable
     private int revision;
     private string lastDiagnostic = "";
     private readonly MediaCoverCache covers = new();
+    private readonly MediaMetadataCache<GlobalSystemMediaTransportControlsSessionMediaProperties> metadata = new();
+    private readonly MediaPlaybackClock clock = new();
     private GlobalSystemMediaTransportControlsSession? coverSession;
     private nint coverSessionIdentity;
     private long coverRevision;
+    public event Action? RefreshRequested;
     public async Task<Song> Read(string preferred, CancellationToken token = default)
     {
         var readRevision = revision;
-        manager ??= await GlobalSystemMediaTransportControlsSessionManager.RequestAsync().AsTask(token);
+        if (manager is null)
+        {
+            var connected = await GlobalSystemMediaTransportControlsSessionManager.RequestAsync().AsTask(token);
+            token.ThrowIfCancellationRequested();
+            if (readRevision != revision) throw new OperationCanceledException();
+            manager = connected;
+        }
         var sessions = manager.GetSessions().ToArray(); var current = manager.GetCurrentSession();
         var sources = sessions.Select(s => new MediaSource(s.SourceAppUserModelId, s.SourceAppUserModelId)).DistinctBy(s => s.Id).ToArray();
         // A bound session wins even while paused; query other players' playback only when choosing a new binding.
@@ -29,46 +39,54 @@ internal sealed class MediaMonitor : IDisposable
         var session = selection?.Value;
         if (session is null) { Invalidate(); return new("", "", "", "", "", false, 0, 0, 1, false, sources); }
         WatchCover(session, selection!.Identity);
-        var props = await session.TryGetMediaPropertiesAsync().AsTask(token); var info = session.GetPlaybackInfo(); var timeline = session.GetTimelineProperties();
+        var metadataRevision = Interlocked.Read(ref coverRevision);
+        var props = await metadata.Read(selection.Identity, metadataRevision, cancellation => session.TryGetMediaPropertiesAsync().AsTask(cancellation),
+            () => readRevision == revision && coverSessionIdentity == selection.Identity && metadataRevision == Interlocked.Read(ref coverRevision), RequestRefresh, token);
+        token.ThrowIfCancellationRequested();
+        var info = session.GetPlaybackInfo(); var timeline = session.GetTimelineProperties();
+        token.ThrowIfCancellationRequested();
         if (readRevision != revision) throw new OperationCanceledException();
         var key = WindowsMediaControlTarget.SongKey(session, props);
         var cover = covers.Refresh(selection.Identity, key, Interlocked.Read(ref coverRevision),
             () => Task.Run(() => ReadCover(props.Thumbnail, token), token), () => readRevision == revision && !token.IsCancellationRequested, DataFiles.Log);
         var playing = info.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing;
         var rate = info.PlaybackRate ?? 1; if (!double.IsFinite(rate) || rate <= 0) rate = 1;
-        var duration = Math.Max(0, (timeline.EndTime - timeline.StartTime).TotalSeconds);
-        var position = Math.Max(0, (timeline.Position - timeline.StartTime).TotalSeconds);
-        var elapsed = (DateTimeOffset.UtcNow - timeline.LastUpdatedTime).TotalSeconds;
-        if (playing && elapsed is >= 0 and < 21600) position += elapsed * rate;
-        if (duration > 0) position = Math.Clamp(position, 0, duration);
+        var sampled = clock.Read(selection.Identity, key,
+            new((timeline.Position - timeline.StartTime).TotalSeconds, (timeline.EndTime - timeline.StartTime).TotalSeconds, timeline.LastUpdatedTime, playing, rate),
+            (double)Stopwatch.GetTimestamp() / Stopwatch.Frequency, DateTimeOffset.UtcNow);
+        token.ThrowIfCancellationRequested();
         if (readRevision != revision) throw new OperationCanceledException();
         var controls = WindowsMediaControlTarget.Capabilities(info);
         var diagnostic = $"source={session.SourceAppUserModelId}; session={binding.Id}; playing={playing}; controls={controls}";
         if (diagnostic != lastDiagnostic) { lastDiagnostic = diagnostic; MediaDiagnostics.Write(diagnostic); }
         observed = session; observedKey = key;
-        return new(key, props.Title, props.Artist, cover, session.SourceAppUserModelId, playing, position, duration, rate, duration > 0, sources,
+        return new(key, props.Title, props.Artist, cover, session.SourceAppUserModelId, sampled.Playing, sampled.Position, sampled.Duration, sampled.Rate, sampled.Duration > 0, sources,
             props.AlbumTitle, binding.Id, controls);
     }
-    public void Invalidate() { revision++; observed = null; binding.Clear(); observedKey = ""; WatchCover(null, 0); covers.Clear(); }
+    public void Invalidate() { revision++; observed = null; binding.Clear(); observedKey = ""; WatchCover(null, 0); covers.Clear(); metadata.Clear(); clock.Clear(); }
+    public void Reconnect() { Invalidate(); manager = null; }
     // Artwork can arrive after title/artist and can change without changing the song key.
     private void WatchCover(GlobalSystemMediaTransportControlsSession? session, nint identity)
     {
         if (coverSessionIdentity == identity && coverSession is not null) return;
         if (coverSession is not null)
         {
-            try { coverSession.MediaPropertiesChanged -= CoverChanged; }
+            try { coverSession.MediaPropertiesChanged -= CoverChanged; coverSession.PlaybackInfoChanged -= PlaybackChanged; coverSession.TimelinePropertiesChanged -= TimelineChanged; }
             catch (Exception e) { DataFiles.Log(e); }
         }
         coverSession = session; coverSessionIdentity = identity;
         Interlocked.Increment(ref coverRevision);
         if (session is not null)
         {
-            try { session.MediaPropertiesChanged += CoverChanged; }
+            try { session.MediaPropertiesChanged += CoverChanged; session.PlaybackInfoChanged += PlaybackChanged; session.TimelinePropertiesChanged += TimelineChanged; }
             catch (Exception e) { DataFiles.Log(e); }
         }
     }
     private void CoverChanged(GlobalSystemMediaTransportControlsSession _, MediaPropertiesChangedEventArgs __)
-        => Interlocked.Increment(ref coverRevision);
+    { Interlocked.Increment(ref coverRevision); RequestRefresh(); }
+    private void PlaybackChanged(GlobalSystemMediaTransportControlsSession _, PlaybackInfoChangedEventArgs __) => RequestRefresh();
+    private void TimelineChanged(GlobalSystemMediaTransportControlsSession _, TimelinePropertiesChangedEventArgs __) => RequestRefresh();
+    private void RequestRefresh() => RefreshRequested?.Invoke();
     private static async Task<string> ReadCover(IRandomAccessStreamReference? thumbnail, CancellationToken token)
     {
         if (thumbnail is null) return "";

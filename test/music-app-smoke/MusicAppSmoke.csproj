@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Isolated binding and launch-policy checks; never starts an external player. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType><TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+    <UseWindowsForms>true</UseWindowsForms><EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../native/Preferences.cs" Link="Preferences.cs"/>
+    <Compile Include="../../native/MusicAppLauncher.cs" Link="MusicAppLauncher.cs"/>
+    <Compile Include="../../native/MusicAppCatalog.cs" Link="MusicAppCatalog.cs"/>
+    <Compile Include="../../native/MusicAppInstalledPaths.cs" Link="MusicAppInstalledPaths.cs"/>
+    <Compile Include="../../native/MusicAppDiscoveryPolicy.cs" Link="MusicAppDiscoveryPolicy.cs"/>
+    <Compile Include="../../native/MusicAppDiscovery.cs" Link="MusicAppDiscovery.cs"/>
+    <Compile Include="../../native/MusicAppStore.cs" Link="MusicAppStore.cs"/>
+    <Compile Include="../../native/MusicAppRunningProcesses.cs" Link="MusicAppRunningProcesses.cs"/>
+    <Compile Include="../../native/MusicAppDiscoveryInbox.cs" Link="MusicAppDiscoveryInbox.cs"/>
+  </ItemGroup>
+</Project>

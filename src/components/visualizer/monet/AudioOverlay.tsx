@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import type { AudioBands, MonetAudioStyle, Theme } from '../../../types';
-import { colorWithAlpha } from '../colorMix';
+import { colorWithAlpha } from '../../../utils/colorMix';
 
 // src/components/visualizer/monet/AudioOverlay.tsx
 // Renders the bottom audio rail for Monet with a lightweight canvas loop in player mode and a static placeholder in preview mode.
