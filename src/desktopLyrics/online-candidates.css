@@ -1,0 +1,8 @@
+/* src/desktopLyrics/online-candidates.css — candidate disclosure uses the existing desktop glass controls and theme colors. */
+.online-candidates-more{display:grid;gap:8px;min-width:0}
+.online-candidates-more[hidden]{display:none}
+.desktop-lyrics .online-candidates-toggle{display:flex;align-items:center;justify-content:center;gap:7px;min-height:36px;padding:9px 12px;border-radius:var(--desktop-control-radius,8px);font-size:11px;line-height:1.5}
+.online-candidates-selection{display:flex;align-items:flex-start;gap:7px;margin:2px 0;color:var(--glass-muted);font-size:11px;line-height:1.65;overflow-wrap:anywhere}
+.online-candidates-selection>svg{flex:none;margin-top:3px;color:var(--glass-text)}
+.desktop-lyrics.high-contrast .online-candidates-selection{color:CanvasText}
+@media(forced-colors:active){.online-candidates-selection,.online-candidates-selection>svg{color:CanvasText}}

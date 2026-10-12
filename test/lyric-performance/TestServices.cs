@@ -21,6 +21,7 @@ internal static class TestProviders
     public static readonly ConcurrentQueue<string> Fetches = new();
     public static Func<LyricQuery, string[], CancellationToken, Task<OnlineSearchResult>>? SearchHandler;
     public static Func<LyricCandidate, Song, CancellationToken, Task<Lyrics?>>? FetchHandler;
+    public static Func<Lyrics, Task<LyricContentQuality>>? InspectionHandler;
     public static async Task<LyricCandidate[]> Search(string provider, LyricQuery query, CancellationToken token)
     {
         Searches.Enqueue([provider]);
@@ -30,9 +31,9 @@ internal static class TestProviders
     public static Task<Lyrics?> Fetch(LyricCandidate candidate, Song song, CancellationToken token)
     {
         Fetches.Enqueue(candidate.Provider);
-        return FetchHandler?.Invoke(candidate, song, token) ?? Task.FromResult<Lyrics?>(new(song.Key, song.Title, song.Artist, "[00:01.00]online", candidate.Provider, "", false));
+        return FetchHandler?.Invoke(candidate, song, token) ?? Task.FromResult<Lyrics?>(new(song.Key, song.Title, song.Artist, "[1000,2000](1000,1000,0)on(2000,1000,0)line", candidate.Provider, "", false, "yrc"));
     }
-    public static void Reset() { Searches.Clear(); Fetches.Clear(); SearchHandler = null; FetchHandler = null; }
+    public static void Reset() { Searches.Clear(); Fetches.Clear(); SearchHandler = null; FetchHandler = null; InspectionHandler = null; }
     public static void Attach(OnlineLyrics facade) => typeof(OnlineLyrics).GetField("providers", BindingFlags.NonPublic | BindingFlags.Instance)!
         .SetValue(facade, OnlineLyrics.ProviderIds.Select(id => (IOnlineLyricProvider)new TestProvider(id)).ToArray());
     private sealed class TestProvider(string id) : IOnlineLyricProvider
@@ -57,6 +58,7 @@ internal sealed partial class MainWindow : IDisposable
     public readonly TaskCompletionSource<OnlineState> FirstSelection = new(TaskCreationOptions.RunContinuationsAsynchronously);
     public MainWindow(Preferences? preferences = null) { this.preferences = preferences ?? new(); TestProviders.Attach(online); }
     public Task Resolve(Song target) { song = target; return ResolveLyrics(target, StartWork()); }
+    public void SetAutomaticSearchTimeout(TimeSpan timeout) => online.AutomaticSearchTimeout = timeout;
     public Task Select(string id, string key) => SelectOnline(JsonSerializer.SerializeToElement(new { id, songKey = key }));
     public Task Search(string title, string artist) => SearchOnline(JsonSerializer.SerializeToElement(new { title, artist }));
     public Task Reset() => ResetOnline();
@@ -65,8 +67,18 @@ internal sealed partial class MainWindow : IDisposable
     public (bool Automatic, double Duration, string AppliedKey) LookupSnapshot => (automaticLookup, lookupDuration, lyricKey);
     private void Send(string type, object data)
     {
+        if (type == "inspectLyrics") _ = ReplyInspection(data);
         if (type == "lyrics" && data is Lyrics packet) { Packets.Enqueue(packet); FirstPacket.TrySetResult(packet); }
         if (type == "online" && data is OnlineState state && state.SelectedKey.Length > 0) FirstSelection.TrySetResult(state);
+    }
+    // Replace only the page-side parser in this offline host; the real request registry and response handler remain linked.
+    private async Task ReplyInspection(object data)
+    {
+        var request = JsonSerializer.SerializeToElement(data, DataFiles.Json);
+        var packet = request.GetProperty("packet").Deserialize<Lyrics>(DataFiles.Json)!;
+        var quality = TestProviders.InspectionHandler is { } inspect ? await inspect(packet)
+            : new LyricContentQuality(!string.IsNullOrWhiteSpace(packet.Content), packet.Format == "yrc");
+        CompleteLyricInspection(JsonSerializer.SerializeToElement(new { requestId = request.Text("requestId"), key = packet.Key, usable = quality.Usable, wordTimed = quality.WordTimed }));
     }
     private void SavePreferences() { }
     public void Dispose() { IsDisposed = true; lifetime.Cancel(); lyricWork?.Cancel(); lyricWork?.Dispose(); lifetime.Dispose(); online.Dispose(); }

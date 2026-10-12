@@ -15,6 +15,9 @@
     <Compile Include="../../native/Preferences.cs" Link="Preferences.cs"/>
     <Compile Include="../../native/Online/OnlineModels.cs" Link="OnlineModels.cs"/>
     <Compile Include="$(OnlineLyricsSource)" Link="OnlineLyrics.cs"/>
+    <Compile Include="../../native/Online/OnlineAutomaticSelection.cs" Link="OnlineAutomaticSelection.cs"/>
+    <Compile Include="../../native/Online/LyricInspectionRequests.cs" Link="LyricInspectionRequests.cs"/>
+    <Compile Include="../../native/WindowLyricInspection.cs" Link="WindowLyricInspection.cs"/>
     <Compile Include="../../native/Online/OnlineHttp.cs" Link="OnlineHttp.cs"/>
     <Compile Include="../../native/Online/KugouLyricProvider.cs" Link="KugouLyricProvider.cs"/>
     <Compile Include="../../native/Online/QqLyricProvider.cs" Link="QqLyricProvider.cs"/>

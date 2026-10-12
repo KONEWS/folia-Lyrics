@@ -232,7 +232,7 @@ try
     using (var host = new MainWindow())
     {
         await host.Resolve(SongOf("Fallback", key: "fallback"));
-        Check(TestProviders.Fetches.Count(provider => provider == preferredProvider) == 2 && host.Packets.Single().Source == fallbackProvider, "automatic fetch retains two attempts per source and falls through to the next priority");
+        Check(TestProviders.Fetches.Count(provider => provider == preferredProvider) == 3 && host.Packets.Single().Source == fallbackProvider, "automatic fetch checks every returned QQ version before falling through to the next source");
         Check(host.Status.Errors.Any(error => error.Contains("synthetic fetch failure")), "automatic fetch errors remain in the completed result");
     }
 
@@ -241,8 +241,8 @@ try
     using (var host = new MainWindow())
     {
         await host.Resolve(SongOf("Strict", key: "strict"));
-        Check(host.Packets.IsEmpty && TestProviders.Fetches.IsEmpty && host.Status.Candidates.All(candidate => !candidate.AutoEligible), "progressive automatic matching retains strict duration eligibility");
-        if (!baseline) Check(host.Status.Phase == "choice" && !host.Status.Busy, "ineligible automatic candidates publish choice without fetching them");
+        Check(host.Packets.Single().Source == "qq" && !TestProviders.Fetches.IsEmpty && host.Status.Candidates.All(candidate => !candidate.AutoEligible), "automatic matching selects the highest available QQ version even below the former strict duration threshold");
+        if (!baseline) Check(host.Status.Phase == "ready" && !host.Status.Busy, "forced automatic candidates publish ready after content verification");
     }
 
     // Hold the low-priority source explicitly to prove early display and both supersession paths without timing thresholds.
@@ -265,34 +265,30 @@ try
         }
         DataFiles.Reset(); Seed();
         var lateQq = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var qqEntered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         TestProviders.SearchHandler = async (query, providers, _) =>
         {
             var provider = providers.Single();
-            if (provider == "qq") { await lateQq.Task; return new(Enumerable.Range(0, 45).Select(i => new LyricCandidate("qq", "late" + i, query.Title, query.Artist, query.Album, query.Duration, "timed")).ToArray(), []); }
-            return new(provider == "kugou" ? [new("kugou", "early-fallback", query.Title, query.Artist, query.Album, query.Duration, "timed")] : [], []);
+            if (provider == "qq") { qqEntered.TrySetResult(); await lateQq.Task; return new(Enumerable.Range(0, 45).Select(i => new LyricCandidate("qq", "late" + i, query.Title, query.Artist, query.Album, query.Duration, "timed")).ToArray(), []); }
+            return new(provider == "kugou" ? [new("kugou", "fallback", query.Title, query.Artist, query.Album, query.Duration, "timed")] : [], []);
         };
         using (var host = new MainWindow())
         {
             var pending = host.Resolve(SongOf("MoreThanFortyQq", key: "many-qq-results"));
-            try
-            {
-                await host.FirstSelection.Task.WaitAsync(TimeSpan.FromSeconds(4));
-                Check(host.Packets.Single().Source == "kugou", "a ready fallback can display before a held QQ search exceeds its grace window");
-            }
-            finally { lateQq.TrySetResult(); }
-            await pending;
-            Check(host.Status.Candidates.Length == 40 && host.Status.Candidates.Take(39).All(candidate => candidate.Provider == "qq")
-                && host.Status.Candidates.Last().Key == "kugou:early-fallback" && host.Status.SelectedKey == "kugou:early-fallback",
-                "QQ-first completed candidates retain the selected fallback row when late QQ results fill the 40-row limit");
-            Check(host.Packets.Count == 1, "late QQ candidates never replace the already accepted fallback lyrics");
+            await qqEntered.Task.WaitAsync(TimeSpan.FromSeconds(4));
+            Check(host.Packets.IsEmpty, "automatic matching waits to evaluate QQ before accepting another source");
+            lateQq.TrySetResult(); await pending;
+            Check(host.Status.Candidates.Length == 40 && host.Status.Candidates.All(candidate => candidate.Provider == "qq")
+                && host.Status.SelectedKey == "qq:late0", "completed automatic candidates keep the highest QQ word-timed selection within the result limit");
+            Check(host.Packets.Count == 1, "automatic matching publishes its final word-timing decision once");
         }
         foreach (var manual in new[] { false, true })
         {
             DataFiles.Reset(); Seed(new Entry(localPath, target.Title, target.Artist));
-            var lowGate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var lowGate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously); var lowEntered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             TestProviders.SearchHandler = async (query, providers, _) =>
             {
-                var provider = providers.Single(); if (provider == "lrclib") await lowGate.Task;
+                var provider = providers.Single(); if (provider == "lrclib") { lowEntered.TrySetResult(); await lowGate.Task; }
                 return new([new(provider, "early", query.Title, query.Artist, query.Album, query.Duration, "timed"), new(provider, "alternative", query.Title, query.Artist, query.Album, query.Duration, "timed")], []);
             };
             TestProviders.FetchHandler = (candidate, song, _) => Task.FromResult<Lyrics?>(new(song.Key, song.Title, song.Artist, "[00:01.00]" + candidate.Id, candidate.Provider, "", false));
@@ -300,14 +296,13 @@ try
             var pending = host.Resolve(progressiveSong);
             try
             {
-                await host.FirstPacket.Task.WaitAsync(TimeSpan.FromSeconds(3));
-                await host.FirstSelection.Task.WaitAsync(TimeSpan.FromSeconds(3));
-                Check(!pending.IsCompleted && host.Status.SelectedKey == "qq:early", "preferred lyrics appear while a lower-priority result is held: manual=" + manual);
-                Check(host.Status.Phase == "ready" && !host.Status.Busy, "early automatic lyrics remain ready while lower-priority results are pending: manual=" + manual);
+                await lowEntered.Task.WaitAsync(TimeSpan.FromSeconds(3));
+                Check(!pending.IsCompleted && host.Packets.IsEmpty && host.Status.Phase == "matching", "automatic content ranking remains cancellable while a provider result is held: manual=" + manual);
                 if (manual)
                 {
-                    await host.Select("qq:alternative", progressiveSong.Key);
-                    Check(await cache.ReadAsync(progressiveSong) is { Manual: true }, "early manual selection is persisted as a manual binding");
+                    TestProviders.SearchHandler = (query, providers, _) => Task.FromResult(new OnlineSearchResult([new(providers.Single(), "alternative", query.Title, query.Artist, query.Album, query.Duration, "timed")], []));
+                    await host.Search(progressiveSong.Title, progressiveSong.Artist); await host.Select("qq:alternative", progressiveSong.Key);
+                    Check(await cache.ReadAsync(progressiveSong) is { Manual: true }, "manual selection during automatic ranking is persisted as a manual binding");
                 }
                 else await host.Resolve(target);
             }
@@ -357,6 +352,7 @@ try
     if (!baseline) await ProgressiveSearchChecks.Run(Check);
     if (!baseline) await AutomaticFetchChecks.Run(Check);
     if (!baseline) await PreferredCacheChecks.Run(Check);
+    if (!baseline) await WordTimingPriorityChecks.Run(Check);
 
     // Measure lookup work separately; --logic-only preserves the previously recorded baseline and optimized data.
     if (!logicOnly)

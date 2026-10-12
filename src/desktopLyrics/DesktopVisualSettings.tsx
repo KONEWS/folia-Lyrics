@@ -14,6 +14,12 @@ import { getDesktopVisualFocusableElements, useDesktopVisualDialogFocus } from '
 import { useDesktopSettingsDismiss } from './useDesktopSettingsDismiss';
 import type { DesktopVisualSettingsModel } from './useDesktopVisualSettings';
 import './desktop-visual-settings.css';
+import DesktopSettingsSearch from './DesktopSettingsSearch';
+import type { DesktopSettingsSearchEntry, DesktopSettingsSearchRequest } from '../types/desktopSettingsSearch';
+import { useDesktopSettingsSearchNavigation } from './useDesktopSettingsSearchNavigation';
+import { getVisualizerModeLabel } from '../components/visualizer/registry';
+import { getVisualizerBackgroundModeLabel } from '../components/visualizer/backgrounds/registry';
+import i18n from '../i18n/config';
 
 // src/desktopLyrics/DesktopVisualSettings.tsx — one desktop settings surface, with the live original renderer behind it.
 export type DesktopVisualSection = 'common' | 'background' | 'visualizer' | 'subtitle';
@@ -22,26 +28,32 @@ const SLIDER_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 
 const LABELS = { common: 'options.previewCommonSettings', background: 'options.previewBackgroundSettings',
   visualizer: 'options.previewVisualizerSettings', subtitle: 'options.previewSubtitleSettings' } as const;
 type Props = { mode: VisualizerMode; onMode: (mode: VisualizerMode) => void; model: DesktopVisualSettingsModel;
-  onClose: () => void; initialSection?: DesktopVisualSection; navigationSequence?: number; onSegmentation?: () => void; canSegment?: boolean; returnFocus?: HTMLElement | null };
+  onClose: () => void; initialSection?: DesktopVisualSection; navigationSequence?: number; onSegmentation?: () => void; canSegment?: boolean; returnFocus?: HTMLElement | null;
+  searchNavigation?: DesktopSettingsSearchRequest; onSearchNavigate: (entry: DesktopSettingsSearchEntry) => void; onClearSearchNavigation: () => void };
 
 export default function DesktopVisualSettings(props: Props) {
   return <DesktopVisualLanguage><DesktopVisualSettingsSurface {...props}/></DesktopVisualLanguage>;
 }
 
-function DesktopVisualSettingsSurface({ mode, onMode, model, onClose, initialSection = 'visualizer', navigationSequence, onSegmentation, canSegment, returnFocus }: Props) {
+function DesktopVisualSettingsSurface({ mode, onMode, model, onClose, initialSection = 'visualizer', navigationSequence, onSegmentation, canSegment, returnFocus,
+  searchNavigation, onSearchNavigate, onClearSearchNavigation }: Props) {
   const t = useVisualTranslation();
   const id = useId();
   const panel = useRef<HTMLElement>(null);
+  const content = useRef<HTMLDivElement>(null);
   const closeButton = useRef<HTMLButtonElement>(null);
   const [section, setSection] = useState(initialSection);
   const backgroundOnly = initialSection === 'background';
   const title = t(backgroundOnly ? 'desktopVisual.backgroundTitle' : 'desktopVisual.title');
+  const searchHint = useDesktopSettingsSearchNavigation(content, searchNavigation, section);
+  const editingName = searchNavigation?.entry.mode ? getVisualizerModeLabel(searchNavigation.entry.mode, t)
+    : searchNavigation?.entry.background ? getVisualizerBackgroundModeLabel(searchNavigation.entry.background, t) : '';
   useDesktopVisualDialogSkin(panel, model.mergedTheme, t('desktopVisual.closeImages'));
   useDesktopVisualDialogFocus(panel);
   useDesktopSettingsDismiss(panel, () => { model.commitSlider(); onClose(); });
   useEffect(() => {
     const previous = returnFocus ?? document.activeElement;
-    closeButton.current?.focus();
+    if (!searchNavigation) closeButton.current?.focus();
     return () => { model.commitSlider(); if (previous instanceof HTMLElement && previous.isConnected) previous.focus(); };
     // Capture opening focus once; model values change as the settings are edited.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -49,6 +61,7 @@ function DesktopVisualSettingsSurface({ mode, onMode, model, onClose, initialSec
   useEffect(() => {
     if (navigationSequence === undefined) return;
     setSection(initialSection);
+    if (searchNavigation) return;
     const scroll = panel.current?.querySelector<HTMLElement>('.desktop-visual-content');
     if (scroll) scroll.scrollTop = 0;
     (document.getElementById(`${id}-${initialSection}`) ?? closeButton.current)?.focus({ preventScroll: true });
@@ -81,19 +94,25 @@ function DesktopVisualSettingsSurface({ mode, onMode, model, onClose, initialSec
     onBlurCapture={event => { if (event.target instanceof HTMLInputElement && event.target.type === 'range') model.commitSlider(); }}>
     <header className={`desktop-visual-heading${backgroundOnly ? ' panel-heading' : ''}`}><div><h2 id={`${id}-heading`}>{title}</h2>{!backgroundOnly ? <p>{t('desktopVisual.headingHint')}</p> : null}</div>
       <button ref={closeButton} type="button" aria-label={t(backgroundOnly ? 'desktopVisual.backgroundClose' : 'desktopVisual.close')} onClick={() => { model.commitSlider(); onClose(); }}><X size={19}/></button></header>
+    <DesktopSettingsSearch onNavigate={entry => { model.commitSlider(); onSearchNavigate(entry); }}/>
+    {searchHint ? <p className="desktop-settings-search-hint" role="status">{searchHint}</p> : null}
     {!backgroundOnly ? <div role="tablist" aria-label={t('desktopVisual.tabs')} className="desktop-visual-tabs">
       {SECTIONS.map(value => <button key={value} type="button" role="tab" id={`${id}-${value}`} aria-selected={section === value}
-        aria-controls={`${id}-content`} tabIndex={section === value ? 0 : -1} onClick={() => { model.commitSlider(); setSection(value); }}
+        aria-controls={`${id}-content`} tabIndex={section === value ? 0 : -1} onClick={() => { model.commitSlider(); onClearSearchNavigation(); setSection(value); }}
         onKeyDown={event => {
           if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
           event.preventDefault(); event.stopPropagation(); model.commitSlider();
           const next = event.key === 'Home' ? 0 : event.key === 'End' ? SECTIONS.length - 1 : (SECTIONS.indexOf(value) + (event.key === 'ArrowRight' ? 1 : -1) + SECTIONS.length) % SECTIONS.length;
-          setSection(SECTIONS[next]); document.getElementById(`${id}-${SECTIONS[next]}`)?.focus();
+          onClearSearchNavigation(); setSection(SECTIONS[next]); document.getElementById(`${id}-${SECTIONS[next]}`)?.focus();
         }}>{t(LABELS[value])}</button>)}
     </div> : null}
-    <div role={backgroundOnly ? 'region' : 'tabpanel'} id={`${id}-content`} aria-labelledby={backgroundOnly ? `${id}-heading` : `${id}-${section}`} data-visual-section={section} className={`desktop-visual-content${backgroundOnly ? ' desktop-settings-scroll' : ''}`} key={section}>
-      {section === 'common' ? <DesktopVisualCommon model={model} mode={mode} onSegmentation={onSegmentation} canSegment={canSegment}/> : section === 'background' ? <DesktopVisualBackground model={model} mode={mode}/>
-        : section === 'subtitle' ? <DesktopVisualSubtitle model={model}/> : <DesktopVisualModes model={model} mode={mode} onMode={onMode}/>}
+    <div ref={content} role={backgroundOnly ? 'region' : 'tabpanel'} id={`${id}-content`} aria-labelledby={backgroundOnly ? `${id}-heading` : `${id}-${section}`} data-visual-section={section} className={`desktop-visual-content${backgroundOnly ? ' desktop-settings-scroll' : ''}`}>
+      {editingName ? <div className="desktop-search-editing"><span>{i18n.t('desktopLyrics.settingsSearch.editing', { lng: 'zh-CN', name: editingName })}</span>
+        <button type="button" onClick={onClearSearchNavigation}>{t('desktopLyrics.settingsSearch.current')}</button></div> : null}
+      {section === 'common' ? <DesktopVisualCommon model={model} mode={mode} onSegmentation={onSegmentation} canSegment={canSegment}/> : section === 'background' ? <DesktopVisualBackground model={model} mode={mode}
+        editingBackground={searchNavigation?.entry.background} onSelection={onClearSearchNavigation}/>
+        : section === 'subtitle' ? <DesktopVisualSubtitle model={model}/> : <DesktopVisualModes model={model} mode={mode} editingMode={searchNavigation?.entry.mode}
+          onMode={next => { onClearSearchNavigation(); onMode(next); }}/>}
       <DesktopVisualConfigActions model={model} mode={mode} onMode={onMode}/>
     </div>
     <DesktopVisualFeedback/>

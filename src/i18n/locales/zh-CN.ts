@@ -2,6 +2,22 @@
 
 export default {
   "desktopLyrics": {
+    "settingsSearch": {
+      "label": "搜索全部设置",
+      "placeholder": "搜索设置、背景、字体…",
+      "clear": "清空设置搜索",
+      "results": "设置搜索候选",
+      "empty": "没有找到相关设置",
+      "main": "歌词设置",
+      "common": "通用与字体",
+      "visualizer": "歌词动画",
+      "subtitle": "字幕设置",
+      "background": "桌面背景",
+      "prerequisite": "“{{label}}”暂未显示，请先检查“{{control}}”。",
+      "unavailable": "已打开对应设置；“{{label}}”当前未显示，请先检查相关选项。",
+      "editing": "正在查看：{{name}}的参数",
+      "current": "返回当前设置"
+    },
     "topbar": {
       "more": "更多操作",
       "translationOn": "译文已开启",
@@ -55,6 +71,15 @@ export default {
       "noTimelineNotice": "此播放器未提供有效进度，请在设置中使用手动歌词时钟。",
       "noTimelineAction": "查看设置",
       "previewMode": "界面预览 · 自动同步与文件读取需在 Windows EXE 中使用"
+    },
+    "onlineCandidates": {
+      "showMore": "显示更多（{{count}}）",
+      "collapse": "收起更多候选",
+      "hiddenSelection": "当前选择在折叠项中：{{title}} · {{artist}} · {{source}} · {{quality}}",
+      "use": "使用歌词：{{title}} / {{artist}} / {{id}}",
+      "unknownArtist": "歌手未知",
+      "unknownDuration": "时长未知",
+      "matching": "信息吻合"
     },
     "musicApps": {
       "title": "音乐软件快捷启动",

@@ -103,6 +103,21 @@ jobs:
         env:
           FOLIA_UI_OUTPUT: test-results/desktop-settings-navigation-ci
 
+      - name: Run desktop settings search regression
+        run: node test/verify-desktop-settings-search.mjs
+        env:
+          FOLIA_UI_OUTPUT: test-results/desktop-settings-search-ci
+
+      - name: Run online lyric candidate disclosure regression
+        run: node test/verify-online-candidates.mjs
+        env:
+          FOLIA_UI_OUTPUT: test-results/online-candidates-ci
+
+      - name: Run desktop lyric content inspection regression
+        run: node test/verify-desktop-lyric-inspection.mjs
+        env:
+          FOLIA_UI_OUTPUT: test-results/desktop-lyric-inspection-ci
+
       - name: Run music app discovery confirmation regression
         run: node test/verify-music-app-discovery.mjs
         env:

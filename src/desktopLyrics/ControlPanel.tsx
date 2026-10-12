@@ -13,6 +13,9 @@ import { useDesktopSettingsDismiss } from './useDesktopSettingsDismiss';
 import { DesktopMusicAppSettings } from './DesktopMusicApps';
 import type { DesktopSettingsRequest } from '../types/desktopSettings';
 import { useDesktopSettingsNavigation } from './useDesktopSettingsNavigation';
+import DesktopSettingsSearch from './DesktopSettingsSearch';
+import type { DesktopSettingsSearchEntry, DesktopSettingsSearchRequest } from '../types/desktopSettingsSearch';
+import { useDesktopSettingsSearchNavigation } from './useDesktopSettingsSearchNavigation';
 
 // src/desktopLyrics/ControlPanel.tsx
 export { MODES };
@@ -26,13 +29,14 @@ type Props = { mode: VisualizerMode; onMode: (mode: VisualizerMode) => void; ses
   library: LibrarySummary; online: OnlineState; scan: { active: boolean; text: string }; offset: number; onOffset: (value: number) => void;
   translated: boolean; onTranslated: (value: boolean) => void; immersiveProgress: boolean; onImmersiveProgress: (value: boolean) => void; manual: ManualClock; setManual: Dispatch<SetStateAction<ManualClock>>; audioStatus: string; onClose: () => void;
   navigation?: DesktopSettingsRequest; returnFocus?: HTMLElement | null; lyricSource?: string; onVisualSettings?: () => void;
-  canSegment?: boolean; onSegmentation?: () => void };
+  canSegment?: boolean; onSegmentation?: () => void; searchNavigation?: DesktopSettingsSearchRequest; onSearchNavigate: (entry: DesktopSettingsSearchEntry) => void };
 export default function ControlPanel(p: Props) {
   const panelRef = useRef<HTMLElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   useDesktopSettingsDismiss(panelRef, p.onClose);
   // Reveal the requested section and restore the editor entry without scrolling the lyrics behind this panel.
   useDesktopSettingsNavigation(scrollRef, p.navigation);
+  const searchHint = useDesktopSettingsSearchNavigation(scrollRef, p.searchNavigation);
   useEffect(() => {
     const active = p.returnFocus ?? document.activeElement;
     const opener = active instanceof HTMLElement && active !== document.body && !panelRef.current?.contains(active)
@@ -42,6 +46,8 @@ export default function ControlPanel(p: Props) {
   }, [p.returnFocus]);
   const toggleClock = () => p.setManual(old => ({ ...old, playing: !old.playing, position: clockPosition(EMPTY, performance.now(), old), received: performance.now() }));
   return <aside ref={panelRef} className="control-panel desktop-main-settings" aria-label="歌词设置">
+    <DesktopSettingsSearch onNavigate={p.onSearchNavigate}/>
+    {searchHint ? <p className="desktop-settings-search-hint" role="status">{searchHint}</p> : null}
     <div ref={scrollRef} className="desktop-settings-scroll">
     <section data-settings-section="transparency" aria-label={i18n.t('desktopLyrics.transparentBackground', { lng: 'zh-CN' })}>
       <label className="toggle"><span>{i18n.t('desktopLyrics.transparentBackground', { lng: 'zh-CN' })}</span><input type="checkbox" checked={p.preferences.transparentBackground} onChange={e => send('transparentBackground', e.target.checked)}/></label>

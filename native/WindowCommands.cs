@@ -62,6 +62,7 @@ internal sealed partial class MainWindow
                 preferences.OnlineProviders = value.GetProperty("enabled").GetBoolean() ? EnabledSources().Append(provider).Distinct().ToArray() : EnabledSources().Where(p => p != provider).ToArray();
                 OnlinePreferenceChanged(); break;
             case "searchOnline": await SearchOnline(cmd.GetProperty("value")); break;
+            case "lyricInspection": CompleteLyricInspection(cmd.GetProperty("value")); break;
             case "selectOnline": await SelectOnline(cmd.GetProperty("value")); break;
             case "resetOnline": await ResetOnline(); break;
         }

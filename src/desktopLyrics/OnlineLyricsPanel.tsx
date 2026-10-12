@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Search, LoaderCircle, Check, Globe2 } from 'lucide-react';
+import { Search, LoaderCircle, Globe2 } from 'lucide-react';
 import { send, type OnlineState, type Preferences, type Session } from './bridge';
-import { timeLabel } from './clock';
 import i18n from '../i18n/config';
+import OnlineLyricsCandidates from './OnlineLyricsCandidates';
 
 // src/desktopLyrics/OnlineLyricsPanel.tsx
 const SOURCES = [
@@ -32,13 +32,7 @@ export default function OnlineLyricsPanel({ session, preferences, online }: { se
     </form>
     <p className={`online-status ${online.busy ? 'busy' : ''}`} role="status">{online.message}</p>
     {online.errors.length > 0 ? <details className="online-errors"><summary>部分歌词源暂不可用</summary>{online.errors.map((error, i) => <p key={i}>{error}</p>)}</details> : null}
-    <div className="online-results" data-settings-target="online-results">{online.candidates.map(candidate => <button key={candidate.key} className={`online-result ${candidate.key === online.selectedKey ? 'chosen' : ''}`}
-      disabled={online.busy || !preferences.onlineEnabled || !preferences.onlineProviders.includes(candidate.provider) || !candidate.available}
-      onClick={() => send('selectOnline', { id: candidate.key, songKey: session.key })} aria-label={`使用歌词：${candidate.title} / ${candidate.artist} / ${candidate.id}`}>
-      <span className="result-heading"><strong>{candidate.title}</strong>{candidate.key === online.selectedKey ? <Check size={14}/> : <span>{candidate.duration > 0 ? timeLabel(candidate.duration) : '时长未知'}</span>}</span>
-      <span className="result-artist">{candidate.artist || '歌手未知'}{candidate.album ? ` · ${candidate.album}` : ''}</span>
-      <span className="result-meta">{SOURCES.find(s => s.id === candidate.provider)?.name} · {candidate.quality}{candidate.autoEligible ? ' · 信息吻合' : ''}</span>
-    </button>)}</div>
+    <OnlineLyricsCandidates songKey={session.key} online={online} preferences={preferences} sources={SOURCES}/>
     <details className="settings-help online-help"><summary>{i18n.t('desktopLyrics.settings.onlineHelp', { lng: 'zh-CN' })}</summary>
       <p className="hint">找不到本地歌词时自动联网。只发送歌名、歌手、专辑和时长，不上传音频。已匹配歌词会缓存；关闭联网后仍可使用缓存。</p>
       <p className="hint">逐字时间轴由歌词源提供；逐行歌词不会自动变成精准逐字歌词。</p></details>

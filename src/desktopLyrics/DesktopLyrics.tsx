@@ -34,6 +34,7 @@ import { useDesktopSettingsModules } from './useDesktopSettingsModules';
 import DesktopNotice from './DesktopNotice';
 import DesktopMusicAppDiscovery from './DesktopMusicAppDiscovery';
 import type { DesktopNoticeData, DesktopSettingsRequest, DesktopSettingsTarget } from '../types/desktopSettings';
+import type { DesktopSettingsSearchEntry, DesktopSettingsSearchRequest } from '../types/desktopSettingsSearch';
 
 // src/desktopLyrics/DesktopLyrics.tsx
 const DesktopStage = lazy(() => Promise.all([import('./DesktopStage'), prepareDesktopFonts()]).then(([stage]) => stage));
@@ -54,6 +55,7 @@ export default function DesktopLyrics() {
     if (saved.subtitleContentMode !== content || saved.showSubtitleTranslation !== enabled) saved.handleSetSubtitleContentMode(content);
   }, []);
   const [panelNavigation, setPanelNavigation] = useState<DesktopSettingsRequest>();
+  const [searchNavigation, setSearchNavigation] = useState<DesktopSettingsSearchRequest>();
   const navigationSequence = useRef(0);
   const [visualSection, setVisualSection] = useState<DesktopVisualSection | null>(null), [segmentationOpen, setSegmentationOpen] = useState(false);
   const [visualNavigation, setVisualNavigation] = useState(0);
@@ -93,6 +95,7 @@ export default function DesktopLyrics() {
     // Capture the clicked entry before the previous panel restores focus during unmount.
     if (!panel) mainOpener.current = glassSurface.current?.querySelector<HTMLElement>('[data-settings-trigger]') ?? null;
     cancelSettingsOpening(); setVisualSection(null); setSegmentationOpen(false);
+    setSearchNavigation(undefined);
     setPanelNavigation(target ? { sequence: ++navigationSequence.current, target } : undefined); setPanel(true); setImmersive(false);
   };
   const settingsLoadError = () => state.setNotice({ text: i18n.t('desktopVisual.settingsLoadFailed', { lng: 'zh-CN' }), target: { id: 'visual-settings' } });
@@ -102,15 +105,20 @@ export default function DesktopLyrics() {
     return active instanceof HTMLElement && active !== document.body && !active.closest('.control-panel,.desktop-top-menu')
       ? active : glassSurface.current?.querySelector<HTMLElement>('.topbar-mode-picker [role="combobox"]') ?? null;
   };
-  const showVisualSettings = (section: DesktopVisualSection = 'visualizer', stableOpener?: HTMLElement | null) => {
+  const showVisualSettings = (section: DesktopVisualSection = 'visualizer', stableOpener?: HTMLElement | null, searchEntry?: DesktopSettingsSearchEntry) => {
     const opener = stableOpener ?? captureVisualOpener();
-    openSettingsModule('visual', () => { visualOpener.current = opener; setPanel(false); setSegmentationOpen(false); setVisualSection(section); setVisualNavigation(value => value + 1); setImmersive(false); },
+    openSettingsModule('visual', () => { visualOpener.current = opener; setPanel(false); setSegmentationOpen(false); setVisualSection(section); setVisualNavigation(value => value + 1);
+      setSearchNavigation(searchEntry ? { sequence: ++navigationSequence.current, entry: searchEntry } : undefined); setImmersive(false); },
       () => state.setNotice({ text: i18n.t('desktopVisual.settingsLoadFailed', { lng: 'zh-CN' }), target: { id: section === 'background' ? 'background-settings' : 'visual-settings' } }));
   };
   const navigateSettings = (target?: DesktopSettingsTarget) => {
     if (target?.id === 'visual-settings' || target?.id === 'background-settings') showVisualSettings(target.id === 'background-settings' ? 'background' : 'visualizer',
       glassSurface.current?.querySelector<HTMLElement>(target.id === 'background-settings' ? '[data-background-settings-trigger]' : '[data-settings-trigger]'));
     else showSettings(target);
+  };
+  const navigateSearch = (entry: DesktopSettingsSearchEntry) => {
+    if (entry.section === 'main') { showSettings(); setSearchNavigation({ sequence: ++navigationSequence.current, entry }); }
+    else showVisualSettings(entry.section, glassSurface.current?.querySelector<HTMLElement>(entry.section === 'background' ? '[data-background-settings-trigger]' : '[data-settings-trigger]'), entry);
   };
   useEffect(() => {
     // Host navigation runs after the restore effect, so it cannot cancel its own deferred module opening.
@@ -154,9 +162,10 @@ export default function DesktopLyrics() {
       playing={playing} unavailable={Boolean(state.connectionError) || !manual.enabled && !state.session.hasTimeline}/> : null}
     {panel ? <ControlPanel mode={mode} onMode={changeMode} session={state.session} preferences={state.preferences} library={state.library} online={state.online} scan={state.scan} offset={offset} onOffset={changeOffset}
       translated={translated} onTranslated={changeTranslated} immersiveProgress={immersiveProgress} onImmersiveProgress={changeImmersiveProgress} manual={manual} setManual={setManual} audioStatus={state.audioStatus}
-      lyricSource={state.lyricInfo?.source} navigation={panelNavigation} returnFocus={mainOpener.current} onVisualSettings={() => showVisualSettings()} canSegment={canSegment} onSegmentation={showSegmentation} onClose={() => { cancelSettingsOpening(); setPanel(false); }}/> : null}
+      lyricSource={state.lyricInfo?.source} navigation={panelNavigation} searchNavigation={searchNavigation} onSearchNavigate={navigateSearch} returnFocus={mainOpener.current} onVisualSettings={() => showVisualSettings()} canSegment={canSegment} onSegmentation={showSegmentation} onClose={() => { cancelSettingsOpening(); setPanel(false); }}/> : null}
     {visualSection !== null && DesktopVisualSettings ? <DesktopVisualSettings key={visualSection === 'background' ? 'background' : 'visual'} initialSection={visualSection} navigationSequence={visualNavigation} mode={mode} onMode={changeMode} model={visual}
-      returnFocus={visualOpener.current} canSegment={canSegment} onSegmentation={showSegmentation} onClose={() => { cancelSettingsOpening(); setVisualSection(null); }}/> : null}
+      returnFocus={visualOpener.current} searchNavigation={searchNavigation} onSearchNavigate={navigateSearch} onClearSearchNavigation={() => setSearchNavigation(undefined)}
+      canSegment={canSegment} onSegmentation={showSegmentation} onClose={() => { cancelSettingsOpening(); setVisualSection(null); }}/> : null}
     {segmentationOpen && DesktopSegmentationSettings ? <DesktopSegmentationSettings model={segmentation} returnFocus={segmentationOpener.current} onClose={closeSegmentation}/> : null}
     {notice ? <DesktopNotice text={notice.text}
       action={notice.target ? i18n.t('desktopLyrics.settings.noTimelineAction', { lng: 'zh-CN' }) : '关闭'} onAction={() => { state.setNotice(''); if (notice.target) navigateSettings(notice.target); }}/> : null}

@@ -2,6 +2,22 @@
 
 export default {
   "desktopLyrics": {
+    "settingsSearch": {
+      "label": "Search all settings",
+      "placeholder": "Search settings, backgrounds, fonts…",
+      "clear": "Clear settings search",
+      "results": "Settings suggestions",
+      "empty": "No matching settings",
+      "main": "Lyric settings",
+      "common": "General and fonts",
+      "visualizer": "Lyric animation",
+      "subtitle": "Subtitles",
+      "background": "Desktop background",
+      "prerequisite": "“{{label}}” is hidden. Check “{{control}}” first.",
+      "unavailable": "The settings are open. “{{label}}” is currently hidden; check its related options first.",
+      "editing": "Viewing parameters for {{name}}",
+      "current": "Return to current settings"
+    },
     "topbar": {
       "more": "More controls",
       "translationOn": "Translation is on",
@@ -55,6 +71,15 @@ export default {
       "noTimelineNotice": "This player does not provide a timeline. Use the manual lyric clock in settings.",
       "noTimelineAction": "Open settings",
       "previewMode": "Preview mode · Sync and file access require the Windows EXE"
+    },
+    "onlineCandidates": {
+      "showMore": "Show more ({{count}})",
+      "collapse": "Collapse additional candidates",
+      "hiddenSelection": "Current choice is collapsed: {{title}} · {{artist}} · {{source}} · {{quality}}",
+      "use": "Use lyrics: {{title}} / {{artist}} / {{id}}",
+      "unknownArtist": "Unknown artist",
+      "unknownDuration": "Unknown duration",
+      "matching": "Metadata matches"
     },
     "musicApps": {
       "title": "Music app shortcuts",

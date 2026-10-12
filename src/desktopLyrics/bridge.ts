@@ -1,5 +1,6 @@
 import { normalizeDesktopSettingsTarget, type DesktopNoticeData, type DesktopSettingsTarget } from '../types/desktopSettings';
 import { normalizeMusicApps, normalizeMusicAppCandidates, normalizeMusicAppDiscovery, type MusicAppBinding, type MusicAppCandidate, type MusicAppDiscovery } from '../types/desktopMusicApps';
+import { inspectDesktopLyrics } from './inspectDesktopLyrics';
 
 // src/desktopLyrics/bridge.ts
 export type Clock = { position: number; duration: number; playing: boolean; rate: number; hasTimeline: boolean; received: number; key?: string; sessionId?: string; sequence?: number };
@@ -15,6 +16,7 @@ export type OnlineState = { key: string; busy: boolean; message: string; candida
 export const EMPTY_ONLINE: OnlineState = { key: '', busy: false, message: '播放歌曲后自动匹配在线歌词', candidates: [], errors: [], selectedKey: '' };
 export type LibrarySummary = { folders: string[]; count: number };
 export type Message = { type: 'windowState'; data: { maximized: boolean; fullscreen: boolean; clickThrough?: boolean } } | { type: 'session'; data: Session } | { type: 'clock'; data: Clock } | { type: 'lyrics'; data: LyricPacket }
+  | { type: 'inspectLyrics'; data: { requestId: string; packet: LyricPacket } }
   | { type: 'preferences'; data: Preferences } | { type: 'library'; data: LibrarySummary }
   | { type: 'online'; data: OnlineState }
   | { type: 'musicAppDiscovery'; data: MusicAppDiscovery }
@@ -38,6 +40,10 @@ export function normalizeMessage(raw: unknown): Message | null {
   if (!isRecord(raw) || typeof raw.type !== 'string' || !raw.type || !isRecord(raw.data)) return null;
   const data = raw.data;
   switch (raw.type) {
+    case 'inspectLyrics':
+      return typeof data.requestId === 'string' && data.requestId.length > 0 && data.requestId.length <= 80 && isRecord(data.packet)
+        && typeof data.packet.key === 'string' && typeof data.packet.content === 'string'
+        ? { type: 'inspectLyrics', data: data as { requestId: string; packet: LyricPacket } } : null;
     case 'musicAppDiscovery': {
       const discovery = normalizeMusicAppDiscovery(data);
       return discovery ? { type: 'musicAppDiscovery', data: discovery } : null;
@@ -70,8 +76,48 @@ export function normalizeMessage(raw: unknown): Message | null {
       return raw as Message;
   }
 }
+type InspectionReceiver = { subscribers: number; active: boolean; handler: (event: { data: unknown }) => void };
+const inspectionReceivers = new WeakMap<Native, InspectionReceiver>();
+
+// Components share one parser receiver per native connection; ending its final subscription also invalidates pending replies.
+function retainInspectionReceiver(bridge: Native) {
+  let receiver = inspectionReceivers.get(bridge);
+  if (receiver) receiver.subscribers++;
+  else {
+    const created: InspectionReceiver = { subscribers: 1, active: true, handler: event => {
+      const message = normalizeMessage(event.data);
+      if (message?.type !== 'inspectLyrics') return;
+      const { requestId, packet } = message.data;
+      void inspectDesktopLyrics(packet).then(quality => {
+        if (created.active) bridge.postMessage({ type: 'lyricInspection', value: { requestId, key: packet.key, ...quality } });
+      });
+    } };
+    receiver = created;
+    inspectionReceivers.set(bridge, receiver);
+    bridge.addEventListener('message', receiver.handler);
+  }
+  const retained = receiver;
+  return () => {
+    if (--retained.subscribers !== 0) return;
+    retained.active = false;
+    bridge.removeEventListener('message', retained.handler);
+    inspectionReceivers.delete(bridge);
+  };
+}
+
 export function listen(fn: (message: Message) => void) {
-  const bridge = host(); const handler = (event: { data: unknown }) => { const message = normalizeMessage(event.data); if (message) fn(message); };
-  bridge?.addEventListener('message', handler); return () => bridge?.removeEventListener('message', handler);
+  const bridge = host(); let disposed = false;
+  const releaseInspection = bridge ? retainInspectionReceiver(bridge) : undefined;
+  const handler = (event: { data: unknown }) => {
+    const message = normalizeMessage(event.data); if (!message) return;
+    if (message.type === 'inspectLyrics') return;
+    fn(message);
+  };
+  bridge?.addEventListener('message', handler); return () => {
+    if (disposed) return;
+    disposed = true;
+    bridge?.removeEventListener('message', handler);
+    releaseInspection?.();
+  };
 }
 export const EMPTY: Session = { key: '', title: '', artist: '', cover: '', source: '', sources: [], position: 0, duration: 0, rate: 1, playing: false, hasTimeline: false, received: 0 };

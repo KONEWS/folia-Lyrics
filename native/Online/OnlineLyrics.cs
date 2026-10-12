@@ -3,13 +3,13 @@ using System.Text.RegularExpressions;
 
 // native/Online/OnlineLyrics.cs: Explicit cross-provider facade; UI never sees raw service responses.
 namespace FoliaLyrics;
-internal sealed class OnlineLyrics : IDisposable
+internal sealed partial class OnlineLyrics : IDisposable
 {
     private readonly OnlineHttp? http;
     private readonly IOnlineLyricProvider[] providers;
     private readonly TimeSpan priorityWindow = TimeSpan.FromMilliseconds(750);
     public static readonly string[] ProviderIds = ["qq", "kugou", "netease", "lrclib"];
-    internal const int PriorityPolicyVersion = 1;
+    internal const int PriorityPolicyVersion = 2;
     // Provider text is untrusted and can reach 4 MB: bounded patterns plus a match timeout keep a hostile response from monopolizing a worker.
     private static readonly TimeSpan MatchTimeout = TimeSpan.FromMilliseconds(250);
     // A synchronized-lyric tag such as [mm:ss.xx] (LRC/KRC) or [start,duration] (YRC); only the text after the numbers is capped, so ordinary tags match as before.
@@ -76,18 +76,30 @@ internal sealed class OnlineLyrics : IDisposable
             TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
     }
     private readonly record struct SearchPage(LyricCandidate[] Candidates, string Error);
-    private Task<SearchPage>[] StartSearch(LyricQuery query, string[] enabled, CancellationToken token) => providers
-        .Where(p => enabled.Contains(p.Id)).OrderBy(p => Array.IndexOf(ProviderIds, p.Id)).Select(async p =>
+    private Task<SearchPage>[] StartSearch(LyricQuery query, string[] enabled, CancellationToken token, TimeSpan? timeout = null) => providers
+        .Where(p => enabled.Contains(p.Id)).OrderBy(p => Array.IndexOf(ProviderIds, p.Id)).Select(p => SearchProvider(p, query, token, timeout)).ToArray();
+
+    // A provider that ignores cancellation still has a bounded search; its eventual failure is always observed.
+    private static async Task<SearchPage> SearchProvider(IOnlineLyricProvider provider, LyricQuery query, CancellationToken token, TimeSpan? timeout)
+    {
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(token);
+        if (timeout is { } limit) deadline.CancelAfter(limit);
+        var request = Task.Run(() => provider.Search(query, deadline.Token), deadline.Token);
+        try { return new SearchPage(await request.WaitAsync(deadline.Token).ConfigureAwait(false), ""); }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
+        catch (Exception e) { return new SearchPage([], $"{provider.Name}：{(e is OperationCanceledException ? "请求超时" : e.Message)}"); }
+        finally
         {
-            try { return new SearchPage(await Task.Run(() => p.Search(query, token), token).ConfigureAwait(false), ""); }
-            catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
-            catch (Exception e) { return new SearchPage([], $"{p.Name}：{(e is OperationCanceledException ? "请求超时" : e.Message)}"); }
-        }).ToArray();
-    private static async Task<OnlineSearchResult> Complete(Task<SearchPage>[] work, LyricQuery query, CancellationToken token)
+            deadline.Cancel();
+            _ = request.ContinueWith(completed => { _ = completed.Exception; }, CancellationToken.None,
+                TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+        }
+    }
+    private static async Task<OnlineSearchResult> Complete(Task<SearchPage>[] work, LyricQuery query, CancellationToken token, int limit = 40)
     {
         var pages = await Task.WhenAll(work).WaitAsync(token);
         token.ThrowIfCancellationRequested();
-        var candidates = OrderCandidates(pages.SelectMany(p => p.Candidates).Select(c => Rank(c, query)).DistinctBy(c => c.Key)).Take(40).ToArray();
+        var candidates = OrderCandidates(pages.SelectMany(p => p.Candidates).Select(c => Rank(c, query)).DistinctBy(c => c.Key)).Take(limit).ToArray();
         return new(candidates, pages.Where(p => p.Error.Length > 0).Select(p => p.Error).ToArray());
     }
     // Keep the requested source preference in the chooser; score still ranks versions within each source without changing eligibility.

@@ -31,11 +31,11 @@ internal static class PreferredCacheChecks
 
     private static async Task PreserveInstantChoices(Action<bool, string> check)
     {
-        foreach (var setting in new[] { "offline", "QQ disabled", "manual", "QQ cached", "local" })
+        foreach (var setting in new[] { "offline", "QQ disabled", "manual", "current policy", "local" })
         {
             DataFiles.Reset(); var song = SongOf("PriorityKeep " + setting); var cache = Cache();
-            var manual = setting == "manual"; var provider = setting == "QQ cached" ? "qq" : "kugou";
-            await cache.SaveAsync(song, Packet(song, provider, "old cache"), provider + ":legacy", manual);
+            var manual = setting == "manual"; var provider = setting == "current policy" ? "qq" : "kugou";
+            await cache.SaveAsync(song, Packet(song, provider, "old cache"), provider + ":legacy", manual, setting == "current policy" ? OnlineLyrics.PriorityPolicyVersion : 0);
             if (setting == "local")
             {
                 var path = Path.Combine(DataFiles.Root, "priority-local.lrc");
@@ -49,8 +49,8 @@ internal static class PreferredCacheChecks
                 "QQ-first cache policy preserves immediate lookup without networking: " + setting);
             check(host.Packets.Single().Content.Contains(setting == "local" ? "local first" : "old cache"),
                 "QQ-first cache policy retains the intended lyric choice: " + setting);
-            check((await cache.ReadAsync(song))?.PriorityPolicy == 0,
-                "an immediate local/manual/offline/disabled/QQ hit does not falsely mark an old cache re-evaluated: " + setting);
+            check((await cache.ReadAsync(song))?.PriorityPolicy == (setting == "current policy" ? OnlineLyrics.PriorityPolicyVersion : 0),
+                "an immediate local/manual/offline/disabled/current-policy hit does not falsely mark an old cache re-evaluated: " + setting);
         }
     }
 
@@ -62,8 +62,8 @@ internal static class PreferredCacheChecks
         {
             await host.Resolve(song).WaitAsync(Limit);
             check(host.Packets.Single().Source == "qq" && host.Packets.Single().Content.Contains("new QQ")
-                && TestProviders.Searches.SelectMany(page => page).SequenceEqual(["qq"]),
-                "a legacy automatic non-QQ cache refreshes QQ only and publishes one preferred lyric packet");
+                && TestProviders.Searches.SelectMany(page => page).Order().SequenceEqual(OnlineLyrics.ProviderIds.Order()),
+                "a legacy automatic non-QQ cache evaluates all enabled sources and publishes one preferred lyric packet");
         }
         var saved = await cache.ReadAsync(song);
         check(saved is { CandidateKey: "qq:preferred", Manual: false } && saved.PriorityPolicy == OnlineLyrics.PriorityPolicyVersion,
@@ -85,7 +85,7 @@ internal static class PreferredCacheChecks
         }
         ClearCalls();
         using var enabled = new MainWindow(); await enabled.Resolve(song).WaitAsync(Limit);
-        check(enabled.Packets.Single().Source == "qq" && TestProviders.Searches.SelectMany(page => page).SequenceEqual(["qq"]),
+        check(enabled.Packets.Single().Source == "qq" && TestProviders.Searches.SelectMany(page => page).Order().SequenceEqual(OnlineLyrics.ProviderIds.Order()),
             "enabling QQ later re-evaluates a non-QQ automatic cache made while QQ was disabled");
     }
 
@@ -96,15 +96,15 @@ internal static class PreferredCacheChecks
         using (var host = new MainWindow())
         {
             await host.Resolve(song).WaitAsync(Limit);
-            check(host.Packets.Single().Content.Contains("valid fallback") && TestProviders.Fetches.IsEmpty
-                && host.Status.Candidates.Single() is { Provider: "qq", AutoEligible: false } && host.Status.Phase == "ready",
-                "an ineligible QQ version cannot replace a valid old cache or weaken matching accuracy");
+            check(host.Packets.Single().Source == "qq" && !TestProviders.Fetches.IsEmpty
+                && host.Status.Candidates.All(candidate => !candidate.AutoEligible) && host.Status.Phase == "ready",
+                "the new forced-choice policy permits the highest available QQ version below the former duration threshold");
         }
         check((await cache.ReadAsync(song))?.PriorityPolicy == OnlineLyrics.PriorityPolicyVersion,
             "an evaluated cached fallback records the current source policy");
         ClearCalls();
         using var restarted = new MainWindow(); await restarted.Resolve(song).WaitAsync(Limit);
-        check(TestProviders.Searches.IsEmpty && restarted.Packets.Single().Content.Contains("valid fallback"),
+        check(TestProviders.Searches.IsEmpty && restarted.Packets.Single().Source == "qq",
             "an evaluated cached fallback avoids repeated automatic network requests");
         await cache.ForgetAsync(song); ReadyQq(); ClearCalls();
         using var reset = new MainWindow(); await reset.Resolve(song).WaitAsync(Limit);
@@ -121,7 +121,7 @@ internal static class PreferredCacheChecks
         using var host = new MainWindow(); await host.Resolve(song).WaitAsync(Limit);
         check(host.Packets.Single().Content.Contains("valid fallback") && host.Status.Phase == "ready" && !host.Status.Busy && TestProviders.Fetches.IsEmpty,
             "a failing QQ provider keeps the valid cached lyric ready without a second lyric publication");
-        check(host.Status.Errors.Single().Contains("synthetic QQ unavailable") && (await cache.ReadAsync(song))?.PriorityPolicy == OnlineLyrics.PriorityPolicyVersion,
+        check(host.Status.Errors.All(error => error.Contains("synthetic QQ unavailable")) && host.Status.Errors.Length == OnlineLyrics.ProviderIds.Length && (await cache.ReadAsync(song))?.PriorityPolicy == OnlineLyrics.PriorityPolicyVersion,
             "an unavailable preferred source records its error and evaluated cache policy");
     }
 
@@ -132,13 +132,13 @@ internal static class PreferredCacheChecks
         var held = new TaskCompletionSource<OnlineSearchResult>(TaskCreationOptions.RunContinuationsAsynchronously); CancellationToken searchToken = default;
         await cache.SaveAsync(song, Packet(song, "kugou", "valid fallback"), "kugou:legacy", false);
         TestProviders.SearchHandler = (_, _, token) => { searchToken = token; entered.TrySetResult(); return held.Task; };
-        using var host = new MainWindow(); var pending = host.Resolve(song);
+        using var host = new MainWindow(); host.SetAutomaticSearchTimeout(TimeSpan.FromMilliseconds(150)); var pending = host.Resolve(song);
         try
         {
             await entered.Task.WaitAsync(Limit); await pending.WaitAsync(Limit);
             check(searchToken.IsCancellationRequested && !held.Task.IsCompleted && host.Packets.Single().Source == "kugou",
                 "an uncooperative QQ search falls back to the valid cache after its bounded search window");
-            check(host.Status.Errors.Any(error => error.Contains("优先搜索超时")) && TestProviders.Fetches.IsEmpty,
+            check(host.Status.Errors.Any(error => error.Contains("请求超时")) && TestProviders.Fetches.IsEmpty,
                 "a slow preferred-cache search reports its timeout without fetching a late result");
         }
         finally { held.TrySetResult(new([new("qq", "late", song.Title, song.Artist, song.Album, song.Duration, "timed")], [])); }
