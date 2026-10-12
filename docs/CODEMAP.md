@@ -39,8 +39,8 @@
 | 32+ | `dev/probes/definition.ts` |
 | 32+ | `src/components/command-palette/types.ts` |
 | 32+ | `src/components/ponder/surfaces/ponderSurfaceGeometry.ts` |
-| 32+ | `src/components/visualizer/colorMix.ts` |
 | 32+ | `src/components/visualizer/definition.ts` |
+| 32+ | `src/desktopLyrics/bridge.ts` |
 | 32+ | `src/i18n/config.ts` |
 | 32+ | `src/mods/folium/contract.ts` |
 | 32+ | `src/services/db.ts` |
@@ -50,6 +50,7 @@
 | 32+ | `src/stores/useStatusMessageStore.ts` |
 | 32+ | `src/stores/useThemeSettingsStore.ts` |
 | 32+ | `src/stores/useVisualizerSettingsStore.ts` |
+| 32+ | `src/utils/colorMix.ts` |
 | 32+ | `src/utils/fontStacks.ts` |
 | 32+ | `src/utils/lyrics/parserCore.ts` |
 | 32+ | `src/utils/lyrics/renderHints.ts` |
@@ -195,9 +196,7 @@
 规则是人定的（见 `codemap.mjs` 的 `BOUNDARY_RULES`），拿真实的值导入图去比对。
 `import type` 不算——它在运行时不存在。
 
-下面这些边的依赖方向本身就是错的：
-
-- `src/stores/useVisualizerSettingsStore.ts` → `src/components/visualizer/registry.tsx`  —— store 不应依赖组件
+当前没有违规。
 
 ### 目录归属存疑
 
@@ -205,11 +204,7 @@
 依赖方向没问题，是文件住在了 `src/components/` 下面。修法是移动文件，不是改依赖。
 
 - `src/services/obs/visualSettingsConfig.ts` → `src/components/visualizer/tuningRegistry.ts`
-- `src/services/ponder/pagePonderTarget.ts` → `src/components/modal/settings/navigation/settingsAnchorModel.ts`
 - `src/services/sync/settingsSnapshot.ts` → `src/components/visualizer/tuningRegistry.ts`
 - `src/stores/useCollectionNavigationStore.ts` → `src/components/app/home/gridViewCollectionAdapters.ts`
-- `src/stores/usePlaybackStore.ts` → `src/components/app/playback/createCoverUrlResolver.ts`
-- `src/stores/useSettingsModalStore.ts` → `src/components/command-palette/pinnedCommandPreferences.ts`
 - `src/stores/visualizerSettingsPersistence.ts` → `src/components/visualizer/diorama/dioramaMoteField.ts`
-- `src/utils/themeColorMath.ts` → `src/components/visualizer/colorMix.ts`
 
