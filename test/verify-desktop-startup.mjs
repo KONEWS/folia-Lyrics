@@ -38,7 +38,6 @@ try {
     });
     try {
       await page.goto(`http://127.0.0.1:${server.address().port}/desktop.html`, { waitUntil: 'domcontentloaded' });
-      await fontRequested;
       await page.waitForFunction(() => window.__foliaReadyAt !== null, null, { timeout: 2000 });
       assert(await page.locator('.desktop-statusbar').isVisible(), 'controls render before the font finishes');
       await page.getByRole('button', { name: '打开歌词设置', exact: true }).click();
@@ -50,6 +49,7 @@ try {
         window.__foliaEmit('session', song);
         window.__foliaEmit('lyrics', { key: song.key, title: song.title, artist: song.artist, content: '[00:01.00]字体就绪后显示歌词\n[00:30.00]继续播放', translation: '[00:01.00]Font ready lyric\n[00:30.00]Next line', format: 'lrc', source: 'startup', cover: '', embedded: false });
       });
+      await fontRequested;
       await page.getByRole('button', { name: '继续播放音乐', exact: true }).click();
       const request = await page.evaluate(() => window.__foliaCommands.filter(message => message.type === 'mediaControl').at(-1));
       assert.equal(request.value.songKey, 'startup', 'playback is available while font and lyrics prepare');

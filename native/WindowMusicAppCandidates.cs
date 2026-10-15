@@ -12,10 +12,10 @@ internal sealed partial class MainWindow
         preferences.MusicApps = MusicAppDiscoveryPolicy.Merge(preferences.MusicApps,
             candidates.Select(app => MusicAppDiscoveryPolicy.Binding(app)), preferences.BlockedMusicApps.Select(app => app.Id));
         musicAppInbox.Reconcile(preferences.MusicApps, preferences.BlockedMusicApps);
-        SavePreferences();
+        var saved = SavePreferences();
         SendMusicAppDiscovery();
         var added = preferences.MusicApps.Length - previous;
-        if (added > 0) Send("notice", new { text = $"已添加 {added} 个音乐软件，可从首页打开。", target = new { id = "music-apps" } });
+        if (saved && added > 0) Send("notice", new { text = $"已添加 {added} 个音乐软件，可从首页打开。", target = new { id = "music-apps" } });
     }
 
     private void DismissMusicAppDiscovery(JsonElement value)
@@ -39,9 +39,9 @@ internal sealed partial class MainWindow
         musicAppDiscoveryRevision++;
         preferences.BlockedMusicApps = MusicAppDiscoveryPolicy.NormalizeBlocked(preferences.BlockedMusicApps.Append(candidate));
         musicAppInbox.Reconcile(preferences.MusicApps, preferences.BlockedMusicApps);
-        SavePreferences();
+        var saved = SavePreferences();
         SendMusicAppDiscovery();
-        Send("notice", new { text = $"已屏蔽 {candidate.Name} 的发现提示，可在设置中恢复。", target = new { id = "music-apps" } });
+        if (saved) Send("notice", new { text = $"已屏蔽 {candidate.Name} 的发现提示，可在设置中恢复。", target = new { id = "music-apps" } });
     }
 
     private async Task UnblockMusicApp(JsonElement value)
@@ -50,7 +50,7 @@ internal sealed partial class MainWindow
         if (!preferences.BlockedMusicApps.Any(app => app.Id == id)) throw new IOException("找不到要恢复的音乐软件。");
         musicAppDiscoveryRevision++;
         preferences.BlockedMusicApps = preferences.BlockedMusicApps.Where(app => app.Id != id).ToArray();
-        SavePreferences();
-        await DiscoverMusicApps(installed: true, notify: true);
+        var saved = SavePreferences();
+        await DiscoverMusicApps(installed: true, notify: true, notifyResult: saved);
     }
 }

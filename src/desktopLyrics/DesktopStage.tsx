@@ -8,7 +8,7 @@ import VisualizerBoundary from './VisualizerBoundary';
 // src/desktopLyrics/DesktopStage.tsx — stable runtime props keep settings drafts outside the original renderer's React path.
 type Props = VisualizerSharedProps & { mode: VisualizerMode; onRecover: () => void };
 const DesktopStage = memo(function DesktopStage({ onRecover, ...props }: Props) {
-  return <VisualizerBoundary key={props.mode} onRecover={onRecover}><PlayerBottomBarLayoutContext.Provider value={true}>
+  return <VisualizerBoundary key={props.mode} mode={props.mode} onRecover={onRecover}><PlayerBottomBarLayoutContext.Provider value={true}>
     <VisualizerRenderer {...props}/>
   </PlayerBottomBarLayoutContext.Provider></VisualizerBoundary>;
 });

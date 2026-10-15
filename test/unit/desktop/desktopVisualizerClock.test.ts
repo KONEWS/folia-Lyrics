@@ -40,6 +40,26 @@ function mount(reactive: boolean, demand?: FrameDemand) {
   return { clock, input, runtime, tick, cleanup, scheduled };
 }
 describe('desktop clock audio work', () => {
+  it('coalesces active audio requests into the next RAF without publishing extra lyric clock changes', () => {
+    const demand = createFrameDemand(), mounted = mount(true, demand);
+    mounted.clock.current = { ...mounted.clock.current, playing: true };
+    mounted.tick(1000);
+    const changed = vi.fn(), unsubscribe = mounted.runtime.playbackTime.on('change', changed);
+    vi.stubGlobal('performance', { now: () => 1100 });
+    for (let packet = 0; packet < 20; packet++) {
+      mounted.input.current.received = 1100;
+      mounted.input.current.bins.fill(200);
+      demand.request('spectrum');
+    }
+    expect(mounted.runtime.currentTime.get()).toBe(2);
+    expect(changed).not.toHaveBeenCalled();
+    expect(mounted.scheduled.size).toBe(1);
+    mounted.tick(1117);
+    expect(mounted.runtime.currentTime.get()).toBeCloseTo(2.117, 12);
+    expect(changed).toHaveBeenCalledTimes(1);
+    expect(mounted.runtime.audioBands.spectrum.get()[0]).toBe(200);
+    unsubscribe(); mounted.cleanup?.();
+  });
   it('publishes the exact pause and seek positions synchronously before a renderer stops its draw loop', () => {
     const demand = createFrameDemand(), mounted = mount(false, demand);
     mounted.clock.current = { ...mounted.clock.current, position: 42, playing: true };

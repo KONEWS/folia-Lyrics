@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Exercise production placement rules and unshown window lifecycle handlers with fixture monitors and an in-memory save sink. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType><TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms><EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../native/Preferences.cs" Link="Preferences.cs"/>
+    <Compile Include="../../native/WindowPlacementPolicy.cs" Link="WindowPlacementPolicy.cs"/>
+    <Compile Include="../../native/WindowPlacement.cs" Link="WindowPlacement.cs"/>
+    <Compile Include="../../native/UiDispatcher.cs" Link="UiDispatcher.cs"/>
+  </ItemGroup>
+</Project>

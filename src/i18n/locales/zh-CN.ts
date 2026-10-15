@@ -2,6 +2,18 @@
 
 export default {
   "desktopLyrics": {
+    "diagnostics": {
+      "title": "诊断与支持",
+      "hint": "用于排查播放器连接、声音响应或歌词显示问题。",
+      "copy": "复制诊断信息",
+      "openLogs": "打开日志目录"
+    },
+    "onlineOperation": { "cancel": "取消请求" },
+    "recovery": {
+      "failed": "这个动效暂时无法显示",
+      "retry": "重试歌词显示",
+      "fallback": "切回{{mode}}"
+    },
     "settingsSearch": {
       "label": "搜索全部设置",
       "placeholder": "搜索设置、背景、字体…",
@@ -53,7 +65,7 @@ export default {
     },
     "settings": {
       "transparentHelp": "透明背景与穿透说明",
-      "clickThroughRecovery": "恢复操作：Ctrl + Alt + L，或双击托盘图标。",
+      "clickThroughRecovery": "双击托盘图标恢复操作；快捷键可用时也可按 Ctrl + Alt + L。",
       "playerTitle": "播放器",
       "playerHelp": "播放控制说明",
       "currentPlayer": "当前播放器：{{player}}",
@@ -157,12 +169,12 @@ export default {
     "seconds": "秒",
     "autoImmersiveHint": "可设 1–3600 秒，默认 30 秒。歌词页面中鼠标或键盘操作会重新计时，到时隐藏控制栏和鼠标；打开设置期间暂停计时。窗口模式下移到顶部可呼出标题栏和顶部控件，Esc 恢复控制栏或退出全屏。",
     "bottomHoverControls": "沉浸时移到底部呼出播放控件",
-    "bottomHoverHint": "鼠标移到窗口底部显示播放控件，离开后收起。开启鼠标穿透时需先按 Ctrl + Alt + L 恢复操作。",
+    "bottomHoverHint": "鼠标移到窗口底部显示播放控件，离开后收起。开启鼠标穿透时先双击托盘图标恢复操作；快捷键可用时也可按 Ctrl + Alt + L。",
     "transparentBackground": "播放页面透明背景",
     "transparentHint": "透过歌词看到后方窗口，适合配合置顶与鼠标穿透使用。关闭后恢复亚克力背景；选择会自动保存。",
     "closeToTaskbar": "关闭按钮最小化到任务栏",
     "closeToTaskbarHint": "开启后，点击窗口右上角 × 会保留程序并最小化到任务栏；在系统托盘菜单选择“退出”可彻底关闭。选择会自动保存。",
-    "clickThroughHint": "鼠标穿透会自动启用透明背景并收起控制栏。Ctrl + Alt + L 或双击托盘图标恢复操作，透明背景仍保留。全屏按钮进入或退出全屏，Esc 退出全屏。",
+    "clickThroughHint": "鼠标穿透会自动启用透明背景并收起控制栏。双击托盘图标恢复操作；快捷键可用时也可按 Ctrl + Alt + L，透明背景仍保留。全屏按钮进入或退出全屏，Esc 退出全屏。",
     "immersiveProgress": "沉浸模式显示进度条",
     "audioProgressHint": "底部频谱跟随系统输出声音，明亮部分表示播放进度。暂停或关闭声音跟随后收回；进度条仅显示，不改变播放器进度。",
     "audioProgress": "音频可视化与播放进度",

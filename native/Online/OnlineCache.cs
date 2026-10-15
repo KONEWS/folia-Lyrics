@@ -5,17 +5,19 @@ using System.Text.Json;
 // native/Online/OnlineCache.cs: Separate files preserve user music and avoid duplicate downloads.
 namespace FoliaLyrics;
 internal sealed record CachedOnline(Lyrics Lyrics, string CandidateKey, bool Manual, int PriorityPolicy = 0);
+internal readonly record struct OnlineCacheSaveResult(bool Saved, string[] MaintenanceErrors);
 internal sealed class OnlineCache(string root)
 {
     private readonly SemaphoreSlim gate = new(1, 1);
     private bool legacyBindingsMigrated;
     private string BindingFile(string cacheFile) => Path.Combine(root, "bindings", Path.GetFileName(cacheFile));
-    private string FileName(Song song)
+    internal static string Identity(Song song)
     {
         var q = LyricQuery.From(song);
         var identity = OnlineLyrics.Normalize(q.Title) + "\n" + OnlineLyrics.Normalize(q.Artist) + "\n" + OnlineLyrics.Normalize(q.Album) + "\n" + Math.Round(q.Duration);
-        return Path.Combine(root, Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(identity))) + ".json");
+        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(identity)));
     }
+    private string FileName(Song song) => Path.Combine(root, Identity(song) + ".json");
     public Task<CachedOnline?> ReadAsync(Song song) => Run(() =>
     {
         try
@@ -35,23 +37,40 @@ internal sealed class OnlineCache(string root)
         }
         catch { return null; }
     });
-    public Task SaveAsync(Song song, Lyrics lyrics, string candidateKey, bool manual, int priorityPolicy = 0) => Run(() =>
+    public Task<OnlineCacheSaveResult> SaveAsync(Song song, Lyrics lyrics, string candidateKey, bool manual, int priorityPolicy = 0) => Run(() =>
     {
-        if (song.Title.Length == 0) return false;
-        Directory.CreateDirectory(root); var migrated = MigrateLegacyBindings();
-        var cacheFile = FileName(song); var file = manual ? BindingFile(cacheFile) : cacheFile;
-        if (!manual && !migrated)
+        var errors = new List<string>();
+        try
         {
-            // New downloads may still be saved, but never replace an unreadable or unmigrated user choice.
-            try { if (ReadFileStrict(cacheFile) is { Manual: true }) return false; }
-            catch (Exception e) when (e is IOException or UnauthorizedAccessException) { return false; }
+            if (song.Title.Length == 0) return new OnlineCacheSaveResult(false, []);
+            Directory.CreateDirectory(root); var migrated = MigrateLegacyBindings();
+            var cacheFile = FileName(song); var file = manual ? BindingFile(cacheFile) : cacheFile;
+            if (!manual && !migrated)
+            {
+                // New downloads may still be saved, but never replace an unreadable or unmigrated user choice.
+                try { if (ReadFileStrict(cacheFile) is { Manual: true }) return new OnlineCacheSaveResult(false, []); }
+                catch (Exception e) when (e is IOException or UnauthorizedAccessException) { return new OnlineCacheSaveResult(false, []); }
+            }
+            Directory.CreateDirectory(Path.GetDirectoryName(file)!);
+            if (!AtomicJsonFile.TrySave(root, Path.GetRelativePath(root, file), new CachedOnline(lyrics, candidateKey, manual, priorityPolicy), DataFiles.Json, DataFiles.Log))
+                return new OnlineCacheSaveResult(false, []);
+            // Once the replacement committed, a locked old download or eviction failure cannot turn it into an unsaved choice.
+            Maintain(() => { if (manual && File.Exists(cacheFile)) File.Delete(cacheFile); }, errors);
+            if (migrated) Maintain(() =>
+            {
+                foreach (var old in new DirectoryInfo(root).GetFiles("*.json").OrderByDescending(f => f.LastWriteTimeUtc).Skip(500))
+                    Maintain(old.Delete, errors);
+            }, errors);
+            return new OnlineCacheSaveResult(true, errors.ToArray());
         }
-        Directory.CreateDirectory(Path.GetDirectoryName(file)!);
-        File.WriteAllText(file + ".tmp", JsonSerializer.Serialize(new CachedOnline(lyrics, candidateKey, manual, priorityPolicy), DataFiles.Json)); File.Move(file + ".tmp", file, true);
-        if (manual && File.Exists(cacheFile)) File.Delete(cacheFile);
-        if (migrated) foreach (var old in new DirectoryInfo(root).GetFiles("*.json").OrderByDescending(f => f.LastWriteTimeUtc).Skip(500)) old.Delete();
-        return true;
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException) { DataFiles.Log(error); return new OnlineCacheSaveResult(false, []); }
     });
+
+    private static void Maintain(Action operation, List<string> errors)
+    {
+        try { operation(); }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException) { DataFiles.Log(error); errors.Add(error.Message); }
+    }
     public Task ForgetAsync(Song song) => Run(() =>
     {
         var file = FileName(song); if (File.Exists(file)) File.Delete(file);

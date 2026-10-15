@@ -27,9 +27,9 @@ internal sealed partial class MainWindow
         base.OnHandleCreated(e);
         // Force the initial non-client calculation before DWM exposes the custom title area.
         UpdateFrameStyles(); ApplyAppearance();
-        RegisterHotKey(Handle, 1, 0x0001 | 0x0002 | 0x4000, (uint)Keys.L);
+        RegisterRecoveryHotkey();
     }
-    protected override void OnHandleDestroyed(EventArgs e) { UnregisterHotKey(Handle, 1); base.OnHandleDestroyed(e); }
+    protected override void OnHandleDestroyed(EventArgs e) { ReleaseRecoveryHotkey(); base.OnHandleDestroyed(e); }
     // Black GDI pixels expose the extended DWM frame behind the transparent WebView.
     protected override void OnPaintBackground(PaintEventArgs e) => e.Graphics.Clear(acrylic || transparentBackground ? Color.Black : BackColor);
 }

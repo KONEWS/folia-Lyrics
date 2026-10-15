@@ -1,4 +1,5 @@
 import type { DesktopSettingsSearchEntry } from '../types/desktopSettingsSearch';
+import zhCN from '../i18n/locales/zh-CN';
 
 // src/desktopLyrics/desktopSettingsSearchMain.ts — destinations and aliases for the desktop host's own controls.
 type MainItem = readonly [key: string, label: string, ...keywords: string[]];
@@ -49,11 +50,14 @@ const MAIN_ITEMS: MainItem[] = [
   ['online-artist', '在线搜索歌手', '歌手', '艺术家', 'artist'],
   ['online-search', '搜索在线歌词', '搜索', '匹配', 'search lyrics'],
   ['online-reset', '重新自动匹配', '重置匹配', '歌词重新匹配', 'reset matching'],
+  ['online-cancel', zhCN.desktopLyrics.onlineOperation.cancel, '取消搜索', '取消下载', '停止请求', 'cancel lyrics', 'quxiao'],
   ['online-results', '在线歌词候选', '歌词结果', '手动选择歌词', '更多在线歌词', 'online results'],
   ['local', '本地歌词库', '本地文件', '本地歌词', 'local lyrics'],
   ['local-folders', '添加音乐目录', '音乐文件夹', '本地目录', 'add folder'],
   ['local-import', '导入歌词', '导入本地文件', 'LRC', 'TTML', 'YRC', 'QRC', 'FIA', 'import lyrics'],
   ['local-rescan', '重新扫描', '本地歌词库', '重新索引', 'rescan library'],
+  ['diagnostics', zhCN.desktopLyrics.diagnostics.copy, '诊断', '排查问题', '复制状态', 'diagnostics', 'zhenduan'],
+  ['open-logs', zhCN.desktopLyrics.diagnostics.openLogs, '日志', '错误记录', 'log folder', 'rizhi'],
 ];
 
 const MAIN_GROUPS: readonly (readonly [string, string])[] = [
@@ -63,8 +67,9 @@ const MAIN_GROUPS: readonly (readonly [string, string])[] = [
   ['歌词样式', 'visual-settings'],
   ['主题与沉浸', 'immersion cover-theme settings-transparency auto-immersive immersive-delay bottom-controls'],
   ['窗口与声音', 'window-sound immersive-progress topmost close-taskbar audio'],
-  ['在线歌词', 'online online-enabled online-sources source-qq source-kugou source-netease source-lrclib online-title online-artist online-search online-reset online-results'],
+  ['在线歌词', 'online online-enabled online-sources source-qq source-kugou source-netease source-lrclib online-title online-artist online-search online-reset online-cancel online-results'],
   ['本地歌词库', 'local local-folders local-import local-rescan'],
+  [zhCN.desktopLyrics.diagnostics.title, 'diagnostics open-logs'],
 ];
 const MAIN_FALLBACKS: Record<string, string> = {
   'offset-later': '歌词同步', 'offset-earlier': '歌词同步', 'offset-reset': '歌词同步', segmentation: '歌词同步',

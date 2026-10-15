@@ -17,7 +17,7 @@ describe('desktop settings notice targets', () => {
 
   it('keeps every supported destination without inspecting message text', () => {
     for (const id of ['player-source', 'music-apps', 'music-app-add', 'manual-clock', 'online-search', 'online-sources',
-      'online-results', 'local-import', 'local-folders', 'audio', 'segmentation', 'visual-settings', 'background-settings'])
+      'online-results', 'local-import', 'local-folders', 'audio', 'segmentation', 'visual-settings', 'background-settings', 'diagnostics'])
       expect(normalizeDesktopSettingsTarget({ id })).toEqual({ id });
   });
 

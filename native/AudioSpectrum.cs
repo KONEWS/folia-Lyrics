@@ -18,6 +18,7 @@ internal sealed class AudioSpectrum : IDisposable
     private volatile string status = "声音响应未开启";
     private volatile int sampleRate = 48000;
     public string Status => status;
+    public bool IsCapturing => capturing;
     public int SampleRate => sampleRate;
     public AudioSpectrum() => maintenance = new(EnsureDevice, DataFiles.Log);
     public void Ensure(bool enabled) => maintenance.Request(enabled);

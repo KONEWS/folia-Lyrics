@@ -6,12 +6,12 @@ internal sealed partial class MainWindow
     private string? pendingTraySettings;
     private void InitializeTray()
     {
-        tray.Icon = Icon; tray.Text = "Folia 桌面歌词 · Ctrl+Alt+L 恢复操作";
+        tray.Icon = Icon; tray.Text = recoveryHotkey.TrayText;
         tray.MouseUp += (_, eventArgs) =>
         {
             if (eventArgs.Button != MouseButtons.Right || IsDisposed || Disposing) return;
             trayMenu ??= new TrayMenu(ExecuteTrayAction);
-            trayMenu.Open(Cursor.Position, preferences.Topmost, this);
+            trayMenu.Open(Cursor.Position, preferences.Topmost, this, recoveryShortcutAvailable: recoveryHotkey.Registered);
         };
         tray.DoubleClick += (_, _) => RestoreInteraction(); tray.Visible = true;
     }

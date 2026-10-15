@@ -5,7 +5,7 @@ import type { Line } from '../types';
 import type { Clock } from './bridge';
 import { clockPosition, type ManualClock } from './clock';
 import { DesktopClockValue } from './DesktopClockValue';
-import type { FrameDemand } from './frameDemand';
+import type { FrameDemand, FrameDemandReason } from './frameDemand';
 
 // src/desktopLyrics/useVisualizerClock.ts
 // With a FrameDemand, a loop that has nothing to publish parks itself after this long without any change. It has to outlast the progress
@@ -68,7 +68,12 @@ export function useVisualizerClock(lines: Line[], clock: RefObject<Clock>, input
       }
       frame = requestAnimationFrame(tick);
     };
-    const wake = () => { publishClock(performance.now()); woken = true; if (!frame) frame = requestAnimationFrame(tick); };
+    // Clock anchors must reach paused renderers immediately; audio packets only restart a parked loop and let RAF publish once.
+    const wake = (reason: FrameDemandReason) => {
+      if (reason === 'spectrum' && frame) return;
+      if (reason === 'clock') publishClock(performance.now());
+      woken = true; if (!frame) frame = requestAnimationFrame(tick);
+    };
     const unsubscribe = demand?.subscribe(wake);
     frame = requestAnimationFrame(tick);
     return () => { unsubscribe?.(); cancelAnimationFrame(frame); };

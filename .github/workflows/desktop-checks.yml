@@ -98,6 +98,21 @@ jobs:
         env:
           FOLIA_UI_OUTPUT: test-results/desktop-pause-ci
 
+      - name: Run desktop visualizer recovery regression
+        run: node test/verify-desktop-recovery.mjs
+        env:
+          FOLIA_UI_OUTPUT: test-results/desktop-recovery-ci
+
+      - name: Run desktop support actions regression
+        run: node test/verify-desktop-support.mjs
+        env:
+          FOLIA_UI_OUTPUT: test-results/desktop-support-ci
+
+      - name: Run desktop font readiness regression
+        run: node test/verify-desktop-fonts.mjs
+        env:
+          FOLIA_UI_OUTPUT: test-results/desktop-fonts-ci
+
       - name: Run precise desktop settings navigation regression
         run: node test/verify-desktop-settings-navigation.mjs
         env:
@@ -162,7 +177,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.nuget/packages
-          key: desktop-nuget-${{ runner.os }}-dotnet10-${{ hashFiles('native/**/*.csproj', 'test/transport-smoke/*.csproj', 'test/lyric-performance/*.csproj', 'test/window-close-smoke/*.csproj', 'test/music-app-smoke/*.csproj', 'test/window-background-smoke/*.csproj', 'test/tray-menu-smoke/*.csproj') }}
+          key: desktop-nuget-${{ runner.os }}-dotnet10-${{ hashFiles('native/**/*.csproj', 'test/transport-smoke/*.csproj', 'test/lyric-performance/*.csproj', 'test/window-close-smoke/*.csproj', 'test/music-app-smoke/*.csproj', 'test/window-background-smoke/*.csproj', 'test/tray-menu-smoke/*.csproj', 'test/persistence-smoke/*.csproj', 'test/window-placement-smoke/*.csproj', 'test/diagnostics-smoke/*.csproj') }}
           restore-keys: desktop-nuget-${{ runner.os }}-dotnet10-
 
       - name: Run transport smoke checks
@@ -170,6 +185,15 @@ jobs:
 
       - name: Run offline lyric checks
         run: dotnet run --project test/lyric-performance/LyricPerformance.csproj -c Release -- test-results/native/lyric-checks.json --logic-only
+
+      - name: Run persistence failure smoke checks
+        run: dotnet run --project test/persistence-smoke/PersistenceSmoke.csproj -c Release
+
+      - name: Run window placement checks
+        run: dotnet run --project test/window-placement-smoke/WindowPlacementSmoke.csproj -c Release
+
+      - name: Run diagnostic report checks
+        run: dotnet run --project test/diagnostics-smoke/DiagnosticsSmoke.csproj -c Release
 
       - name: Run window lifecycle smoke checks
         run: dotnet run --project test/window-close-smoke/WindowCloseSmoke.csproj -c Release

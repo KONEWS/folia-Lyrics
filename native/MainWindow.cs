@@ -36,6 +36,7 @@ internal sealed partial class MainWindow : Form
         Icon = Icon.ExtractAssociatedIcon(Environment.ProcessPath!) ?? SystemIcons.Application;
         Controls.Add(web); TopMost = preferences.Topmost;
         InitializeTray();
+        InitializeWindowPlacement();
         Shown += async (_, _) => await Initialize();
         Activated += (_, _) => FocusLyricsIfActive();
         mediaTimer.Tick += async (_, _) => await Poll();

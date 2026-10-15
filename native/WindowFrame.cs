@@ -68,7 +68,7 @@ internal sealed partial class MainWindow
             var limits = Marshal.PtrToStructure<MinMaxInfo>(message.LParam);
             limits.MaxPosition = new(area.Left - screen.Bounds.Left, area.Top - screen.Bounds.Top);
             limits.MaxSize = new(area.Width, area.Height);
-            limits.MinTrackSize = new(MinimumSize.Width, MinimumSize.Height);
+            limits.MinTrackSize = new(Math.Min(MinimumSize.Width, area.Width), Math.Min(MinimumSize.Height, area.Height));
             Marshal.StructureToPtr(limits, message.LParam, false); message.Result = IntPtr.Zero; return true;
         }
         return false;

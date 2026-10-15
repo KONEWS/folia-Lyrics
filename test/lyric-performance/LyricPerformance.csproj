@@ -11,6 +11,9 @@
     <Compile Include="$(NativeSourceRoot)/LyricFiles.cs" Link="LyricFiles.cs"/>
     <Compile Include="$(NativeSourceRoot)/WindowOnline.cs" Link="WindowOnline.cs"/>
     <Compile Include="$(OnlineCacheSource)" Link="OnlineCache.cs"/>
+    <Compile Include="../../native/AtomicJsonFile.cs" Link="AtomicJsonFile.cs"/>
+    <Compile Include="../../native/Online/OnlineSessionChoices.cs" Link="OnlineSessionChoices.cs"/>
+    <Compile Include="../../native/Online/ManualOnlineSelection.cs" Link="ManualOnlineSelection.cs"/>
     <Compile Include="../../native/MediaModels.cs" Link="MediaModels.cs"/>
     <Compile Include="../../native/Preferences.cs" Link="Preferences.cs"/>
     <Compile Include="../../native/Online/OnlineModels.cs" Link="OnlineModels.cs"/>

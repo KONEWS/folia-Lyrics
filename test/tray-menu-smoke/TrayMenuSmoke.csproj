@@ -8,5 +8,6 @@
     <Using Include="System.Drawing"/><Using Include="System.Windows.Forms"/>
     <Compile Include="../../native/TrayMenuLayout.cs" Link="TrayMenuLayout.cs"/>
     <Compile Include="../../native/WindowTray.cs" Link="WindowTray.cs"/>
+    <Compile Include="../../native/RecoveryHotkeyPolicy.cs" Link="RecoveryHotkeyPolicy.cs"/>
   </ItemGroup>
 </Project>

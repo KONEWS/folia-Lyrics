@@ -155,7 +155,10 @@ describe('waking a parked clock loop', () => {
   it('a new spectrum packet is processed on the next frame', () => {
     const { demand, m } = parked();
     m.input.current.received = m.now; m.input.current.bins.fill(200);
-    demand.request(); m.frame();
+    demand.request('spectrum');
+    expect(m.scheduled.size).toBe(1);
+    expect(m.runtime.audioPower.get()).toBe(0);
+    m.frame();
     expect(m.runtime.audioPower.get()).toBeGreaterThan(0);
     expect(m.runtime.audioBands.spectrum.get()[0]).toBe(200);
     expect(m.scheduled.size).toBe(1);

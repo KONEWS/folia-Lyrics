@@ -7,7 +7,7 @@ internal sealed partial class TrayMenu : Form
     private float scale = 1;
     private int selected = -1;
     private Point anchor;
-    private bool topmost, acrylic, forceSolid;
+    private bool topmost, acrylic, forceSolid, recoveryShortcutAvailable = true;
     internal bool AcrylicActive => acrylic;
     internal int SelectedIndex => selected;
     internal TrayMenu(Action<TrayMenuAction> execute)
@@ -17,10 +17,10 @@ internal sealed partial class TrayMenu : Form
         AutoScaleMode = AutoScaleMode.None; FormBorderStyle = FormBorderStyle.None; ShowInTaskbar = false; TopMost = true;
         StartPosition = FormStartPosition.Manual; SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint, true);
     }
-    internal void Open(Point position, bool pinned, IWin32Window? owner = null, bool solid = false)
+    internal void Open(Point position, bool pinned, IWin32Window? owner = null, bool solid = false, bool recoveryShortcutAvailable = true)
     {
         if (Visible) { Hide(); return; }
-        topmost = pinned; forceSolid = solid; selected = -1; anchor = position;
+        topmost = pinned; forceSolid = solid; this.recoveryShortcutAvailable = recoveryShortcutAvailable; selected = -1; anchor = position;
         // Create the handle before measuring; Windows uses the same DPI coordinate space for pointer and working area.
         _ = Handle; ResizeMenu(); Location = TrayMenuLayout.Position(anchor, Size, Screen.FromPoint(anchor).WorkingArea);
         ApplyMaterial(); if (owner is null) Show(); else Show(owner); Activate(); Focus(); Invalidate();
@@ -45,7 +45,7 @@ internal sealed partial class TrayMenu : Form
     protected override void OnPaint(PaintEventArgs e)
     {
         canvas ??= new AcrylicCanvas(ClientSize);
-        canvas.Paint(e.Graphics, graphics => TrayMenuDrawing.Draw(graphics, scale, acrylic, topmost, selected));
+        canvas.Paint(e.Graphics, graphics => TrayMenuDrawing.Draw(graphics, scale, acrylic, topmost, selected, recoveryShortcutAvailable));
     }
     protected override void OnMouseMove(MouseEventArgs e)
     {

@@ -21,7 +21,10 @@ internal sealed class Preferences
     [JsonIgnore] public string[] ExcludedAutoMusicAppPaths { get; set; } = [];
     public bool OnlineEnabled { get; set; } = true;
     public string[] OnlineProviders { get; set; } = ["qq", "kugou", "netease", "lrclib"];
+    public WindowPlacementState? WindowPlacement { get; set; }
 }
 
 internal sealed record MusicAppBinding(int Slot, string Name, string Path, string Icon, string LaunchKind = "exe", string AppUserModelId = "");
 internal sealed record MusicAppCandidate(string Id, string Name, string Path, string Icon, string LaunchKind = "exe", string AppUserModelId = "");
+internal sealed record WindowPlacementState(int X, int Y, int Width, int Height, bool Maximized, string Monitor,
+    int Dpi = 96, int WorkAreaX = 0, int WorkAreaY = 0);

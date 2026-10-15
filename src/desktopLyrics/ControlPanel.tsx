@@ -16,6 +16,7 @@ import { useDesktopSettingsNavigation } from './useDesktopSettingsNavigation';
 import DesktopSettingsSearch from './DesktopSettingsSearch';
 import type { DesktopSettingsSearchEntry, DesktopSettingsSearchRequest } from '../types/desktopSettingsSearch';
 import { useDesktopSettingsSearchNavigation } from './useDesktopSettingsSearchNavigation';
+import DesktopDiagnostics from './DesktopDiagnostics';
 
 // src/desktopLyrics/ControlPanel.tsx
 export { MODES };
@@ -100,6 +101,7 @@ export default function ControlPanel(p: Props) {
       {p.library.folders.length ? <details data-settings-expand="local-folders"><summary>{p.library.folders.length} 个已添加目录</summary><ul>{p.library.folders.map(f => <li key={f}>{f}</li>)}</ul></details> : null}
       <details className="settings-help local-formats-help"><summary>{text('settings.localFormatsHelp')}</summary>
         <p className="hint">可读取音乐内嵌歌词，以及 LRC、TTML、YRC、QRC、FIA 文件。普通逐行歌词不会自动变成精准逐字歌词。</p></details></section>
+    <DesktopDiagnostics/>
     <footer className="panel-footer">Folia 桌面歌词{typeof __DESKTOP_VERSION__ === 'string' && __DESKTOP_VERSION__ ? ` · ${__DESKTOP_VERSION__}` : ''}<br/>基于 Folia Major 原版动效 · AGPL-3.0</footer>
     </div>
   </aside>;

@@ -6,15 +6,15 @@ internal sealed partial class OnlineLyrics
     private readonly record struct InspectedCandidate(LyricCandidate Candidate, Lyrics Lyrics, LyricContentQuality Quality);
 
     // Search results remain complete for ranking; the chooser's row limit must not hide a better word-timed version.
+    // A complete QQ page can establish its best word lyric early; other sources still finish for the chooser and fallback ranking.
     internal async Task<AutomaticLyricsResult> ResolveAutomatic(Song song, string[] enabled, CancellationToken token,
-        Func<Lyrics, CancellationToken, Task<LyricContentQuality>> inspect)
+        Func<Lyrics, CancellationToken, Task<LyricContentQuality>> inspect, Func<AutomaticLyricsResult, Task>? selectedEarly = null)
     {
         var work = CancellationTokenSource.CreateLinkedTokenSource(token);
-        var pages = StartSearch(LyricQuery.From(song), enabled, work.Token, AutomaticSearchTimeout);
-        OnlineSearchResult search;
-        try { search = await Complete(pages, LyricQuery.From(song), token, int.MaxValue); }
-        finally { CancelAndObserve(work, pages); }
-        var errors = new List<string>(search.Errors);
+        var query = LyricQuery.From(song); Task<SearchPage>? qqSearch = null;
+        var pages = StartSearch(query, enabled, work.Token, AutomaticSearchTimeout,
+            (provider, page) => { if (provider == "qq") qqSearch = page; });
+        var errors = new List<string>();
         var checkedCandidates = new Dictionary<string, LyricCandidate>();
         InspectedCandidate? qqFallback = null, otherFallback = null;
 
@@ -73,14 +73,37 @@ internal sealed partial class OnlineLyrics
             return await InspectCandidate(candidate, song, workToken, inspect);
         }
 
-        var selected = await FirstWord(search.Candidates.Where(candidate => candidate.Provider == "qq"), true)
-            ?? await FirstWord(search.Candidates.Where(candidate => candidate.Provider != "qq"), false)
-            ?? qqFallback ?? otherFallback;
-        token.ThrowIfCancellationRequested();
-        var rows = OrderCandidates(search.Candidates.Select(candidate => checkedCandidates.GetValueOrDefault(candidate.Key, candidate))).Take(40).ToArray();
-        if (selected is { } winner && !rows.Any(candidate => candidate.Key == winner.Candidate.Key))
-            rows = OrderCandidates(rows.Take(39).Append(checkedCandidates.GetValueOrDefault(winner.Candidate.Key, winner.Candidate))).ToArray();
-        return new(selected?.Lyrics, selected?.Candidate, rows, errors.ToArray());
+        // Keep the selected row inside the display limit without excluding any candidate from the decision.
+        AutomaticLyricsResult Result(OnlineSearchResult search, InspectedCandidate? selected)
+        {
+            var rows = OrderCandidates(search.Candidates.Select(candidate => checkedCandidates.GetValueOrDefault(candidate.Key, candidate))).Take(40).ToArray();
+            if (selected is { } winner && !rows.Any(candidate => candidate.Key == winner.Candidate.Key))
+                rows = OrderCandidates(rows.Take(39).Append(checkedCandidates.GetValueOrDefault(winner.Candidate.Key, winner.Candidate))).ToArray();
+            return new(selected?.Lyrics, selected?.Candidate, rows, search.Errors.Concat(errors).ToArray());
+        }
+
+        try
+        {
+            InspectedCandidate? selected = null;
+            if (qqSearch is not null)
+            {
+                var preferred = await qqSearch.WaitAsync(token);
+                var ranked = preferred.Candidates.Select(candidate => Rank(candidate, query)).DistinctBy(candidate => candidate.Key);
+                selected = await FirstWord(ranked, true);
+                if (selected is not null && selectedEarly is not null)
+                {
+                    token.ThrowIfCancellationRequested();
+                    var completed = MergePages(pages.Where(page => page.IsCompletedSuccessfully).Select(page => page.Result), query, int.MaxValue);
+                    await selectedEarly(Result(completed, selected)).WaitAsync(token);
+                }
+            }
+            var search = await Complete(pages, query, token, int.MaxValue);
+            selected ??= await FirstWord(search.Candidates.Where(candidate => candidate.Provider != "qq"), false)
+                ?? qqFallback ?? otherFallback;
+            token.ThrowIfCancellationRequested();
+            return Result(search, selected);
+        }
+        finally { CancelAndObserve(work, pages); }
     }
 
     // Provider promises and parser responses have separate deadlines; even a transport that ignores cancellation cannot hold song changes.

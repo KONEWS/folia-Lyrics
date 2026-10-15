@@ -61,21 +61,7 @@ internal static class DataFiles
     }
     // Write to a unique temp file next to the target, flush it to disk, then swap it in. Disk failures are logged and
     // reported as false instead of being thrown into the caller (the in-memory state stays authoritative for this session).
-    public static bool TrySave<T>(string name, T value)
-    {
-        string? temp = null;
-        try
-        {
-            var bytes = new UTF8Encoding(false).GetBytes(JsonSerializer.Serialize(value, Json));
-            Directory.CreateDirectory(Root); var path = Path.Combine(Root, name);
-            temp = $"{path}.{Guid.NewGuid():N}.tmp";
-            using (var stream = new FileStream(temp, FileMode.CreateNew, FileAccess.Write, FileShare.None)) { stream.Write(bytes); stream.Flush(true); }
-            File.Move(temp, path, true); temp = null;
-            return true;
-        }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException) { Log(e); return false; }
-        finally { if (temp is not null) try { File.Delete(temp); } catch { } }
-    }
+    public static bool TrySave<T>(string name, T value) => AtomicJsonFile.TrySave(Root, name, value, Json, Log);
     public static void Save<T>(string name, T value) => TrySave(name, value);
     // Append an entry to errors.log. The same exception (type + message) is written once per 30 s; the occurrences suppressed
     // meanwhile are summarized later by one "(repeated N times)" line. Never throws, whatever happens to the disk.

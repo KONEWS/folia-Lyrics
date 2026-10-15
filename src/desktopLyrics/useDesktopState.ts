@@ -66,7 +66,7 @@ export function useDesktopState() {
         case 'spectrum': {
           let raw: string; try { raw = atob(message.data.bins); } catch { break; } // 非法 base64 只丢弃这一帧。
           for (let i = 0; i < 1024; i++) spectrum.current.bins[i] = raw.charCodeAt(i) || 0;
-          spectrum.current.sampleRate = message.data.sampleRate; spectrum.current.received = performance.now(); frameDemand.request(); break;
+          spectrum.current.sampleRate = message.data.sampleRate; spectrum.current.received = performance.now(); frameDemand.request('spectrum'); break;
         }
         case 'preferences': setPreferences(previous => mergeDesktopPreferences(previous, message.data)); break;
         case 'online': if (message.data.key === sessionRef.current.key) setOnline(message.data); break;

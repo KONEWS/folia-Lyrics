@@ -116,6 +116,12 @@ test/tray-menu-smoke/bin/
 test/tray-menu-smoke/obj/
 test/tray-menu-preview/bin/
 test/tray-menu-preview/obj/
+test/diagnostics-smoke/bin/
+test/diagnostics-smoke/obj/
+test/persistence-smoke/bin/
+test/persistence-smoke/obj/
+test/window-placement-smoke/bin/
+test/window-placement-smoke/obj/
 test/lyric-performance/bin/
 test/lyric-performance/obj/
 test/startup-performance/bin/

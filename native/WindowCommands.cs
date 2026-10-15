@@ -11,7 +11,7 @@ internal sealed partial class MainWindow
         switch (cmd.GetProperty("type").GetString())
         {
             case "ready": NormalizeMusicApps(); ready = true; UpdateAudioCapture(); FocusLyricsIfActive(); windowStateSent = false; SendWindowState(); presentedSong = null; SendAppearance(); Send("preferences", preferences); Send("library", library.Summary());
-                if (song is not null) Send("session", song); if (lyrics is not null) Send("lyrics", lyrics); Send("online", onlineState); SendMusicAppDiscovery(); SendPendingTraySettings(); mediaTimer.Start(); ApplyBackgroundStateForCurrentWindow(); StartMusicAppDiscovery(); await Poll(); break;
+                if (song is not null) Send("session", song); if (lyrics is not null) Send("lyrics", lyrics); Send("online", onlineState); SendMusicAppDiscovery(); SendPendingTraySettings(); SendPendingRecoveryHotkeyNotice(); SendPendingWindowPlacementNotice(); mediaTimer.Start(); ApplyBackgroundStateForCurrentWindow(); StartMusicAppDiscovery(); await Poll(); break;
             case "import":
                 using (var dialog = new OpenFileDialog { Title = "读取音乐文件中的歌词或独立歌词（不会播放）", Filter = "音乐或歌词|*.flac;*.mp3;*.m4a;*.mp4;*.ogg;*.opus;*.wav;*.ape;*.wma;*.aiff;*.lrc;*.ttml;*.yrc;*.qrc;*.fia|所有文件|*.*" })
                 {
@@ -63,6 +63,10 @@ internal sealed partial class MainWindow
                 OnlinePreferenceChanged(); break;
             case "searchOnline": await SearchOnline(cmd.GetProperty("value")); break;
             case "lyricInspection": CompleteLyricInspection(cmd.GetProperty("value")); break;
+            case "rendererError": LogRendererError(cmd.GetProperty("value")); break;
+            case "cancelOnline": CancelOnlineOperation(); break;
+            case "copyDiagnostics": CopyDiagnostics(); break;
+            case "openLogFolder": OpenLogFolder(); break;
             case "selectOnline": await SelectOnline(cmd.GetProperty("value")); break;
             case "resetOnline": await ResetOnline(); break;
         }
@@ -81,30 +85,46 @@ internal sealed partial class MainWindow
     private async Task Scan(string? folder)
     {
         if (scanning) return; scanning = true; Send("scan", new { active = true, text = "正在扫描本地目录…" });
-        try { await library.Scan(folder, text => Send("scan", new { active = true, text }), lifetime.Token); lyricKey = "\0"; Send("library", library.Summary()); Send("notice", new { text = "目录已更新，歌词将自动匹配。", target = new { id = "local-folders" } }); }
+        try
+        {
+            var saved = await library.Scan(folder, text => Send("scan", new { active = true, text }), lifetime.Token);
+            lyricKey = "\0"; Send("library", library.Summary());
+            Send("notice", new { text = saved ? "目录已更新，歌词将自动匹配。" : "目录已更新，本次可自动匹配歌词，但未能保存，重启后可能恢复原目录记录。", target = new { id = "local-folders" } });
+        }
         catch (OperationCanceledException) { }
         finally { scanning = false; Send("scan", new { active = false, text = "" }); }
     }
-    private void SavePreferences() { DataFiles.Save("preferences.json", preferences); Send("preferences", preferences); }
+    // Renderer failures reach the same bounded, deduplicated native log as host errors.
+    private static void LogRendererError(JsonElement value)
+    {
+        if (value.ValueKind != JsonValueKind.Object) return;
+        string Field(string name, int limit) { var text = value.Text(name); return text.Length <= limit ? text : text[..limit]; }
+        DataFiles.Log(new InvalidOperationException($"歌词动效 {Field("mode", 40)}：{Field("message", 1024)}\n{Field("stack", 8192)}\n{Field("componentStack", 8192)}"));
+    }
     private void ToggleFullscreen()
     {
-        if (fullscreen)
+        SuspendWindowPlacement();
+        try
         {
-            fullscreen = false; UpdateFrameStyles(); Bounds = restoreBounds; WindowState = restoreState;
+            if (fullscreen)
+            {
+                fullscreen = false; UpdateFrameStyles(); Bounds = restoreBounds; WindowState = restoreState;
+            }
+            else
+            {
+                restoreState = WindowState; restoreBounds = WindowState == FormWindowState.Normal ? Bounds : RestoreBounds;
+                WindowState = FormWindowState.Normal; fullscreen = true; UpdateFrameStyles(); Bounds = Screen.FromControl(this).Bounds;
+            }
+            ApplyAppearance(); SendWindowState();
         }
-        else
-        {
-            restoreState = WindowState; restoreBounds = WindowState == FormWindowState.Normal ? Bounds : RestoreBounds;
-            WindowState = FormWindowState.Normal; fullscreen = true; UpdateFrameStyles(); Bounds = Screen.FromControl(this).Bounds;
-        }
-        ApplyAppearance(); SendWindowState();
+        finally { ResumeWindowPlacement(); }
     }
     private void SetClickThrough(bool enabled)
     {
         if (enabled && !preferences.TransparentBackground) { preferences.TransparentBackground = true; SavePreferences(); }
         clickThrough = enabled; var style = GetWindowLongPtr(Handle, -20).ToInt64();
         SetWindowLongPtr(Handle, -20, new IntPtr(enabled ? style | 0x20 | 0x80000 : style & ~(0x20 | 0x80000)));
-        if (enabled) { SetLayeredWindowAttributes(Handle, 0, 255, 2); tray.ShowBalloonTip(4000, Text, "已启用鼠标穿透。按 Ctrl+Alt+L 或双击托盘图标恢复操作。", ToolTipIcon.Info); }
+        if (enabled) { SetLayeredWindowAttributes(Handle, 0, 255, 2); tray.ShowBalloonTip(4000, Text, ClickThroughRecoveryNotice, ToolTipIcon.Info); }
         ApplyAppearance(); SendWindowState();
     }
     private void RestoreInteraction() { SetClickThrough(false); Show(); WindowState = FormWindowState.Normal; Activate(); Send("restore", new { }); }
@@ -117,8 +137,6 @@ internal sealed partial class MainWindow
         // WM_SIZE: the size type says whether the window was minimized, restored or maximized.
         if (message.Msg == 0x5) OnSizeMessage(message.WParam.ToInt64());
     }
-    [DllImport("user32.dll")] private static extern bool RegisterHotKey(IntPtr window, int id, uint modifiers, uint key);
-    [DllImport("user32.dll")] private static extern bool UnregisterHotKey(IntPtr window, int id);
     [DllImport("user32.dll", EntryPoint = "GetWindowLongPtrW")] private static extern IntPtr GetWindowLongPtr(IntPtr window, int index);
     [DllImport("user32.dll", EntryPoint = "SetWindowLongPtrW")] private static extern IntPtr SetWindowLongPtr(IntPtr window, int index, IntPtr value);
     [DllImport("user32.dll")] private static extern bool SetLayeredWindowAttributes(IntPtr window, uint color, byte alpha, uint flags);

@@ -22,13 +22,16 @@ namespace FoliaLyrics
     internal sealed class TrayMenu(Action<TrayMenuAction> execute)
     {
         public readonly List<(Point Point, bool Pinned)> Opens = [];
-        public void Open(Point position, bool pinned, object owner) => Opens.Add((position, pinned));
+        public bool RecoveryShortcutAvailable;
+        public void Open(Point position, bool pinned, object owner, bool solid = false, bool recoveryShortcutAvailable = true)
+        { RecoveryShortcutAvailable = recoveryShortcutAvailable; Opens.Add((position, pinned)); }
         public void Execute(TrayMenuAction action) => execute(action);
     }
     internal sealed class Preferences { public bool Topmost; }
     internal sealed partial class MainWindow
     {
         private readonly NotifyIcon tray = new(); private readonly Preferences preferences = new(); private bool ready;
+        private readonly RecoveryHotkeyPolicy recoveryHotkey = new();
         public object Icon = new(); public bool IsDisposed, Disposing, TopMost;
         public FormWindowState WindowState = FormWindowState.Minimized;
         public readonly List<string> Calls = []; public readonly List<(string Type, object Data)> Messages = [];
@@ -42,6 +45,9 @@ namespace FoliaLyrics
         public bool TrayVisible => tray.Visible;
         public int OpenCount => trayMenu?.Opens.Count ?? 0;
         public bool LastPinned => trayMenu?.Opens.Last().Pinned ?? false;
+        public bool MenuShortcutAvailable => trayMenu?.RecoveryShortcutAvailable ?? false;
+        public string TrayText => tray.Text;
+        public void RegisterRecovery(bool result) { recoveryHotkey.Register(() => result, () => 1409, _ => { }); tray.Text = recoveryHotkey.TrayText; }
         public bool SavedPinned => preferences.Topmost;
         private void RestoreInteraction() => Calls.Add("restore");
         private void SavePreferences() => Calls.Add("save");

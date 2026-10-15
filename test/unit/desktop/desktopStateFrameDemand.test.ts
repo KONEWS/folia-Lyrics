@@ -37,6 +37,7 @@ describe('host messages that wake the clock loop', () => {
     const { emit, wakes, state } = connect();
     emit('clock', clock);
     expect(wakes).toHaveBeenCalledTimes(1);                   // EMPTY -> a real timeline
+    expect(wakes).toHaveBeenCalledWith('clock');
     emit('clock', { ...clock }); emit('clock', { ...clock }); emit('clock', { ...clock });
     expect(wakes).toHaveBeenCalledTimes(1);                   // the host repeats an unchanged packet every 500 ms while paused
     expect(state.clock.current.position).toBe(12);
@@ -61,6 +62,7 @@ describe('host messages that wake the clock loop', () => {
     const { emit, wakes, state } = connect();
     emit('spectrum', spectrum); emit('spectrum', spectrum); emit('spectrum', spectrum);
     expect(wakes).toHaveBeenCalledTimes(3);
+    for (let index = 1; index <= 3; index++) expect(wakes).toHaveBeenNthCalledWith(index, 'spectrum');
     expect(state.spectrum.current.bins[0]).toBe(90);
     expect(state.spectrum.current.received).toBeGreaterThan(0);
     emit('spectrum', { bins: '***not base64***', sampleRate: 48000 });

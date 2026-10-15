@@ -76,8 +76,13 @@ internal sealed partial class OnlineLyrics : IDisposable
             TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
     }
     private readonly record struct SearchPage(LyricCandidate[] Candidates, string Error);
-    private Task<SearchPage>[] StartSearch(LyricQuery query, string[] enabled, CancellationToken token, TimeSpan? timeout = null) => providers
-        .Where(p => enabled.Contains(p.Id)).OrderBy(p => Array.IndexOf(ProviderIds, p.Id)).Select(p => SearchProvider(p, query, token, timeout)).ToArray();
+    private Task<SearchPage>[] StartSearch(LyricQuery query, string[] enabled, CancellationToken token, TimeSpan? timeout = null,
+        Action<string, Task<SearchPage>>? started = null) => providers
+        .Where(p => enabled.Contains(p.Id)).OrderBy(p => Array.IndexOf(ProviderIds, p.Id)).Select(p =>
+        {
+            var page = SearchProvider(p, query, token, timeout);
+            started?.Invoke(p.Id, page); return page;
+        }).ToArray();
 
     // A provider that ignores cancellation still has a bounded search; its eventual failure is always observed.
     private static async Task<SearchPage> SearchProvider(IOnlineLyricProvider provider, LyricQuery query, CancellationToken token, TimeSpan? timeout)
@@ -99,8 +104,13 @@ internal sealed partial class OnlineLyrics : IDisposable
     {
         var pages = await Task.WhenAll(work).WaitAsync(token);
         token.ThrowIfCancellationRequested();
-        var candidates = OrderCandidates(pages.SelectMany(p => p.Candidates).Select(c => Rank(c, query)).DistinctBy(c => c.Key)).Take(limit).ToArray();
-        return new(candidates, pages.Where(p => p.Error.Length > 0).Select(p => p.Error).ToArray());
+        return MergePages(pages, query, limit);
+    }
+    private static OnlineSearchResult MergePages(IEnumerable<SearchPage> pages, LyricQuery query, int limit = 40)
+    {
+        var snapshot = pages.ToArray();
+        var candidates = OrderCandidates(snapshot.SelectMany(p => p.Candidates).Select(c => Rank(c, query)).DistinctBy(c => c.Key)).Take(limit).ToArray();
+        return new(candidates, snapshot.Where(p => p.Error.Length > 0).Select(p => p.Error).ToArray());
     }
     // Keep the requested source preference in the chooser; score still ranks versions within each source without changing eligibility.
     internal static IOrderedEnumerable<LyricCandidate> OrderCandidates(IEnumerable<LyricCandidate> candidates) => candidates

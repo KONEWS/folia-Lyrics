@@ -1,8 +1,17 @@
-# folia-Lyrics 0.4.38
+# folia-Lyrics 0.4.39
 
 Windows 歌词显示器，自身不播放音频。使用 Windows GSMTC 获取其他播放器公开的歌曲和进度，使用 WASAPI 默认输出设备的混合声音驱动原版歌词动效。
 
-GitHub 已发布版本：[0.4.38 发布页](https://github.com/KONEWS/folia-Lyrics/releases/tag/desktop-v0.4.38)。下载 `FoliaLyrics-0.4.38-win-x64.zip`，解压后运行 `FoliaLyrics.exe`；发布页提供 `SHA256SUMS.txt` 用于核对压缩包和程序。本地重新编译默认输出到 `release/0.4.38/win-x64/FoliaLyrics.exe`。
+GitHub 已发布版本：[0.4.39 发布页](https://github.com/KONEWS/folia-Lyrics/releases/tag/desktop-v0.4.39)。下载 `FoliaLyrics-0.4.39-win-x64.zip`，解压后运行 `FoliaLyrics.exe`；发布页提供 `SHA256SUMS.txt` 用于核对压缩包和程序。本地重新编译默认输出到 `release/0.4.39/win-x64/FoliaLyrics.exe`。
+
+## 0.4.39 可靠性、窗口记忆与诊断
+
+- 手动在线选择先检测实际歌词内容，下载和检测可取消且有总时限；选择无法写入时会提示，并在当前运行期间保留。QQ 找到高匹配逐字歌词后会先显示，其他来源继续补全候选。
+- 保存失败会明确显示；恢复快捷键冲突时可从托盘恢复。默认歌词动效报错后可以重试，频谱更新不再额外驱动播放时钟。
+- 窗口位置、大小和最大化状态会保存；换显示器或小屏恢复时会确保窗口仍可见。
+- 字幕使用当前歌词和设置的字体准备布局，上传字体恢复与失败回退也经过就绪处理。
+- 设置新增可搜索的诊断与支持，可复制精简状态和最近错误类型，或打开日志目录。
+- 下载包为 Windows x64 自包含便携版，包含说明和许可证；旧版本继续保留在各自目录。
 
 ## 0.4.38 设置搜索与逐字歌词优先
 
@@ -296,7 +305,7 @@ npm run typecheck:desktop
 npm run build:desktop
 npm run test:desktop
 node tools/package-web.mjs
-dotnet publish native/FoliaLyrics.csproj -c Release -r win-x64 --self-contained true -o release/0.4.38/win-x64
+dotnet publish native/FoliaLyrics.csproj -c Release -r win-x64 --self-contained true -o release/0.4.39/win-x64
 ```
 
 `build-windows.cmd` 从 `native/FoliaLyrics.csproj` 读取版本，输出到 `release/<版本>/win-x64/`。每次更新递增原生版本号后重新构建，即可得到独立的版本文件夹；手动执行上述发布命令时，也应将输出路径中的版本同步更新。

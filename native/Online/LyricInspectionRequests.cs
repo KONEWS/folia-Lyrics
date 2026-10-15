@@ -14,8 +14,11 @@ internal sealed class LyricInspectionRequests
         var id = Guid.NewGuid().ToString("N");
         var completion = new TaskCompletionSource<LyricContentQuality>(TaskCreationOptions.RunContinuationsAsynchronously);
         pending[id] = (packet.Key, completion);
+        // An outer selection deadline may return before this async method resumes; cancel the reply identity immediately.
+        using var cancelled = token.Register(() => pending.TryRemove(id, out _));
         try
         {
+            token.ThrowIfCancellationRequested();
             send(id, packet);
             return await completion.Task.WaitAsync(TimeSpan.FromSeconds(5), token);
         }

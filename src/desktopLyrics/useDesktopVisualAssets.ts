@@ -1,21 +1,17 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useVisualizerAssetStore } from '../stores/useVisualizerAssetStore';
 import { useVisualizerSettingsStore } from '../stores/useVisualizerSettingsStore';
-import { useTypographySettingsStore } from '../stores/useTypographySettingsStore';
 import { getCustomCappellaEmojiPack } from '../services/cappellaEmojiPack';
 import { getCustomCappellaAvatar } from '../services/cappellaAvatarPack';
 import { getMonetBackgroundImage } from '../services/monetBackgroundImage';
 import { getMonetPortraitImage } from '../services/monetPortraitImage';
-import { restoreUploadedLyricsFont } from '../services/customLyricsFont';
 import { createSafeObjectUrl } from '../utils/blobGuards';
-import i18n from '../i18n/config';
 
 // src/desktopLyrics/useDesktopVisualAssets.ts — own restored Blob URLs for the desktop lifetime, outside conditional settings UI.
 export function useDesktopVisualAssets() {
   const queues = useRef<Record<'emoji' | 'avatars' | 'background' | 'portrait', Promise<void>>>({ emoji: Promise.resolve(), avatars: Promise.resolve(), background: Promise.resolve(), portrait: Promise.resolve() });
   const emoji = useVisualizerAssetStore(s => s.storedCappellaEmojiPack), avatars = useVisualizerAssetStore(s => s.storedCappellaAvatarPack);
   const background = useVisualizerAssetStore(s => s.storedMonetBackgroundImage), portrait = useVisualizerAssetStore(s => s.storedMonetPortraitImage);
-  const font = useTypographySettingsStore(s => s.lyricsCustomFont);
   useEffect(() => {
     let active = true;
     const initial = useVisualizerAssetStore.getState();
@@ -52,14 +48,6 @@ export function useDesktopVisualAssets() {
     useVisualizerAssetStore.setState({ monetPortraitImage: portrait && url ? { id: portrait.id, name: portrait.name, url } : null });
     return () => { if (url) URL.revokeObjectURL(url); };
   }, [portrait]);
-  useEffect(() => {
-    if (font?.source !== 'uploaded' || !font.fontId) return;
-    let active = true;
-    void restoreUploadedLyricsFont(font.fontId).then(restored => {
-      if (active && !restored && useTypographySettingsStore.getState().lyricsCustomFont === font) useTypographySettingsStore.getState().clearLyricsCustomFontAfterRestoreFailure({ type: 'info', text: i18n.t('notifications.uploadedFontUnavailable') });
-    }).catch(() => { if (active && useTypographySettingsStore.getState().lyricsCustomFont === font) useTypographySettingsStore.getState().clearLyricsCustomFontAfterRestoreFailure({ type: 'error', text: i18n.t('notifications.uploadedFontLoadFailed') }); });
-    return () => { active = false; };
-  }, [font]);
   return useMemo(() => {
     // Serialize original writes per resource: later upload/clear requests keep the user's ordering.
     const serial = <Args extends unknown[], Result>(key: keyof typeof queues.current, action: (...args: Args) => Promise<Result>) => (...args: Args): Promise<Result> => {

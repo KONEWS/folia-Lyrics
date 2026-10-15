@@ -10,10 +10,11 @@ internal sealed class LyricLibrary
 {
     private readonly object gate = new();
     private readonly LibraryState state = DataFiles.Load("library.json", new LibraryState());
+    private readonly HashSet<string> sessionImportOverrides = [];
     private sealed record IndexedEntry(Entry Entry, string Artist);
     private Lazy<Dictionary<string, Entry[]>>? titleIndex;
     public object Summary() { lock (gate) return new { folders = state.Folders.ToArray(), count = state.Entries.Count }; }
-    public Task Scan(string? folder, Action<string> progress, CancellationToken token)
+    public Task<bool> Scan(string? folder, Action<string> progress, CancellationToken token)
     {
         string[] folders;
         lock (gate) { folders = folder is null ? state.Folders.ToArray() : state.Folders.Append(folder).Distinct(StringComparer.OrdinalIgnoreCase).ToArray(); }
@@ -33,9 +34,16 @@ internal sealed class LyricLibrary
             progress($"扫描完成：{result.Count} 个文件，{failures} 个无法读取");
             token.ThrowIfCancellationRequested();
             // Commit the scan on its worker too; serializing a large library must not resume on the UI thread.
-            lock (gate) { state.Folders = folders.ToList(); state.Entries = result; titleIndex = null; DataFiles.Save("library.json", state); }
+            lock (gate)
+            {
+                state.Folders = folders.ToList(); state.Entries = result; titleIndex = null;
+                return DataFiles.TrySave("library.json", state);
+            }
         }, token);
     }
+    // Explicit imports keep precedence for this session even if saving failed; scanning does not change the user's choice.
+    public bool HasSessionImportOverride(Song song) { lock (gate) return sessionImportOverrides.Contains(LyricFiles.Key(song.Title, song.Artist)); }
+    public void ClearSessionImportOverride(Song song) { lock (gate) sessionImportOverrides.Remove(LyricFiles.Key(song.Title, song.Artist)); }
     public Lyrics? Find(Song song)
     {
         var title = LyricFiles.Normalize(song.Title); var artist = LyricFiles.Normalize(song.Artist); string? binding;
@@ -64,7 +72,7 @@ internal sealed class LyricLibrary
     // Build once on the first lookup worker; scan/import replace the lazy snapshot before the next lookup.
     private static Lazy<Dictionary<string, Entry[]>> CreateIndex(Entry[] entries) => new(() =>
         entries.GroupBy(e => LyricFiles.Normalize(e.Title)).ToDictionary(g => g.Key, g => g.ToArray()));
-    public Lyrics Import(string path, Song? song)
+    public (Lyrics Lyrics, bool Saved) Import(string path, Song? song)
     {
         var entry = LyricFiles.Inspect(path); var title = song is { Title.Length: > 0 } ? song.Title : entry.Title;
         var artist = song is { Title.Length: > 0 } ? song.Artist : entry.Artist;
@@ -72,9 +80,12 @@ internal sealed class LyricLibrary
         if (string.IsNullOrWhiteSpace(packet.Content)) throw new IOException("文件中没有歌词，请导入带内嵌歌词的音乐或时间轴歌词文件。");
         lock (gate)
         {
-            state.Bindings[LyricFiles.Key(title, artist)] = path; state.Entries.RemoveAll(e => e.Path.Equals(path, StringComparison.OrdinalIgnoreCase));
-            state.Entries.Add(entry); titleIndex = null; DataFiles.Save("library.json", state);
+            var key = LyricFiles.Key(title, artist);
+            state.Bindings[key] = path; state.Entries.RemoveAll(e => e.Path.Equals(path, StringComparison.OrdinalIgnoreCase));
+            state.Entries.Add(entry); titleIndex = null;
+            var saved = DataFiles.TrySave("library.json", state);
+            sessionImportOverrides.Add(key);
+            return (packet, saved);
         }
-        return packet;
     }
 }

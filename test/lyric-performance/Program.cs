@@ -353,6 +353,10 @@ try
     if (!baseline) await AutomaticFetchChecks.Run(Check);
     if (!baseline) await PreferredCacheChecks.Run(Check);
     if (!baseline) await WordTimingPriorityChecks.Run(Check);
+    if (!baseline) await ManualSelectionValidationChecks.Run(Check);
+    if (!baseline) await EarlyQqSelectionChecks.Run(Check);
+    if (!baseline) await OnlineChoicePersistenceChecks.Run(Check);
+    if (!baseline) await ManualOnlineDeadlineChecks.Run(Check);
 
     // Measure lookup work separately; --logic-only preserves the previously recorded baseline and optimized data.
     if (!logicOnly)

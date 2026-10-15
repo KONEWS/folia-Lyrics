@@ -87,6 +87,10 @@ internal static class TrayMenuChecks
             actions.Clear(); item.DoDefaultAction();
             run.Check(actions.SequenceEqual([(TrayMenuAction)index]), $"MSAA item {index} invokes its mapped command exactly once");
         }
+        typeof(TrayMenu).GetField("recoveryShortcutAvailable", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(menu, false);
+        run.Check(root.GetChild(1)!.KeyboardShortcut is null, "failed recovery registration is not advertised as an MSAA keyboard shortcut");
+        actions.Clear(); root.GetChild(1)!.DoDefaultAction();
+        run.Check(actions.SequenceEqual([TrayMenuAction.Restore]), "the accessible tray recovery action remains usable without a registered hotkey");
     }
 
     private static bool Key(TrayMenu menu, Keys key) => (bool)ProcessKey.Invoke(menu, [default(Message), key])!;

@@ -49,4 +49,9 @@ foreach (var scale in new[] { 1f, 1.25f, 1.5f, 2f })
     }
 }
 Check(TrayMenuLayout.Next(5, 1) == 0 && TrayMenuLayout.Next(0, -1) == 5 && TrayMenuLayout.Next(-1, 1) == 0, "arrow navigation wraps across the menu ends");
+var recoveryWindow = new MainWindow(); recoveryWindow.Initialize(); recoveryWindow.RegisterRecovery(false); recoveryWindow.RightClick();
+Check(!recoveryWindow.MenuShortcutAvailable && !recoveryWindow.TrayText.Contains("Ctrl+Alt+L"), "failed registration hides the unavailable shortcut in both real tray routing and tooltip");
+recoveryWindow.RegisterRecovery(true); recoveryWindow.RightClick();
+Check(recoveryWindow.MenuShortcutAvailable && recoveryWindow.TrayText.Contains("Ctrl+Alt+L"), "successful registration passes shortcut availability to the tray menu");
+RecoveryHotkeyChecks.Run(Check);
 Console.WriteLine($"{count} tray-menu checks passed");

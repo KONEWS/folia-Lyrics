@@ -20,7 +20,7 @@ import SystemVolumeFeedback from './SystemVolumeFeedback';
 import { useDesktopSubtitleLayout } from './useDesktopSubtitleLayout';
 import { useImmersiveToggleIdle } from './useImmersiveToggleIdle';
 import DesktopWaitingScreen from './DesktopWaitingScreen';
-import { prepareDesktopFonts } from './desktopFonts';
+import { useDesktopFonts } from './useDesktopFonts';
 import { ALL_MODES } from './desktopModes';
 import { getVisualizerRegistryEntry } from '../components/visualizer/registry';
 import { useDesktopVisualSettings } from './useDesktopVisualSettings';
@@ -37,7 +37,7 @@ import type { DesktopNoticeData, DesktopSettingsRequest, DesktopSettingsTarget }
 import type { DesktopSettingsSearchEntry, DesktopSettingsSearchRequest } from '../types/desktopSettingsSearch';
 
 // src/desktopLyrics/DesktopLyrics.tsx
-const DesktopStage = lazy(() => Promise.all([import('./DesktopStage'), prepareDesktopFonts()]).then(([stage]) => stage));
+const DesktopStage = lazy(() => import('./DesktopStage'));
 export default function DesktopLyrics() {
   const state = useDesktopState();
   const { visual: DesktopVisualSettings, segmentation: DesktopSegmentationSettings, open: openSettingsModule, cancel: cancelSettingsOpening } = useDesktopSettingsModules();
@@ -70,6 +70,11 @@ export default function DesktopLyrics() {
   const runtime = useVisualizerClock(segmentation.lyrics.lines, state.clock, state.spectrum, manual, offset, state.preferences.audioReactive, state.frameDemand);
   const coverTheme = useCoverTheme(cover, state.preferences.coverTheme);
   const visual = useDesktopVisualSettings({ baseTheme: coverTheme.theme, cover, transparent: Boolean(state.appearance.transparent), translated, onTranslated: changeTranslated });
+  const fontsReady = useDesktopFonts({ lines: segmentation.lyrics.lines, theme: visual.mergedTheme, subtitleTheme: visual.subtitleTheme, title, artist,
+    hideTranslationSubtitle: visual.rendererProps.hideTranslationSubtitle, subtitleContentMode: visual.rendererProps.subtitleContentMode,
+    showHarmonySubtitle: visual.rendererProps.showHarmonySubtitle }, state.setNotice);
+  const hasLyrics = state.lyrics.lines.length > 0;
+  useEffect(() => { if (hasLyrics) void import('./DesktopStage').catch(() => undefined); }, [hasLyrics]);
   const anyPanel = panel || visualSection !== null || segmentationOpen || discoveryOpen;
   const canSegment = Boolean(state.lyrics.lines.length && getVisualizerRegistryEntry(mode).usesWordSegmentation);
   const { cursorHidden, controlsRevealed, topControlsRevealed } = useImmersiveControls({ root: glassSurface, immersive, setImmersive, panel: anyPanel,
@@ -144,9 +149,9 @@ export default function DesktopLyrics() {
     : state.session.key && !state.session.hasTimeline && !manual.enabled ? { text: i18n.t('desktopLyrics.settings.noTimelineNotice', { lng: 'zh-CN' }), target: { id: 'manual-clock' } } : null);
   return <main ref={glassSurface} style={coverTheme.style} className={`desktop-lyrics ${coverTheme.active ? 'cover-theme' : ''} ${immersive ? 'immersive' : ''} ${cursorHidden ? 'cursor-idle' : ''} ${immersiveToggleHidden ? 'immersive-toggle-idle' : ''} ${controlsRevealed ? 'controls-revealed' : ''} ${topControlsRevealed ? 'top-controls-revealed' : ''} ${state.fullscreen ? 'native-fullscreen' : ''} ${state.appearance.acrylic ? 'native-acrylic' : ''} ${state.appearance.transparent ? 'transparent-background' : ''} ${state.appearance.solid ? 'solid-surfaces' : ''} ${state.appearance.highContrast ? 'high-contrast' : ''}`}>
     {state.appearance.transparent ? <div className="transparent-veil" aria-hidden="true"/> : <AcrylicBackdrop cover={cover}/>}<WindowChrome/><div className="desktop-stage">
-    {state.lyrics.lines.length ? <Suspense fallback={null}><DesktopStage mode={mode} onRecover={recoverStage} currentTime={runtime.currentTime} currentLineIndex={runtime.lineIndex} lines={segmentation.lyrics.lines} theme={visual.mergedTheme}
+    {state.lyrics.lines.length ? <Suspense fallback={null}>{fontsReady ? <DesktopStage mode={mode} onRecover={recoverStage} currentTime={runtime.currentTime} currentLineIndex={runtime.lineIndex} lines={segmentation.lyrics.lines} theme={visual.mergedTheme}
         audioPower={runtime.audioPower} audioBands={runtime.audioBands} songTitle={title} songArtist={artist} coverUrl={cover || undefined} showText paused={!playing}
-        seed={state.session.key || title || 'desktop'} isPreviewMode={false} {...visual.rendererProps} isPlayerChromeHidden={!footerVisible}/></Suspense> : <DesktopWaitingScreen session={state.session} online={state.online} preferences={state.preferences}
+        seed={state.session.key || title || 'desktop'} isPreviewMode={false} {...visual.rendererProps} isPlayerChromeHidden={!footerVisible}/> : null}</Suspense> : <DesktopWaitingScreen session={state.session} online={state.online} preferences={state.preferences}
       connectionError={state.connectionError} lyricStatus={state.lyricStatus} title={title} scanning={state.scan.active} onSettings={showSettings}/>}</div>
     <DesktopTopbar title={title} artist={artist} cover={cover} mode={mode} onMode={changeMode} translated={translated} onTranslated={changeTranslated}
       topmost={state.preferences.topmost} onTopmost={value => send('topmost', value)} playing={playing} connected={Boolean(state.session.key)} manual={manual.enabled}

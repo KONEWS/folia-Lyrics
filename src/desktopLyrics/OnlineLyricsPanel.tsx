@@ -28,7 +28,9 @@ export default function OnlineLyricsPanel({ session, preferences, online }: { se
       <label>歌手<input aria-label="在线搜索歌手" value={artist} maxLength={200} placeholder="可留空，手动选择版本" onChange={e => setArtist(e.target.value)}/></label>
       <div className="action-row"><button type="submit" disabled={!preferences.onlineEnabled || !title.trim() || online.busy || !preferences.onlineProviders.length}>
         {online.busy ? <LoaderCircle className="online-spinner" size={14}/> : <Search size={14}/>}搜索在线歌词</button>
-        <button type="button" disabled={!preferences.onlineEnabled || !preferences.onlineProviders.length || !session.title || online.busy} onClick={() => send('resetOnline')}>重新自动匹配</button></div>
+        <button type="button" disabled={!preferences.onlineEnabled || !preferences.onlineProviders.length || !session.title || online.busy} onClick={() => send('resetOnline')}>重新自动匹配</button>
+        <button type="button" data-settings-target="online-cancel" disabled={!online.busy} onClick={() => send('cancelOnline')}>
+          {i18n.t('desktopLyrics.onlineOperation.cancel', { lng: 'zh-CN' })}</button></div>
     </form>
     <p className={`online-status ${online.busy ? 'busy' : ''}`} role="status">{online.message}</p>
     {online.errors.length > 0 ? <details className="online-errors"><summary>部分歌词源暂不可用</summary>{online.errors.map((error, i) => <p key={i}>{error}</p>)}</details> : null}

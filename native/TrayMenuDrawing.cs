@@ -5,7 +5,7 @@ using System.Drawing.Text;
 namespace FoliaLyrics;
 internal static class TrayMenuDrawing
 {
-    internal static void Draw(Graphics graphics, float scale, bool acrylic, bool topmost, int selected)
+    internal static void Draw(Graphics graphics, float scale, bool acrylic, bool topmost, int selected, bool recoveryShortcutAvailable = true)
     {
         var contrast = SystemInformation.HighContrast;
         var foreground = contrast ? SystemColors.MenuText : Color.FromArgb(240, 243, 252);
@@ -30,7 +30,7 @@ internal static class TrayMenuDrawing
             }
             Icon(graphics, (TrayMenuAction)index, new(17, row.Y + 11, 18, 18), color);
             Text(graphics, TrayMenuLayout.Labels[index], body, color, new(47, row.Y, 169, row.Height));
-            if (index == 1) Text(graphics, "Ctrl+Alt+L", small, index == selected && contrast ? color : muted, new(214, row.Y, 67, row.Height), true);
+            if (index == 1 && recoveryShortcutAvailable) Text(graphics, "Ctrl+Alt+L", small, index == selected && contrast ? color : muted, new(214, row.Y, 67, row.Height), true);
             if (index == 2) Text(graphics, topmost ? "开启 ✓" : "关闭", small, index == selected && contrast ? color : muted, new(225, row.Y, 56, row.Height), true);
         }
         using var line = new Pen(contrast ? SystemColors.MenuText : Color.FromArgb(35, 220, 230, 250));

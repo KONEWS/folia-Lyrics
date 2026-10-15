@@ -2,6 +2,18 @@
 
 export default {
   "desktopLyrics": {
+    "diagnostics": {
+      "title": "Diagnostics and support",
+      "hint": "Troubleshoot player connections, audio response, or lyric display.",
+      "copy": "Copy diagnostics",
+      "openLogs": "Open log folder"
+    },
+    "onlineOperation": { "cancel": "Cancel request" },
+    "recovery": {
+      "failed": "This lyric animation is temporarily unavailable",
+      "retry": "Retry lyric display",
+      "fallback": "Switch to {{mode}}"
+    },
     "settingsSearch": {
       "label": "Search all settings",
       "placeholder": "Search settings, backgrounds, fonts…",
@@ -53,7 +65,7 @@ export default {
     },
     "settings": {
       "transparentHelp": "About transparency and click-through",
-      "clickThroughRecovery": "Restore interaction: Ctrl + Alt + L, or double-click the tray icon.",
+      "clickThroughRecovery": "Double-click the tray icon to restore interaction; Ctrl + Alt + L also works when the shortcut is available.",
       "playerTitle": "Player",
       "playerHelp": "About playback controls",
       "currentPlayer": "Current player: {{player}}",
@@ -157,12 +169,12 @@ export default {
     "seconds": "seconds",
     "autoImmersiveHint": "Set 1–3600 seconds, default 30. Mouse or keyboard activity on a lyric page resets the timer; controls and the cursor hide when idle. Settings pause the timer. In window mode, move to the top to reveal the title bar and top controls. Esc restores controls or exits fullscreen.",
     "bottomHoverControls": "Reveal playback controls at the bottom in immersive mode",
-    "bottomHoverHint": "Move the mouse to the window bottom to reveal playback controls; they hide when you leave. With click-through enabled, first press Ctrl + Alt + L to restore interaction.",
+    "bottomHoverHint": "Move the mouse to the window bottom to reveal playback controls; they hide when you leave. With click-through enabled, first double-click the tray icon to restore interaction; Ctrl + Alt + L also works when the shortcut is available.",
     "transparentBackground": "Transparent lyric page background",
     "transparentHint": "See windows behind the lyrics. Combine with always-on-top and click-through. Turn off to restore acrylic. The choice is saved automatically.",
     "closeToTaskbar": "Minimize to the taskbar when the close button is clicked",
     "closeToTaskbarHint": "When enabled, the window's × button keeps the app running and minimizes it to the taskbar. Choose Exit in the system tray menu to quit. The choice is saved automatically.",
-    "clickThroughHint": "Click-through enables the transparent background and hides controls. Ctrl + Alt + L or double-click the tray icon restores interaction and keeps transparency. Use the fullscreen button to enter or exit fullscreen; Esc exits fullscreen.",
+    "clickThroughHint": "Click-through enables the transparent background and hides controls. Double-click the tray icon to restore interaction while keeping transparency; Ctrl + Alt + L also works when the shortcut is available. Use the fullscreen button to enter or exit fullscreen; Esc exits fullscreen.",
     "immersiveProgress": "Show progress in immersive mode",
     "audioProgressHint": "The bottom spectrum follows system output audio; brighter bars indicate playback progress. Bars settle when paused or audio response is disabled. This display does not seek the player.",
     "audioProgress": "Audio visualization and playback progress",

@@ -17,7 +17,7 @@ internal sealed partial class TrayMenu
         public override AccessibleRole Role => AccessibleRole.MenuItem;
         public override AccessibleObject? Parent => menu.AccessibilityObject;
         public override string? DefaultAction => "执行";
-        public override string? KeyboardShortcut => index == 1 ? "Ctrl+Alt+L" : null;
+        public override string? KeyboardShortcut => index == 1 && menu.recoveryShortcutAvailable ? "Ctrl+Alt+L" : null;
         public override Rectangle Bounds => menu.RectangleToScreen(TrayMenuLayout.Item(index, menu.scale));
         public override AccessibleStates State => AccessibleStates.Focusable | AccessibleStates.Selectable
             | (menu.Visible ? AccessibleStates.None : AccessibleStates.Invisible)

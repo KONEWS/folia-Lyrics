@@ -46,9 +46,9 @@ internal sealed partial class MainWindow
             preferences.BlockedMusicApps = preferences.BlockedMusicApps.Where(app => app.Id != MusicAppDiscoveryPolicy.Id(binding)).ToArray();
             musicAppInbox.Reconcile(preferences.MusicApps, preferences.BlockedMusicApps);
             musicAppLaunches.Remove(slot);
-            SavePreferences();
+            var saved = SavePreferences();
             SendMusicAppDiscovery();
-            Send("notice", new { text = $"已绑定 {binding.Name}，可从首页打开。", target = new { id = "music-app-binding", slot } });
+            if (saved) Send("notice", new { text = $"已绑定 {binding.Name}，可从首页打开。", target = new { id = "music-app-binding", slot } });
         }
         catch (OperationCanceledException) when (lifetime.IsCancellationRequested) { }
         catch (Exception error)
@@ -73,9 +73,9 @@ internal sealed partial class MainWindow
         NormalizeMusicApps();
         musicAppInbox.DeferBinding(binding);
         preferences.MusicApps = preferences.MusicApps.Where(app => app.Slot != slot).ToArray();
-        SavePreferences();
+        var saved = SavePreferences();
         SendMusicAppDiscovery();
-        Send("notice", new { text = $"已移除 {binding.Name} 的快捷方式。", target = new { id = "music-app-add" } });
+        if (saved) Send("notice", new { text = $"已移除 {binding.Name} 的快捷方式。", target = new { id = "music-app-add" } });
     }
 
     // Launch only the saved slot binding, with a short guard against accidental repeated clicks.
