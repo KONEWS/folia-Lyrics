@@ -108,6 +108,19 @@ describe('desktop cover theme refresh', () => {
     a.resolve(['#246edc']); expect((await mounted.settle()).theme).toBe(current.theme);
     expect(mounted.update('A').theme).toBe(DESKTOP_DEFAULT_THEME); await mounted.settle(); expect(extract).toHaveBeenCalledTimes(3);
   });
+  it('aborts obsolete image work on cover switches, disabling, and unmount without restarting on ordinary renders', () => {
+    extract.mockReturnValue(new Promise(() => {}));
+    const mounted = mount(); mounted.render();
+    const first = extract.mock.calls[0][2]!;
+    for (let index = 0; index < 10; index++) mounted.render();
+    expect(extract).toHaveBeenCalledTimes(1); expect(first.aborted).toBe(false);
+    mounted.update('B'); expect(first.aborted).toBe(true);
+    const second = extract.mock.calls[1][2]!;
+    mounted.update('B', false); expect(second.aborted).toBe(true);
+    mounted.update('B', true);
+    const third = extract.mock.calls[2][2]!;
+    mounted.unmount(); expect(third.aborted).toBe(true);
+  });
   it('cancels a refresh when the current artwork changes and restores the prior palette when returning', async () => {
     extract.mockResolvedValue(colors);
     const mounted = mount(); mounted.render(); const ready = await mounted.settle();

@@ -4,11 +4,6 @@ internal sealed partial class MainWindow
 {
     private bool choosingMusicApp;
     private readonly Dictionary<int, object> musicAppChoices = new();
-    private readonly Dictionary<int, MusicAppLaunchState> musicAppLaunches = new();
-    private sealed record MusicAppLaunchState(long StartedAt)
-    {
-        public bool Active { get; set; } = true;
-    }
 
     private void NormalizeMusicApps()
     {
@@ -78,26 +73,4 @@ internal sealed partial class MainWindow
         if (saved) Send("notice", new { text = $"已移除 {binding.Name} 的快捷方式。", target = new { id = "music-app-add" } });
     }
 
-    // Launch only the saved slot binding, with a short guard against accidental repeated clicks.
-    private async Task LaunchMusicApp(int slot)
-    {
-        var now = Environment.TickCount64;
-        var binding = MusicAppLauncher.Resolve(preferences.MusicApps, slot);
-        if (musicAppLaunches.TryGetValue(slot, out var recent) && (recent.Active || now - recent.StartedAt < 1500)) return;
-        var launch = new MusicAppLaunchState(now);
-        musicAppLaunches[slot] = launch;
-        try
-        {
-            await Task.Run(() => MusicAppLauncher.LaunchAsync(binding, lifetime.Token), lifetime.Token);
-            if (!IsDisposed && !Disposing) Send("notice", new { text = $"已请求打开 {binding.Name}，请在播放器中播放歌曲。", target = new { id = "player-source" } });
-        }
-        catch (OperationCanceledException) when (lifetime.IsCancellationRequested) { }
-        catch (Exception error)
-        {
-            if (musicAppLaunches.TryGetValue(slot, out var currentLaunch) && ReferenceEquals(launch, currentLaunch)) musicAppLaunches.Remove(slot);
-            DataFiles.Log(error);
-            Send("notice", new { text = $"无法打开 {binding.Name}：{error.Message}", target = new { id = "music-app-binding", slot } });
-        }
-        finally { launch.Active = false; }
-    }
 }

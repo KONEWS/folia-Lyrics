@@ -6,7 +6,8 @@ import { inspectDesktopLyrics } from './inspectDesktopLyrics';
 export type Clock = { position: number; duration: number; playing: boolean; rate: number; hasTimeline: boolean; received: number; key?: string; sessionId?: string; sequence?: number };
 export type MediaCapabilities = { play: boolean; pause: boolean; toggle: boolean; previous: boolean; next: boolean };
 export type MediaAction = 'play' | 'pause' | 'previous' | 'next';
-export type Session = Clock & { key: string; title: string; artist: string; album?: string; cover: string; source: string; sessionId?: string; controls?: MediaCapabilities | null; sources: { id: string; label: string }[] };
+export type MediaSource = { id: string; label: string; playing?: boolean };
+export type Session = Clock & { key: string; title: string; artist: string; album?: string; cover: string; source: string; sessionId?: string; controls?: MediaCapabilities | null; sources: MediaSource[] };
 export type LyricPacket = { key: string; title: string; artist: string; content: string; source: string; cover: string; embedded: boolean; format?: string; translation?: string; romanization?: string; fallbackContent?: string; fallbackTranslation?: string };
 export type { MusicAppBinding } from '../types/desktopMusicApps';
 export type Preferences = { topmost: boolean; closeToTaskbar: boolean; audioReactive: boolean; transparentBackground: boolean; coverTheme: boolean; autoImmersive: boolean; immersiveDelay: number; bottomHoverControls: boolean; source: string; onlineEnabled: boolean; onlineProviders: string[]; musicApps: MusicAppBinding[]; blockedMusicApps: MusicAppCandidate[]; showMusicAppAddButton: boolean; autoDiscoverMusicApps: boolean };
@@ -66,7 +67,8 @@ export function normalizeMessage(raw: unknown): Message | null {
     }
     case 'session':
       return { type: 'session', data: { ...data, position: finite(data.position, 0), duration: finite(data.duration, 0), rate: finite(data.rate, 1) > 0 ? finite(data.rate, 1) : 1,
-        sources: Array.isArray(data.sources) ? data.sources.filter(isRecord).map(s => ({ id: String(s.id ?? ''), label: String(s.label ?? '') })) : [] } as Session };
+        sources: Array.isArray(data.sources) ? data.sources.filter(isRecord).map(s => ({ id: String(s.id ?? ''), label: String(s.label ?? ''),
+          ...(typeof s.playing === 'boolean' ? { playing: s.playing } : {}) })) : [] } as Session };
     case 'clock':
       return { type: 'clock', data: { ...data, position: finite(data.position, 0), duration: finite(data.duration, 0), rate: finite(data.rate, 1) > 0 ? finite(data.rate, 1) : 1 } as Clock };
     case 'spectrum':
@@ -76,48 +78,57 @@ export function normalizeMessage(raw: unknown): Message | null {
       return raw as Message;
   }
 }
-type InspectionReceiver = { subscribers: number; active: boolean; handler: (event: { data: unknown }) => void };
-const inspectionReceivers = new WeakMap<Native, InspectionReceiver>();
+type MessageSubscriber = (message: Message) => void;
+type MessageReceiver = { subscribers: Set<MessageSubscriber>; active: boolean; handler: (event: { data: unknown }) => void };
+const messageReceivers = new WeakMap<Native, MessageReceiver>();
 
 // Components share one parser receiver per native connection; ending its final subscription also invalidates pending replies.
-function retainInspectionReceiver(bridge: Native) {
-  let receiver = inspectionReceivers.get(bridge);
-  if (receiver) receiver.subscribers++;
-  else {
-    const created: InspectionReceiver = { subscribers: 1, active: true, handler: event => {
+// Normalize host packets once per connection; subscribers share the read-only packet and one inspection reply.
+function receiveMessages(bridge: Native) {
+  let receiver = messageReceivers.get(bridge);
+  if (!receiver) {
+    const created: MessageReceiver = { subscribers: new Set(), active: true, handler: event => {
       const message = normalizeMessage(event.data);
-      if (message?.type !== 'inspectLyrics') return;
-      const { requestId, packet } = message.data;
-      void inspectDesktopLyrics(packet).then(quality => {
-        if (created.active) bridge.postMessage({ type: 'lyricInspection', value: { requestId, key: packet.key, ...quality } });
-      });
+      if (!message) return;
+      if (message.type === 'inspectLyrics') {
+        const { requestId, packet } = message.data;
+        void inspectDesktopLyrics(packet).then(quality => {
+          if (created.active) bridge.postMessage({ type: 'lyricInspection', value: { requestId, key: packet.key, ...quality } });
+        });
+        return;
+      }
+      // Match native event dispatch: a removed subscriber is skipped; new subscriptions begin with the next packet.
+      for (const subscriber of [...created.subscribers]) {
+        if (!created.subscribers.has(subscriber)) continue;
+        try { subscriber(message); }
+        catch (error) {
+          // One component's failure must not prevent clocks or transport replies from reaching other components.
+          if (typeof globalThis.reportError === 'function') globalThis.reportError(error);
+          else queueMicrotask(() => { throw error; });
+        }
+      }
     } };
     receiver = created;
-    inspectionReceivers.set(bridge, receiver);
+    messageReceivers.set(bridge, receiver);
     bridge.addEventListener('message', receiver.handler);
   }
-  const retained = receiver;
-  return () => {
-    if (--retained.subscribers !== 0) return;
-    retained.active = false;
-    bridge.removeEventListener('message', retained.handler);
-    inspectionReceivers.delete(bridge);
-  };
+  return receiver;
 }
 
 export function listen(fn: (message: Message) => void) {
-  const bridge = host(); let disposed = false;
-  const releaseInspection = bridge ? retainInspectionReceiver(bridge) : undefined;
-  const handler = (event: { data: unknown }) => {
-    const message = normalizeMessage(event.data); if (!message) return;
-    if (message.type === 'inspectLyrics') return;
-    fn(message);
-  };
-  bridge?.addEventListener('message', handler); return () => {
+  const bridge = host();
+  if (!bridge) return () => undefined;
+  const receiver = receiveMessages(bridge), subscriber: MessageSubscriber = message => fn(message);
+  let disposed = false;
+  receiver.subscribers.add(subscriber);
+  return () => {
     if (disposed) return;
     disposed = true;
-    bridge?.removeEventListener('message', handler);
-    releaseInspection?.();
+    receiver.subscribers.delete(subscriber);
+    if (receiver.subscribers.size) return;
+    receiver.active = false;
+    bridge.removeEventListener('message', receiver.handler);
+    messageReceivers.delete(bridge);
   };
 }
 export const EMPTY: Session = { key: '', title: '', artist: '', cover: '', source: '', sources: [], position: 0, duration: 0, rate: 1, playing: false, hasTimeline: false, received: 0 };

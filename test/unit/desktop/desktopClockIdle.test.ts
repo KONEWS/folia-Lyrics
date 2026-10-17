@@ -12,7 +12,7 @@ import type { Line } from '../../../src/types';
 const hooks = vi.hoisted(() => ({ effects: [] as (() => (() => void) | void)[] }));
 vi.mock('react', async importOriginal => ({
   ...await importOriginal<typeof import('react')>(),
-  useEffect: (effect: () => (() => void) | void) => hooks.effects.push(effect),
+  useLayoutEffect: (effect: () => (() => void) | void) => hooks.effects.push(effect),
   useMemo: (create: () => unknown) => create(),
   useRef: (current: unknown) => ({ current }),
   useState: (initial: unknown) => [typeof initial === 'function' ? initial() : initial, vi.fn()],

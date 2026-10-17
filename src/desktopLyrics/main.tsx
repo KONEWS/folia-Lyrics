@@ -16,6 +16,7 @@ import './compact-playback.css';
 import './desktop-style-controls.css';
 import './popup-motion.css';
 import './desktop-theme.css';
+import './window-follow-menu.css';
 
 // src/desktopLyrics/main.tsx: Install Pixi's CSP-compatible implementation before loading the original renderers.
 const render = () => createRoot(document.getElementById('root')!).render(<React.StrictMode><DesktopLyrics/></React.StrictMode>);

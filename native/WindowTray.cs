@@ -22,7 +22,7 @@ internal sealed partial class MainWindow
         {
             case TrayMenuAction.Show:
             case TrayMenuAction.Restore: RestoreInteraction(); break;
-            case TrayMenuAction.Topmost: TopMost = preferences.Topmost = !preferences.Topmost; SavePreferences(); break;
+            case TrayMenuAction.Topmost: SetTopmostPreference(!preferences.Topmost); break;
             case TrayMenuAction.LyricsSettings: OpenTraySettings("visual-settings"); break;
             case TrayMenuAction.MusicApps: OpenTraySettings("music-apps"); break;
             case TrayMenuAction.Exit: Close(); break;

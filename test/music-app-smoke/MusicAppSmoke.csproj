@@ -9,6 +9,7 @@
   <ItemGroup>
     <Compile Include="../../native/Preferences.cs" Link="Preferences.cs"/>
     <Compile Include="../../native/MusicAppLauncher.cs" Link="MusicAppLauncher.cs"/>
+    <Compile Include="../../native/MusicAppIcon.cs" Link="MusicAppIcon.cs"/>
     <Compile Include="../../native/MusicAppCatalog.cs" Link="MusicAppCatalog.cs"/>
     <Compile Include="../../native/MusicAppInstalledPaths.cs" Link="MusicAppInstalledPaths.cs"/>
     <Compile Include="../../native/MusicAppDiscoveryPolicy.cs" Link="MusicAppDiscoveryPolicy.cs"/>

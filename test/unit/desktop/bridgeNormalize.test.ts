@@ -20,6 +20,9 @@ describe('normalizeMessage', () => {
     expect((normalizeMessage({ type: 'session', data: withoutSources }) as { data: { sources: unknown } }).data.sources).toEqual([]);
     const messy = normalizeMessage({ type: 'session', data: { ...session, sources: [null, 7, { id: 'a', label: 'A' }, { id: 5 }] } }) as { data: { sources: unknown } };
     expect(messy.data.sources).toEqual([{ id: 'a', label: 'A' }, { id: '5', label: '' }]);
+    const playing = normalizeMessage({ type: 'session', data: { ...session, sources: [{ id: 'a', label: 'A', playing: true },
+      { id: 'b', label: 'B', playing: 'true' }] } }) as { data: { sources: unknown } };
+    expect(playing.data.sources).toEqual([{ id: 'a', label: 'A', playing: true }, { id: 'b', label: 'B' }]);
   });
 
   it('replaces non-finite timeline numbers instead of letting NaN reach the clock', () => {

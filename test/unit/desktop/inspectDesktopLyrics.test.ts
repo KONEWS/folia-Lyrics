@@ -92,7 +92,7 @@ describe('content inspection request protocol', () => {
   it('shares one real parser inspection across five subscriptions while delivering ordinary messages to all subscribers', async () => {
     const inspect = vi.spyOn(inspection, 'inspectDesktopLyrics');
     const host = mockHost(), displays = Array.from({ length: 5 }, () => vi.fn()), stops = displays.map(display => listen(display));
-    expect(host.handlerCount()).toBe(6);
+    expect(host.handlerCount()).toBe(1);
     host.emit({ type: 'inspectLyrics', data: { requestId: 'shared', packet: { ...base, format: 'qq-qrc', content: wordQrc } } });
     host.emit({ type: 'online', data: { key: 'display-song' } });
     await vi.waitFor(() => expect(host.postMessage).toHaveBeenCalledTimes(1));
@@ -109,7 +109,7 @@ describe('content inspection request protocol', () => {
     const host = mockHost(), stopFirst = listen(vi.fn()), display = vi.fn(), stopLast = listen(display);
     host.emit({ type: 'inspectLyrics', data: { requestId: 'partial', packet: base } });
     stopFirst(); stopFirst();
-    expect(host.handlerCount()).toBe(2);
+    expect(host.handlerCount()).toBe(1);
     host.emit({ type: 'online', data: { key: 'still-active' } });
     complete({ usable: true, wordTimed: false });
     await Promise.resolve();

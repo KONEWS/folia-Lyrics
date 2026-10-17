@@ -2,30 +2,40 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTypographySettingsStore } from '../stores/useTypographySettingsStore';
 import { restoreUploadedLyricsFont } from '../services/customLyricsFont';
 import i18n from '../i18n/config';
-import { desktopFontRequests, prepareDesktopFonts, type DesktopFontInput, type DesktopFontRequest } from './desktopFonts';
+import { desktopFontRequests, desktopFontsReady, prepareDesktopFonts, type DesktopFontInput } from './desktopFonts';
 
 // src/desktopLyrics/useDesktopFonts.ts — isolate lyric measurement until the current font and any uploaded FontFace are ready.
 const uploaded = new Map<string, ReturnType<typeof restoreUploadedLyricsFont>>();
+const restoredUploads = new Set<string>();
 
 // Restoring the same upload twice while StrictMode replays effects must not register duplicate FontFaces.
 function restoreFont(id: string) {
   const existing = uploaded.get(id);
   if (existing) return existing;
-  const loading = restoreUploadedLyricsFont(id);
+  const loading = restoreUploadedLyricsFont(id).then(result => {
+    if (result && uploaded.get(id) === loading) restoredUploads.add(id);
+    return result;
+  });
   uploaded.set(id, loading);
-  while (uploaded.size > 8) uploaded.delete(uploaded.keys().next().value!);
+  while (uploaded.size > 8) { const oldest = uploaded.keys().next().value!; uploaded.delete(oldest); restoredUploads.delete(oldest); }
   return loading;
 }
 
 export function useDesktopFonts(input: DesktopFontInput, onNotice: (text: string) => void) {
   const font = useTypographySettingsStore(settings => settings.lyricsCustomFont);
   const active = input.lines.length > 0;
-  const signature = useMemo(() => JSON.stringify({ requests: desktopFontRequests(input),
-    fontId: font?.source === 'uploaded' ? font.fontId : null }), [input.lines, input.theme, input.subtitleTheme, input.title, input.artist,
+  const prepared = useMemo(() => {
+    const requests = active ? desktopFontRequests(input) : [];
+    return { requests, signature: JSON.stringify({ requests, fontId: font?.source === 'uploaded' ? font.fontId : null }) };
+  }, [active, input.lines, input.theme, input.subtitleTheme, input.title, input.artist,
     input.hideTranslationSubtitle, input.subtitleContentMode, input.showHarmonySubtitle, font]);
+  const { signature, requests } = prepared;
   const [ready, setReady] = useState('');
+  const available = useMemo(() => active && (font?.source !== 'uploaded' || Boolean(font.fontId && restoredUploads.has(font.fontId)))
+    && desktopFontsReady(requests), [active, prepared, font, ready]);
   useEffect(() => {
-    if (!active) return;
+    if (!active || ready === signature) return;
+    if (available) { void prepareDesktopFonts(requests); return; }
     let current = true;
     const prepare = async () => {
       if (font?.source === 'uploaded' && font.fontId) {
@@ -43,11 +53,11 @@ export function useDesktopFonts(input: DesktopFontInput, onNotice: (text: string
         }
       }
       if (!current) return;
-      await prepareDesktopFonts((JSON.parse(signature) as { requests: DesktopFontRequest[] }).requests);
+      await prepareDesktopFonts(requests);
       if (current) setReady(signature);
     };
     void prepare();
     return () => { current = false; };
-  }, [active, signature, font, onNotice]);
-  return !active || ready === signature;
+  }, [active, signature, requests, font, onNotice, ready, available]);
+  return !active || ready === signature || available;
 }

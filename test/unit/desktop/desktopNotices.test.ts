@@ -30,13 +30,13 @@ function connect() {
 }
 
 describe('desktop notice deadlines', () => {
-  it('keeps a host notice for five seconds and then dismisses it', () => {
+  it('keeps an ordinary host notice for five seconds and then dismisses it', () => {
     const { publish, cleanup } = connect(), notice = publish('已请求打开 foobar2000，请在播放器中播放歌曲。');
     vi.advanceTimersByTime(4999); expect((notice.value as DesktopNoticeData).text).toContain('foobar2000');
     vi.advanceTimersByTime(1); expect(notice.value).toBeNull(); expect(vi.getTimerCount()).toBe(0); cleanup();
   });
 
-  it('gives a replacement notice its own five seconds without the previous deadline clearing it', () => {
+  it('gives a replacement notice its own deadline without the previous deadline clearing it', () => {
     const { publish, cleanup } = connect(), notice = publish('first');
     vi.advanceTimersByTime(4000); publish('second');
     vi.advanceTimersByTime(1000); expect(notice.value).toMatchObject({ text: 'second' });
@@ -69,10 +69,15 @@ describe('desktop notice deadlines', () => {
     const writes = notice.writes.length; vi.advanceTimersByTime(10000); expect(notice.writes).toHaveLength(writes);
   });
 
-  it('leaves persistent connection errors intact when a transient notice expires', () => {
-    const { publish, emit, cleanup } = connect(); emit('connectionError', 'connection remains unavailable');
-    const connection = hooks.cells.find(cell => cell.value === 'connection remains unavailable')!, notice = publish('launch requested');
-    vi.advanceTimersByTime(5000); expect(notice.value).toBeNull(); expect(connection.value).toBe('connection remains unavailable'); cleanup();
+  it('briefly displays a connection failure once while retaining its operational error state', () => {
+    const { emit, cleanup } = connect(); emit('connectionError', 'connection remains unavailable');
+    const connection = hooks.cells.find(cell => cell.value === 'connection remains unavailable')!;
+    const notice = hooks.cells.find(cell => (cell.value as DesktopNoticeData | null)?.text === 'connection remains unavailable')!;
+    expect(notice.value).toEqual({ text: 'connection remains unavailable', target: { id: 'player-source' } });
+    vi.advanceTimersByTime(2499); expect(notice.value).not.toBeNull();
+    vi.advanceTimersByTime(1); expect(notice.value).toBeNull();
+    emit('connectionError', 'connection remains unavailable'); expect(notice.value).toBeNull();
+    expect(connection.value).toBe('connection remains unavailable'); cleanup();
   });
 
   it('keeps the precise target with the message and replaces it even when the text repeats', () => {

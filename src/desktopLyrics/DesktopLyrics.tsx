@@ -67,14 +67,15 @@ export default function DesktopLyrics() {
   const title = state.session.title || state.lyricInfo?.title || '', artist = state.session.artist || state.lyricInfo?.artist || '', cover = state.session.cover || state.lyricInfo?.cover || '';
   const { offset, changeOffset } = useDesktopLyricOffset({ ...state.session, title, artist }, state.lyricInfo);
   const segmentation = useDesktopSegmentation(songIdentity, state.lyrics);
-  const runtime = useVisualizerClock(segmentation.lyrics.lines, state.clock, state.spectrum, manual, offset, state.preferences.audioReactive, state.frameDemand);
   const coverTheme = useCoverTheme(cover, state.preferences.coverTheme);
   const visual = useDesktopVisualSettings({ baseTheme: coverTheme.theme, cover, transparent: Boolean(state.appearance.transparent), translated, onTranslated: changeTranslated });
   const fontsReady = useDesktopFonts({ lines: segmentation.lyrics.lines, theme: visual.mergedTheme, subtitleTheme: visual.subtitleTheme, title, artist,
     hideTranslationSubtitle: visual.rendererProps.hideTranslationSubtitle, subtitleContentMode: visual.rendererProps.subtitleContentMode,
     showHarmonySubtitle: visual.rendererProps.showHarmonySubtitle }, state.setNotice);
   const hasLyrics = state.lyrics.lines.length > 0;
-  useEffect(() => { if (hasLyrics) void import('./DesktopStage').catch(() => undefined); }, [hasLyrics]);
+  const runtime = useVisualizerClock(segmentation.lyrics.lines, state.clock, state.spectrum, manual, offset, state.preferences.audioReactive,
+    state.frameDemand, state.lyricInfo?.key ?? '', hasLyrics && fontsReady);
+  const stageLoaded = useRef(false); if (hasLyrics) stageLoaded.current = true;
   const anyPanel = panel || visualSection !== null || segmentationOpen || discoveryOpen;
   const canSegment = Boolean(state.lyrics.lines.length && getVisualizerRegistryEntry(mode).usesWordSegmentation);
   const { cursorHidden, controlsRevealed, topControlsRevealed } = useImmersiveControls({ root: glassSurface, immersive, setImmersive, panel: anyPanel,
@@ -145,14 +146,15 @@ export default function DesktopLyrics() {
     setSegmentationOpen(false);
     if (segmentationFromSettings.current) { setPanelNavigation({ sequence: ++navigationSequence.current, target: { id: 'segmentation' } }); setPanel(true); }
   };
-  const notice: DesktopNoticeData | null = state.notice ?? (state.connectionError ? { text: state.connectionError, target: { id: 'player-source' } }
-    : state.session.key && !state.session.hasTimeline && !manual.enabled ? { text: i18n.t('desktopLyrics.settings.noTimelineNotice', { lng: 'zh-CN' }), target: { id: 'manual-clock' } } : null);
+  const notice: DesktopNoticeData | null = state.notice ?? (state.session.key && !state.session.hasTimeline && !manual.enabled
+    ? { text: i18n.t('desktopLyrics.settings.noTimelineNotice', { lng: 'zh-CN' }), target: { id: 'manual-clock' } } : null);
+  const waiting = <DesktopWaitingScreen session={state.session} online={state.online} preferences={state.preferences}
+    connectionError={state.connectionError} lyricStatus={state.lyricStatus} title={title} scanning={state.scan.active} onSettings={showSettings}/>;
   return <main ref={glassSurface} style={coverTheme.style} className={`desktop-lyrics ${coverTheme.active ? 'cover-theme' : ''} ${immersive ? 'immersive' : ''} ${cursorHidden ? 'cursor-idle' : ''} ${immersiveToggleHidden ? 'immersive-toggle-idle' : ''} ${controlsRevealed ? 'controls-revealed' : ''} ${topControlsRevealed ? 'top-controls-revealed' : ''} ${state.fullscreen ? 'native-fullscreen' : ''} ${state.appearance.acrylic ? 'native-acrylic' : ''} ${state.appearance.transparent ? 'transparent-background' : ''} ${state.appearance.solid ? 'solid-surfaces' : ''} ${state.appearance.highContrast ? 'high-contrast' : ''}`}>
-    {state.appearance.transparent ? <div className="transparent-veil" aria-hidden="true"/> : <AcrylicBackdrop cover={cover}/>}<WindowChrome/><div className="desktop-stage">
-    {state.lyrics.lines.length ? <Suspense fallback={null}>{fontsReady ? <DesktopStage mode={mode} onRecover={recoverStage} currentTime={runtime.currentTime} currentLineIndex={runtime.lineIndex} lines={segmentation.lyrics.lines} theme={visual.mergedTheme}
+    {state.appearance.transparent ? <div className="transparent-veil" aria-hidden="true"/> : <AcrylicBackdrop cover={cover}/>}<WindowChrome session={state.session} apps={state.preferences.musicApps} preferred={state.preferences.source}/><div className="desktop-stage">
+    {stageLoaded.current ? <Suspense fallback={waiting}><DesktopStage ready={hasLyrics && fontsReady} fallback={hasLyrics ? null : waiting} mode={mode} onRecover={recoverStage} currentTime={runtime.currentTime} currentLineIndex={runtime.lineIndex} lines={segmentation.lyrics.lines} theme={visual.mergedTheme}
         audioPower={runtime.audioPower} audioBands={runtime.audioBands} songTitle={title} songArtist={artist} coverUrl={cover || undefined} showText paused={!playing}
-        seed={state.session.key || title || 'desktop'} isPreviewMode={false} {...visual.rendererProps} isPlayerChromeHidden={!footerVisible}/> : null}</Suspense> : <DesktopWaitingScreen session={state.session} online={state.online} preferences={state.preferences}
-      connectionError={state.connectionError} lyricStatus={state.lyricStatus} title={title} scanning={state.scan.active} onSettings={showSettings}/>}</div>
+        seed={state.session.key || title || 'desktop'} isPreviewMode={false} {...visual.rendererProps} isPlayerChromeHidden={!footerVisible}/></Suspense> : waiting}</div>
     <DesktopTopbar title={title} artist={artist} cover={cover} mode={mode} onMode={changeMode} translated={translated} onTranslated={changeTranslated}
       topmost={state.preferences.topmost} onTopmost={value => send('topmost', value)} playing={playing} connected={Boolean(state.session.key)} manual={manual.enabled}
       panel={panel} onPanel={() => { if (panel) { cancelSettingsOpening(); setPanel(false); } else showSettings(); }} immersive={immersive} onImmersive={() => { cancelSettingsOpening(); setImmersive(!immersive); setPanel(false); setVisualSection(null); setSegmentationOpen(false); }}

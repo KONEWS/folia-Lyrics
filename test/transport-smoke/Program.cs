@@ -10,7 +10,9 @@ await CoverChecks.Run(Check);
 await AudioMaintenanceChecks.Run(Check);
 await MediaReadChecks.Run(Check);
 MediaClockChecks.Run(Check);
+PreferenceChecks.Run(Check);
 await MetadataChecks.Run(Check);
+await SourceSwitchChecks.Run(Check);
 
 foreach (var action in new[] { "play", "pause", "previous", "next" })
 {

@@ -22,20 +22,22 @@ export function useCoverTheme(cover: string, enabled: boolean) {
   useEffect(() => {
     mounted.current = true;
     const token = ++revision.current;
+    let extraction: AbortController | undefined;
     setRefreshing(false);
     if (enabled && cover) {
       const cached = cache.current.get(cover);
       if (cached) { remember(cover, cached); setResult({ cover, palette: cached }); }
       else {
+        extraction = new AbortController();
         const accept = (colors: string[]) => {
           if (!isCurrent(token)) return;
           const palette = { colors, theme: buildCoverTheme(colors) };
           remember(cover, palette); setResult({ cover, palette });
         };
-        void extractRepresentativeColors(cover).then(accept).catch(() => accept([]));
+        void extractRepresentativeColors(cover, 5, extraction.signal).then(accept).catch(() => accept([]));
       }
     }
-    return () => { mounted.current = false; revision.current++; };
+    return () => { mounted.current = false; revision.current++; extraction?.abort(); };
   }, [cover, enabled]);
   const refresh = useCallback(async () => {
     const palette = cache.current.get(cover);

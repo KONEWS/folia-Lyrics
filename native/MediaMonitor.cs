@@ -13,13 +13,17 @@ internal sealed class MediaMonitor : IDisposable
     private int revision;
     private string lastDiagnostic = "";
     private readonly MediaCoverCache covers = new();
-    private readonly MediaMetadataCache<GlobalSystemMediaTransportControlsSessionMediaProperties> metadata = new();
+    private readonly MediaMetadataCache<GlobalSystemMediaTransportControlsSessionMediaProperties> metadata = new(same: (left, right)
+        => left.Title == right.Title && left.Artist == right.Artist && left.AlbumTitle == right.AlbumTitle);
     private readonly MediaPlaybackClock clock = new();
+    private MediaSource[] sourceSnapshot = [];
+    private string[] sourceIds = [];
+    private long sourceCheckedAt;
     private GlobalSystemMediaTransportControlsSession? coverSession;
     private nint coverSessionIdentity;
     private long coverRevision;
     public event Action? RefreshRequested;
-    public async Task<Song> Read(string preferred, CancellationToken token = default)
+    public async Task<Song> Read(string preferred, MusicAppBinding[] apps, CancellationToken token = default)
     {
         var readRevision = revision;
         if (manager is null)
@@ -30,14 +34,16 @@ internal sealed class MediaMonitor : IDisposable
             manager = connected;
         }
         var sessions = manager.GetSessions().ToArray(); var current = manager.GetCurrentSession();
-        var sources = sessions.Select(s => new MediaSource(s.SourceAppUserModelId, s.SourceAppUserModelId)).DistinctBy(s => s.Id).ToArray();
-        // A bound session wins even while paused; query other players' playback only when choosing a new binding.
+        var sources = ReadSources(sessions);
+        // A bound session wins even while paused; checking other players' status for the menu is throttled separately.
         var candidates = Candidates(sessions, false);
-        var eligible = preferred.Length == 0 ? candidates : candidates.Where(s => s.Source == preferred).ToArray();
+        var resolved = MediaSourcePreference.Resolve(preferred, candidates.Select(candidate => candidate.Source),
+            apps.Where(app => app.LaunchKind != "store").Select(app => new SavedMediaExecutable(app.Name, app.Path)));
+        var eligible = resolved.Length == 0 ? candidates : candidates.Where(s => s.Source == resolved).ToArray();
         if (binding.Find(eligible, binding.Id) is null) candidates = Candidates(sessions);
-        var selection = binding.Select(candidates, current is null ? 0 : WindowsSessionIdentity.Get(current), preferred);
+        var selection = binding.Select(candidates, current is null ? 0 : WindowsSessionIdentity.Get(current), resolved);
         var session = selection?.Value;
-        if (session is null) { Invalidate(); return new("", "", "", "", "", false, 0, 0, 1, false, sources); }
+        if (session is null) { ClearSelection(); return new("", "", "", "", "", false, 0, 0, 1, false, sources); }
         WatchCover(session, selection!.Identity);
         var metadataRevision = Interlocked.Read(ref coverRevision);
         var props = await metadata.Read(selection.Identity, metadataRevision, cancellation => session.TryGetMediaPropertiesAsync().AsTask(cancellation),
@@ -47,9 +53,14 @@ internal sealed class MediaMonitor : IDisposable
         token.ThrowIfCancellationRequested();
         if (readRevision != revision) throw new OperationCanceledException();
         var key = WindowsMediaControlTarget.SongKey(session, props);
-        var cover = covers.Refresh(selection.Identity, key, Interlocked.Read(ref coverRevision),
+        // Old properties can remain visible while a newer metadata event loads; only stamp artwork with loaded properties.
+        var cover = covers.Refresh(selection.Identity, key, metadata.ValueRevision,
             () => Task.Run(() => ReadCover(props.Thumbnail, token), token), () => readRevision == revision && !token.IsCancellationRequested, DataFiles.Log);
         var playing = info.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing;
+        sources = MediaSourceStatus.RefreshSelected(sources, selection.Source, playing,
+            candidates.Where(candidate => candidate.Identity != selection.Identity && candidate.Source.Equals(selection.Source, StringComparison.OrdinalIgnoreCase)),
+            candidate => IsPlaying(candidate.Value));
+        sourceSnapshot = sources;
         var rate = info.PlaybackRate ?? 1; if (!double.IsFinite(rate) || rate <= 0) rate = 1;
         var sampled = clock.Read(selection.Identity, key,
             new((timeline.Position - timeline.StartTime).TotalSeconds, (timeline.EndTime - timeline.StartTime).TotalSeconds, timeline.LastUpdatedTime, playing, rate),
@@ -63,7 +74,11 @@ internal sealed class MediaMonitor : IDisposable
         return new(key, props.Title, props.Artist, cover, session.SourceAppUserModelId, sampled.Playing, sampled.Position, sampled.Duration, sampled.Rate, sampled.Duration > 0, sources,
             props.AlbumTitle, binding.Id, controls);
     }
-    public void Invalidate() { revision++; observed = null; binding.Clear(); observedKey = ""; WatchCover(null, 0); covers.Clear(); metadata.Clear(); clock.Clear(); }
+    // An offline preference can leave other sessions visible for minutes; clearing selection must retain their throttled status cache.
+    private void ClearSelection() { revision++; observed = null; binding.Clear(); observedKey = ""; WatchCover(null, 0); covers.Clear(); metadata.Clear(); clock.Clear(); }
+    public void Invalidate() { ClearSelection(); sourceSnapshot = []; sourceIds = []; sourceCheckedAt = 0; }
+    // An explicit return to Auto chooses again; the next selected identity decides which cached media can be reused.
+    public void ReevaluateSelection() { observed = null; binding.Clear(); observedKey = ""; }
     public void Reconnect() { Invalidate(); manager = null; }
     // Artwork can arrive after title/artist and can change without changing the song key.
     private void WatchCover(GlobalSystemMediaTransportControlsSession? session, nint identity)
@@ -111,6 +126,20 @@ internal sealed class MediaMonitor : IDisposable
         if (!IsCurrent(request) || manager is null) return null;
         var fresh = binding.Find(Candidates(manager.GetSessions(), false), request.SessionId);
         return fresh is null ? null : new WindowsMediaControlTarget(fresh.Value, binding.Id);
+    }
+    // Session membership is checked every poll; other apps' playback state is sampled at most once a second.
+    private MediaSource[] ReadSources(GlobalSystemMediaTransportControlsSession[] sessions)
+    {
+        var ids = sessions.Select(session => session.SourceAppUserModelId)
+            .Where(id => !string.IsNullOrWhiteSpace(id)).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+        var now = Stopwatch.GetTimestamp();
+        if (!ids.SequenceEqual(sourceIds, StringComparer.OrdinalIgnoreCase)
+            || sourceCheckedAt == 0 || Stopwatch.GetElapsedTime(sourceCheckedAt, now) >= TimeSpan.FromSeconds(1))
+        {
+            sourceSnapshot = MediaSourceStatus.Collect(sessions, session => session.SourceAppUserModelId, IsPlaying);
+            sourceIds = ids; sourceCheckedAt = now;
+        }
+        return sourceSnapshot;
     }
     private static SessionCandidate<GlobalSystemMediaTransportControlsSession>[] Candidates(IEnumerable<GlobalSystemMediaTransportControlsSession> sessions, bool readPlayback = true)
         => sessions.Select(s => new SessionCandidate<GlobalSystemMediaTransportControlsSession>(s, WindowsSessionIdentity.Get(s), s.SourceAppUserModelId, readPlayback && IsPlaying(s))).ToArray();

@@ -8,16 +8,28 @@ interface RGB {
     b: number;
 }
 
-const loadImagePixels = (imageUrl: string): Promise<Uint8ClampedArray | null> => (
+const loadImagePixels = (imageUrl: string, signal?: AbortSignal): Promise<Uint8ClampedArray | null> => (
     new Promise(resolve => {
+        if (signal?.aborted) { resolve(null); return; }
         const img = new Image();
         img.crossOrigin = "Anonymous";
+        let settled = false;
+        // Release the image callbacks and cancellation listener for every completion path.
+        const finish = (pixels: Uint8ClampedArray | null) => {
+            if (settled) return;
+            settled = true;
+            img.onload = null; img.onerror = null;
+            signal?.removeEventListener('abort', abort);
+            resolve(pixels);
+        };
+        const abort = () => { finish(null); img.removeAttribute('src'); };
 
         img.onload = () => {
+            if (signal?.aborted) { abort(); return; }
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             if (!ctx) {
-                resolve(null);
+                finish(null);
                 return;
             }
 
@@ -30,16 +42,17 @@ const loadImagePixels = (imageUrl: string): Promise<Uint8ClampedArray | null> =>
             // Cross-origin or unreadable covers should keep the fallback theme, not strand the promise.
             try {
                 ctx.drawImage(img, 0, 0, width, height);
-                resolve(ctx.getImageData(0, 0, width, height).data);
+                finish(ctx.getImageData(0, 0, width, height).data);
             } catch {
-                resolve(null);
+                finish(null);
             }
         };
 
         img.onerror = (e) => {
             console.warn("Failed to load image for color extraction", e);
-            resolve(null);
+            finish(null);
         };
+        signal?.addEventListener('abort', abort, { once: true });
         img.src = imageUrl;
     })
 );
@@ -109,15 +122,16 @@ const extractVibrantColorsFromPixels = (imageData: Uint8ClampedArray, count: num
     });
 };
 
-export const extractColors = async (imageUrl: string, count: number = 5): Promise<string[]> => {
-    const pixels = await loadImagePixels(imageUrl);
-    return pixels ? extractVibrantColorsFromPixels(pixels, count) : [];
+export const extractColors = async (imageUrl: string, count: number = 5, signal?: AbortSignal): Promise<string[]> => {
+    const pixels = await loadImagePixels(imageUrl, signal);
+    return pixels && !signal?.aborted ? extractVibrantColorsFromPixels(pixels, count) : [];
 };
 
 export const extractRepresentativeColors = async (
     imageUrl: string,
     count: number = 5,
+    signal?: AbortSignal,
 ): Promise<string[]> => {
-    const pixels = await loadImagePixels(imageUrl);
-    return pixels ? extractRepresentativeColorsFromPixels(pixels, count) : [];
+    const pixels = await loadImagePixels(imageUrl, signal);
+    return pixels && !signal?.aborted ? extractRepresentativeColorsFromPixels(pixels, count) : [];
 };

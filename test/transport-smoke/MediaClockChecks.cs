@@ -55,5 +55,30 @@ internal static class MediaClockChecks
         check(Near(Read(.8, sample), 42.8), "pause preserves progress even when the player re-stamps its unchanged whole-second sample");
         sample = sample with { Playing = true, UpdatedAt = epoch.AddSeconds(10) };
         check(Near(Read(10, sample), 42.8) && Near(Read(10.2, sample), 43), "resume with a re-stamped old position neither rewinds nor counts the paused time");
+
+        // The first lagging pause sample can be recognized at the playback-state transition. A later
+        // changed sample is indistinguishable from a user seek and must remain authoritative.
+        clock.Clear();
+        sample = new(42, 180, epoch, true, 1);
+        Read(0, sample);
+        Read(.5, sample);
+        sample = sample with { Position = 42.1, UpdatedAt = epoch.AddSeconds(.8), Playing = false };
+        check(Near(Read(.8, sample), 42.8), "a slightly changed stale pause sample cannot rewind the visible lyric frame");
+        check(Near(Read(.9, sample), 42.8), "repeated stale pause samples keep the frozen frame");
+        sample = sample with { Position = 42.3, UpdatedAt = epoch.AddSeconds(1) };
+        check(Near(Read(1, sample), 42.3), "a small backward seek immediately after pause refreshes the frame");
+        sample = sample with { Position = 43.1, UpdatedAt = epoch.AddSeconds(1.1) };
+        check(Near(Read(1.1, sample), 43.1), "a forward seek immediately after pause refreshes the frame");
+        check(Near(Read(3, sample), 43.1), "repeated paused packets keep the sought frame");
+        sample = sample with { Position = 42, UpdatedAt = epoch.AddSeconds(3.1) };
+        check(Near(Read(3.1, sample), 42), "a later small backward seek while paused remains available");
+        sample = sample with { Position = 32, UpdatedAt = epoch.AddSeconds(3.2) };
+        check(Near(Read(3.2, sample), 32), "a later large backward seek while paused remains available");
+
+        clock.Clear();
+        sample = new(42, 180, epoch, true, 1);
+        Read(0, sample);
+        sample = sample with { Position = 30, UpdatedAt = epoch.AddSeconds(.8), Playing = false };
+        check(Near(Read(.8, sample), 30), "an explicit large backward seek on pause is still authoritative");
     }
 }

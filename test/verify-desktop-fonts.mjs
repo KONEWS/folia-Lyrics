@@ -130,7 +130,7 @@ try {
       });
       await page.waitForFunction(() => window.__fontProbe.requests.some(request => request.font.includes('ReplacementFontFixture')));
       assert.equal((await probe()).measures.length, 0);
-      assert.equal(await page.locator('.desktop-stage').innerText(), '');
+      await page.waitForFunction(() => document.querySelector('.desktop-stage')?.textContent === '', null, { timeout: 3000 });
       replacement.resolve(); await rendered();
       const after = await probe();
       assert(after.measures.length > 0 && after.measures.every(sample => sample.ready && sample.font.includes('ReplacementFontFixture')));

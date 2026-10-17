@@ -133,6 +133,25 @@ internal static class CoverChecks
         check(!MediaPresentation.Same(session, session with { Album = "Updated Album" })
             && !MediaPresentation.Same(session, session with { Sources = [new("player", "Updated Player")] }),
             "visible metadata and source labels participate in session deduplication");
+        var appSessions = new[] { (Id: "Spotify.exe", Playing: false), (Id: "spotify.exe", Playing: true),
+            (Id: "Sakawish.SaltPlayer_q65!SaltPlayerforWindows", Playing: false) };
+        var sources = MediaSourceStatus.Collect(appSessions, item => item.Id, item => item.Playing);
+        check(sources.Length == 2 && sources[0] == new MediaSource("Spotify.exe", "Spotify", true)
+            && sources[1] == new MediaSource("Sakawish.SaltPlayer_q65!SaltPlayerforWindows", "SaltPlayerforWindows", false),
+            "duplicate sessions become one friendly source with the active playback status");
+        var siblings = appSessions.Skip(1).Where(item => item.Id.Equals("Spotify.exe", StringComparison.OrdinalIgnoreCase));
+        var corrected = MediaSourceStatus.RefreshSelected(sources, "Spotify.exe", false, siblings, item => item.Playing);
+        check(corrected[0].Playing && ReferenceEquals(corrected, sources),
+            "selected paused session cannot stop an app's wave while its sibling session is playing");
+        corrected = MediaSourceStatus.RefreshSelected(sources, "Spotify.exe", false,
+            new[] { (Playing: false, Id: "spotify.exe") }, item => item.Playing);
+        check(!corrected[0].Playing && ReferenceEquals(corrected[1], sources[1]),
+            "selected app stops promptly once all sibling sessions pause without replacing unrelated sources");
+        check(MediaSourceStatus.RefreshSelected(corrected, "Spotify.exe", true, new[] { false },
+            _ => throw new Exception("playing selected session need not query siblings"))[0].Playing,
+            "selected playback starts the app wave immediately without querying sibling playback");
+        check(!MediaPresentation.Same(session, session with { Sources = [new("player", "Player", true)] }),
+            "another player's playback state change reaches the source menu");
     }
 
     private static async Task Throws<T>(Func<Task<string>> action, Action<bool, string> check, string name) where T : Exception

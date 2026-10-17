@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { desktopFontRequests, prepareDesktopFonts, type DesktopFontInput } from '../../../src/desktopLyrics/desktopFonts';
+import { desktopFontRequests, desktopFontsReady, prepareDesktopFonts, type DesktopFontInput } from '../../../src/desktopLyrics/desktopFonts';
 import { DESKTOP_DEFAULT_THEME } from '../../../src/desktopLyrics/desktopTheme';
 
 // test/unit/desktop/desktopFonts.test.ts — selected font stacks, real lyric characters and declared weight variants gate measurement.
@@ -17,6 +17,24 @@ function deferred<T>() {
 }
 
 describe('desktop font preparation', () => {
+  it('recognizes already loaded glyphs synchronously and keeps unloaded glyphs gated', () => {
+    const check = vi.fn().mockReturnValue(true);
+    vi.stubGlobal('document', { fonts: { check } });
+    const requests = desktopFontRequests(input());
+    expect(desktopFontsReady(requests)).toBe(true);
+    expect(check).toHaveBeenCalledWith(requests[0].font, requests[0].text);
+    check.mockReturnValue(false); expect(desktopFontsReady(requests)).toBe(false);
+    check.mockImplementation(() => { throw new Error('invalid font'); }); expect(desktopFontsReady(requests)).toBe(false);
+  });
+  it('keeps unloaded declared weight variants gated even when the requested regular face is loaded', () => {
+    const regular = { family: 'Selected', status: 'loaded' }, bold = { family: '"Selected"', status: 'loading' };
+    const unrelated = { family: 'Other', status: 'unloaded' };
+    vi.stubGlobal('document', { fonts: { check: () => true,
+      forEach: (visit: (face: unknown) => void) => [regular, bold, unrelated].forEach(visit) } });
+    const requests = [{ font: '400 16px "Selected", sans-serif', text: '实际字形' }];
+    expect(desktopFontsReady(requests)).toBe(false);
+    bold.status = 'loaded'; expect(desktopFontsReady(requests)).toBe(true);
+  });
   it.each(['serif', 'mono'] as const)('does not select the bundled Noto Sans font for %s layouts', style => {
     const requests = desktopFontRequests(input(style));
     expect(requests).toHaveLength(2);

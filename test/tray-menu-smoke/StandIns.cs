@@ -51,6 +51,7 @@ namespace FoliaLyrics
         public bool SavedPinned => preferences.Topmost;
         private void RestoreInteraction() => Calls.Add("restore");
         private void SavePreferences() => Calls.Add("save");
+        private void SetTopmostPreference(bool enabled) { TopMost = preferences.Topmost = enabled; SavePreferences(); }
         private void SetClickThrough(bool value) => Calls.Add("clickThrough=" + value);
         private void Show() => Calls.Add("show");
         private void Activate() => Calls.Add("activate");

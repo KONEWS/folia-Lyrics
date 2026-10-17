@@ -30,6 +30,23 @@ export function desktopFontRequests(input: DesktopFontInput): DesktopFontRequest
   return requests;
 }
 
+// A new song can use already loaded glyphs immediately without tearing down the renderer for a resolved Promise.
+export function desktopFontsReady(requests: DesktopFontRequest[]): boolean {
+  if (typeof document === 'undefined' || !document.fonts?.check) return false;
+  try {
+    if (!requests.every(request => document.fonts.check(request.font, request.text))) return false;
+    let variantsReady = true;
+    // Modes can use another weight from the selected family; keep those declared faces behind the same layout gate.
+    const stacks = requests.map(request => request.font.toLowerCase());
+    document.fonts.forEach?.(face => {
+      const family = face.family.replace(/^(['"])(.*)\1$/, '$2').toLowerCase();
+      if (family && stacks.some(stack => stack.includes(family)) && face.status !== 'loaded') variantsReady = false;
+    });
+    return variantsReady;
+  }
+  catch { return false; }
+}
+
 // Share StrictMode/repeated requests. A failed web font releases the layout gate and keeps the browser's normal fallback.
 export function prepareDesktopFonts(requests: DesktopFontRequest[]): Promise<void> {
   if (typeof document === 'undefined' || !document.fonts?.load) return Promise.resolve();

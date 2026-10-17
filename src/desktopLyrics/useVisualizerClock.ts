@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { useMotionValue } from 'framer-motion';
 import { findLatestActiveLineIndex } from '../utils/appPlaybackHelpers';
 import type { Line } from '../types';
@@ -15,14 +15,16 @@ export const IDLE_PARK_MS = 2500;
 // grows no faster than decay can clear residual levels. A suspended gap (minimize, background tab) contributes only one capped step
 // on the resumed tick, preventing suspended time from counting toward the park threshold.
 export const IDLE_BUDGET_STEP_MS = 100;
-export function useVisualizerClock(lines: Line[], clock: RefObject<Clock>, input: RefObject<{ bins: Uint8Array; sampleRate: number; received: number }>, manual: ManualClock, offset: number, reactive: boolean, demand?: FrameDemand) {
+export function useVisualizerClock(lines: Line[], clock: RefObject<Clock>, input: RefObject<{ bins: Uint8Array; sampleRate: number; received: number }>, manual: ManualClock, offset: number, reactive: boolean, demand?: FrameDemand, lyricKey?: string, presentationReady = true) {
   const [currentTime] = useState(() => new DesktopClockValue(0));
   const playbackTime = useMotionValue(0);
   const audioPower = useMotionValue(0), bass = useMotionValue(0), lowMid = useMotionValue(0), mid = useMotionValue(0), vocal = useMotionValue(0), treble = useMotionValue(0);
   const spectrum = useMotionValue(new Uint8Array(1024));
   const audioBands = useMemo(() => ({ bass, lowMid, mid, vocal, treble, spectrum }), [bass, lowMid, mid, vocal, treble, spectrum]);
   const [lineIndex, setLineIndex] = useState(-1); const lastLine = useRef(-1);
-  useEffect(() => {
+  const presentedKey = useRef(lyricKey); presentedKey.current = lyricKey;
+  const ready = useRef(presentationReady); ready.current = presentationReady;
+  useLayoutEffect(() => {
     let frame = 0, lastTime = NaN, audioReceived = -1, audioSampleRate = 0, audioLive: boolean | null = null, hz = 48000 / 2048, prevTick = NaN, idleBudget = 0, woken = false;
     const raw = new Uint8Array(1024);
     const energy = (min: number, max: number, exponent: number) => {
@@ -32,6 +34,8 @@ export function useVisualizerClock(lines: Line[], clock: RefObject<Clock>, input
     // Publish the accepted host time before React applies paused props, so stopped renderers can draw their final frame.
     const publishClock = (now: number) => {
       const position = clockPosition(clock.current, now, manual); playbackTime.set(position);
+      // Transport chrome follows the new player immediately; a retained outgoing scene must never consume its clock.
+      if (!ready.current || !manual.enabled && presentedKey.current !== undefined && clock.current.key !== undefined && clock.current.key !== presentedKey.current) return false;
       const time = Math.max(0, position + offset); currentTime.set(time);
       const timeChanged = lastTime !== time;
       if (timeChanged) {
@@ -75,8 +79,9 @@ export function useVisualizerClock(lines: Line[], clock: RefObject<Clock>, input
       woken = true; if (!frame) frame = requestAnimationFrame(tick);
     };
     const unsubscribe = demand?.subscribe(wake);
+    publishClock(performance.now());
     frame = requestAnimationFrame(tick);
     return () => { unsubscribe?.(); cancelAnimationFrame(frame); };
-  }, [lines, clock, input, manual, offset, reactive, demand, currentTime, playbackTime, audioPower, bass, lowMid, mid, vocal, treble, spectrum]);
+  }, [lines, clock, input, manual, offset, reactive, demand, currentTime, playbackTime, audioPower, bass, lowMid, mid, vocal, treble, spectrum, lyricKey, presentationReady]);
   return { currentTime, playbackTime, audioPower, audioBands, lineIndex };
 }

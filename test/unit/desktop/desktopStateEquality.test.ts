@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { EMPTY, DEFAULT_PREFERENCES, type LyricPacket, type Session } from '../../../src/desktopLyrics/bridge';
-import { mergeDesktopPreferences, sameLyricPacket, sameSessionPresentation } from '../../../src/desktopLyrics/desktopStateEquality';
+import { mergeDesktopPreferences, reuseMediaSources, sameLyricContent, sameLyricPacket, sameSessionPresentation } from '../../../src/desktopLyrics/desktopStateEquality';
 
 // test/unit/desktop/desktopStateEquality.test.ts — repeated host packets must retain identities without hiding real changes.
 const session: Session = { ...EMPTY, key: 'song', sessionId: 'session', title: 'Title', artist: 'Artist', duration: 180,
@@ -9,6 +9,14 @@ const packet: LyricPacket = { key: 'song', title: 'Title', artist: 'Artist', sou
   format: 'lrc', content: '[00:01.00]歌词', translation: '[00:01.00]translation' };
 
 describe('desktop packet identities', () => {
+  it('reuses equal source lists across metadata updates and preserves real playback, rename, removal and ordering changes', () => {
+    const sources = [...session.sources, { id: 'second', label: 'Second', playing: true }];
+    expect(reuseMediaSources(sources, sources.map(source => ({ ...source })))).toBe(sources);
+    expect(reuseMediaSources(sources, sources.map(source => ({ ...source, playing: Boolean(source.playing) })))).toBe(sources);
+    const changed = [sources.map(source => ({ ...source, playing: !source.playing })), [...sources].reverse(), sources.slice(1),
+      sources.map(source => ({ ...source, label: `${source.label} changed` }))];
+    for (const next of changed) expect(reuseMediaSources(sources, next)).toBe(next);
+  });
   it('ignores clock-only session changes and independently allocated equal source/capability objects', () => {
     expect(sameSessionPresentation(session, { ...session, position: 99, received: 12345,
       controls: { ...session.controls! }, sources: session.sources.map(source => ({ ...source })) })).toBe(true);
@@ -25,12 +33,23 @@ describe('desktop packet identities', () => {
     }
     expect(sameSessionPresentation(session, { ...session, sources: [{ id: 'pepper', label: 'New' }] })).toBe(false);
     expect(sameSessionPresentation(session, { ...session, sources: [{ id: 'other', label: '椒盐音乐' }] })).toBe(false);
+    expect(sameSessionPresentation(session, { ...session, sources: [{ id: 'pepper', label: '椒盐音乐', playing: true }] })).toBe(false);
   });
   it('deduplicates exact lyrics while preserving format, timing content, translations and fallback changes', () => {
     expect(sameLyricPacket(packet, { ...packet })).toBe(true);
     expect(sameLyricPacket(null, packet)).toBe(false);
     for (const field of ['key', 'content', 'format', 'translation', 'romanization', 'fallbackContent', 'fallbackTranslation', 'source'] as const) {
       expect(sameLyricPacket(packet, { ...packet, [field]: 'different' })).toBe(false);
+    }
+  });
+  it('reuses parsing for metadata-only lyric updates but invalidates every parse input', () => {
+    expect(sameLyricContent(null, packet)).toBe(false);
+    expect(sameLyricContent(packet, { ...packet })).toBe(true);
+    for (const field of ['key', 'source', 'cover', 'title', 'artist'] as const) {
+      expect(sameLyricContent(packet, { ...packet, [field]: 'changed' })).toBe(true);
+    }
+    for (const field of ['content', 'embedded', 'format', 'translation', 'romanization', 'fallbackContent', 'fallbackTranslation'] as const) {
+      expect(sameLyricContent(packet, { ...packet, [field]: field === 'embedded' ? !packet.embedded : 'changed' })).toBe(false);
     }
   });
   it('keeps identical full/partial preferences stable while applying every real switch and provider order', () => {

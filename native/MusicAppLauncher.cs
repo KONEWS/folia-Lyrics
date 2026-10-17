@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Drawing.Imaging;
 using System.Text.Json;
 
 // native/MusicAppLauncher.cs — validates saved executable bindings and reads their display metadata.
@@ -17,8 +16,27 @@ internal static class MusicAppLauncher
     internal static MusicAppBinding[] NormalizeBindings(IEnumerable<MusicAppBinding?>? bindings) =>
         (bindings ?? []).Where(app => app is { Slot: >= 0 and < int.MaxValue } && MusicAppDiscoveryPolicy.HasIdentity(app))
             .Select(app => app! with { LaunchKind = app!.LaunchKind == "store" ? "store" : "exe",
-                Path = app.LaunchKind == "store" ? "" : app.Path, AppUserModelId = app.LaunchKind == "store" ? app.AppUserModelId : "" })
+                Path = app.LaunchKind == "store" ? "" : app.Path, AppUserModelId = app.LaunchKind == "store" ? app.AppUserModelId : "",
+                Icon = MusicAppIcon.Normalize(app.Icon) })
             .DistinctBy(app => app.Slot).OrderBy(app => app.Slot).ToArray();
+
+    // Apply an extracted Store icon only to the same saved shortcut, preserving all user-visible binding metadata.
+    internal static MusicAppBinding[] ApplyRefreshedStoreIcons(MusicAppBinding[] bindings, IReadOnlyDictionary<int, MusicAppBinding> refreshed)
+    {
+        MusicAppBinding[]? updated = null;
+        for (var index = 0; index < bindings.Length; index++)
+        {
+            var app = bindings[index];
+            if (app.LaunchKind != "store" || !refreshed.TryGetValue(app.Slot, out var current)
+                || current.LaunchKind != "store"
+                || !app.AppUserModelId.Equals(current.AppUserModelId, StringComparison.OrdinalIgnoreCase)
+                || !current.Icon.StartsWith("data:image/png;base64,", StringComparison.Ordinal)
+                || app.Icon == current.Icon) continue;
+            updated ??= bindings.ToArray();
+            updated[index] = app with { Icon = current.Icon };
+        }
+        return updated ?? bindings;
+    }
 
     // Reuse the first gap without renumbering saved bindings or overflowing large persisted identities.
     internal static int NextSlot(IEnumerable<MusicAppBinding?>? bindings)
@@ -67,9 +85,7 @@ internal static class MusicAppLauncher
             if (extracted is not null)
             {
                 using var bitmap = extracted.ToBitmap();
-                using var stream = new MemoryStream();
-                bitmap.Save(stream, ImageFormat.Png);
-                icon = "data:image/png;base64," + Convert.ToBase64String(stream.ToArray());
+                icon = MusicAppIcon.Encode(bitmap);
             }
         }
         catch (Exception) { }

@@ -1,4 +1,3 @@
-using System.Drawing.Imaging;
 using Windows.ApplicationModel;
 using Windows.ApplicationModel.Core;
 using Windows.Management.Deployment;
@@ -76,17 +75,14 @@ internal static class MusicAppStore
         deadline.CancelAfter(TimeSpan.FromSeconds(2));
         try
         {
-            using var source = await entry.DisplayInfo.GetLogo(new Windows.Foundation.Size(48, 48)).OpenReadAsync().AsTask(deadline.Token);
+            using var source = await entry.DisplayInfo.GetLogo(new Windows.Foundation.Size(256, 256)).OpenReadAsync().AsTask(deadline.Token);
             if (source.Size is 0 or > 512 * 1024) return "";
             using var input = source.GetInputStreamAt(0).AsStreamForRead();
             var bytes = new byte[(int)source.Size];
             await input.ReadExactlyAsync(bytes, deadline.Token);
             using var memory = new MemoryStream(bytes);
             using var image = Image.FromStream(memory);
-            using var bitmap = new Bitmap(image, new System.Drawing.Size(48, 48));
-            using var output = new MemoryStream();
-            bitmap.Save(output, ImageFormat.Png);
-            return "data:image/png;base64," + Convert.ToBase64String(output.ToArray());
+            return MusicAppIcon.Encode(image);
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
         catch (Exception) { return ""; }

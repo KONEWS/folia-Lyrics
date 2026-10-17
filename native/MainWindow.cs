@@ -18,6 +18,7 @@ internal sealed partial class MainWindow : Form
     private bool ready, polling, scanning; private int ticks; private Song? song; private Lyrics? lyrics;
     private bool pollAgain; private int mediaRefreshQueued; private long clockSequence;
     private int sourceRevision;
+    private CancellationTokenSource? mediaRead;
     private readonly MediaTransport transport = new(log: DataFiles.Log);
     private string lyricKey = "\0";
     private Song? presentedSong;
@@ -35,6 +36,7 @@ internal sealed partial class MainWindow : Form
         StartPosition = FormStartPosition.CenterScreen; BackColor = DesktopBackground;
         Icon = Icon.ExtractAssociatedIcon(Environment.ProcessPath!) ?? SystemIcons.Application;
         Controls.Add(web); TopMost = preferences.Topmost;
+        InitializeLaunchForeground();
         InitializeTray();
         InitializeWindowPlacement();
         Shown += async (_, _) => await Initialize();
@@ -106,10 +108,12 @@ internal sealed partial class MainWindow : Form
         if (!ready || IsDisposed) return;
         if (polling) { pollAgain = true; return; }
         polling = true;
+        using var read = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token);
+        mediaRead = read;
         try
         {
             var currentRevision = sourceRevision;
-            var next = await MediaReadDeadline.Read(token => media.Read(preferences.Source, token), lifetime.Token);
+            var next = await MediaReadDeadline.Read(token => media.Read(preferences.Source, preferences.MusicApps, token), read.Token);
             if (IsDisposed || currentRevision != sourceRevision) return; song = next = next with { Sequence = ++clockSequence };
             if (!MediaPresentation.Same(presentedSong, next)) { presentedSong = next; Send("session", next); }
             Send("clock", new { next.Key, next.SessionId, next.Sequence, next.Position, next.Duration, next.Rate, next.Playing, next.HasTimeline });
@@ -123,7 +127,7 @@ internal sealed partial class MainWindow : Form
         catch (OperationCanceledException) { }
         catch (TimeoutException e) { media.Reconnect(); DataFiles.Log(e); Send("connectionError", new { text = e.Message }); }
         catch (Exception e) { media.Reconnect(); DataFiles.Log(e); Send("connectionError", new { text = "系统媒体连接暂不可用：" + e.Message }); }
-        finally { polling = false; if (pollAgain) { pollAgain = false; RequestMediaPoll(); } }
+        finally { mediaRead = null; polling = false; if (pollAgain) { pollAgain = false; RequestMediaPoll(); } }
     }
     // Merge a burst of native events into one UI refresh and retain a request made during a slow first read.
     private void RequestMediaPoll()

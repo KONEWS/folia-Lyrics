@@ -17,6 +17,7 @@ import DesktopSettingsSearch from './DesktopSettingsSearch';
 import type { DesktopSettingsSearchEntry, DesktopSettingsSearchRequest } from '../types/desktopSettingsSearch';
 import { useDesktopSettingsSearchNavigation } from './useDesktopSettingsSearchNavigation';
 import DesktopDiagnostics from './DesktopDiagnostics';
+import { buildFollowMenuOptions } from './windowFollowMenuModel';
 
 // src/desktopLyrics/ControlPanel.tsx
 export { MODES };
@@ -46,6 +47,7 @@ export default function ControlPanel(p: Props) {
     return () => { if (opener instanceof HTMLElement && opener.isConnected) opener.focus({ preventScroll: true }); };
   }, [p.returnFocus]);
   const toggleClock = () => p.setManual(old => ({ ...old, playing: !old.playing, position: clockPosition(EMPTY, performance.now(), old), received: performance.now() }));
+  const sourceOptions = buildFollowMenuOptions(p.session, p.preferences.musicApps, p.preferences.source);
   return <aside ref={panelRef} className="control-panel desktop-main-settings" aria-label="歌词设置">
     <DesktopSettingsSearch onNavigate={p.onSearchNavigate}/>
     {searchHint ? <p className="desktop-settings-search-hint" role="status">{searchHint}</p> : null}
@@ -76,8 +78,8 @@ export default function ControlPanel(p: Props) {
       <DesktopMusicAppSettings apps={p.preferences.musicApps} blocked={p.preferences.blockedMusicApps} showAddButton={p.preferences.showMusicAppAddButton} autoDiscover={p.preferences.autoDiscoverMusicApps}/>
       <div data-settings-target="player-source"><DesktopSelect label="选择播放器" value={p.preferences.source} onChange={value => send('source', value)} options={[
         { value: '', label: '自动跟随正在播放的应用' },
-        ...(p.preferences.source && !p.session.sources.some(s => s.id === p.preferences.source) ? [{ value: p.preferences.source, label: `${p.preferences.source}（未连接）` }] : []),
-        ...p.session.sources.map(source => ({ value: source.id, label: source.label })),
+        ...sourceOptions.filter(option => !option.disabled).map(option => ({ value: option.id,
+          label: option.running ? option.label : `${option.label}（未运行）` })),
       ]}/></div>
       <p className="hint player-status">{p.session.key ? text('settings.currentPlayer', { player: p.session.source || '—' }) : text('settings.noPlayer')}</p>
       <details className="settings-help player-help"><summary>{text('settings.playerHelp')}</summary>

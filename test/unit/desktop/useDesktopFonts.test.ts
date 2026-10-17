@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useDesktopFonts } from '../../../src/desktopLyrics/useDesktopFonts';
-import { prepareDesktopFonts, type DesktopFontInput } from '../../../src/desktopLyrics/desktopFonts';
+import { desktopFontsReady, prepareDesktopFonts, type DesktopFontInput } from '../../../src/desktopLyrics/desktopFonts';
 import { restoreUploadedLyricsFont } from '../../../src/services/customLyricsFont';
 import { DESKTOP_DEFAULT_THEME } from '../../../src/desktopLyrics/desktopTheme';
 import type { StoredCustomLyricsFont } from '../../../src/types';
@@ -11,7 +11,7 @@ const hooks = vi.hoisted(() => ({ slots: [] as Slot[], cursor: 0, pending: [] as
 const typography = vi.hoisted(() => ({ font: null as StoredCustomLyricsFont | null, clear: vi.fn() }));
 vi.mock('../../../src/services/customLyricsFont', () => ({ restoreUploadedLyricsFont: vi.fn() }));
 vi.mock('../../../src/i18n/config', () => ({ default: { t: (key: string) => key } }));
-vi.mock('../../../src/desktopLyrics/desktopFonts', async original => ({ ...await original<object>(), prepareDesktopFonts: vi.fn() }));
+vi.mock('../../../src/desktopLyrics/desktopFonts', async original => ({ ...await original<object>(), prepareDesktopFonts: vi.fn(), desktopFontsReady: vi.fn() }));
 vi.mock('../../../src/stores/useTypographySettingsStore', () => ({ useTypographySettingsStore: Object.assign(
   (select: (state: object) => unknown) => select({ lyricsCustomFont: typography.font }),
   { getState: () => ({ lyricsCustomFont: typography.font, clearLyricsCustomFontAfterRestoreFailure: typography.clear }) },
@@ -42,7 +42,7 @@ const prepare = vi.mocked(prepareDesktopFonts), restore = vi.mocked(restoreUploa
 let cleanup: (() => void) | undefined;
 beforeEach(() => {
   hooks.slots = []; hooks.cursor = 0; hooks.pending = []; hooks.writes = 0; typography.font = null;
-  typography.clear.mockReset(); prepare.mockReset().mockResolvedValue(); restore.mockReset();
+  typography.clear.mockReset(); prepare.mockReset().mockResolvedValue(); restore.mockReset(); vi.mocked(desktopFontsReady).mockReset().mockReturnValue(false);
 });
 afterEach(() => { cleanup?.(); cleanup = undefined; });
 const initial: DesktopFontInput = { lines: [{ startTime: 0, endTime: 20, fullText: '字形', words: [] }],
@@ -67,6 +67,20 @@ function mount(options = initial) {
 }
 
 describe('desktop font layout gate', () => {
+  it('keeps an already loaded font available across lyric and descriptive metadata updates', () => {
+    vi.mocked(desktopFontsReady).mockReturnValue(true);
+    const mounted = mount();
+    expect(mounted.render()).toBe(true);
+    expect(mounted.update({ ...initial, title: 'A new title', lines: [...initial.lines] })).toBe(true);
+    expect(restore).not.toHaveBeenCalled(); expect(hooks.writes).toBe(0);
+  });
+  it('still restores an uploaded face even when the browser reports the fallback family ready', () => {
+    vi.mocked(desktopFontsReady).mockReturnValue(true);
+    typography.font = { source: 'uploaded', family: 'Unregistered', fontId: 'unregistered-ready', label: 'Upload' };
+    restore.mockReturnValue(new Promise(() => {}));
+    const mounted = mount(); expect(mounted.render()).toBe(false);
+    expect(restore).toHaveBeenCalledTimes(1); expect(prepare).not.toHaveBeenCalled();
+  });
   it('does no font or upload work without lyrics and waits for the current selection once lyrics arrive', async () => {
     const loading = deferred<void>(); prepare.mockReturnValue(loading.promise);
     const mounted = mount({ ...initial, lines: [] });

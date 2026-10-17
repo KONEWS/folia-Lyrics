@@ -50,6 +50,42 @@ internal static class MetadataChecks
         try { await Read(0, _ => Task.FromResult("unused")); throw new Exception("metadata failure was lost"); }
         catch (IOException) { check(true, "background metadata failure reaches polling so it can reconnect"); }
         cache.Clear();
+        await StablePolling(check);
+    }
+
+    // Same-song cover events must keep the old thumbnail's revision until the new properties actually arrive.
+    private static async Task StablePolling(Action<bool, string> check)
+    {
+        var clock = new ManualClock();
+        var cache = new MediaMetadataCache<Packet>(clock, (left, right) => left.Title == right.Title);
+        var covers = new MediaCoverCache(clock);
+        var changes = 0; var reads = 0;
+        Task<Packet> Read(long revision, Func<CancellationToken, Task<Packet>> load)
+            => cache.Read(1, revision, load, () => true, () => changes++, CancellationToken.None);
+        for (var poll = 0; poll < 20; poll++)
+        {
+            await Read(0, _ => { reads++; return Task.FromResult(new Packet("same-song", "old-cover")); });
+            clock.Advance(.5);
+        }
+        check(reads == 20 && changes == 1,
+            "twenty unchanged fallback metadata reads produce one notification instead of twenty extra media polls");
+        check(await covers.Read(1, "song", cache.ValueRevision, () => Task.FromResult(cache.Value!.Cover), () => true) == "old-cover",
+            "artwork initially uses the completed metadata revision");
+        var replacement = new TaskCompletionSource<Packet>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var refreshed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var prior = await cache.Read(1, 1, _ => replacement.Task, () => true,
+            () => { changes++; refreshed.TrySetResult(); }, CancellationToken.None);
+        check(prior.Cover == "old-cover" && cache.ValueRevision == 0,
+            "pending same-song metadata event leaves the visible old properties on their completed revision");
+        await covers.Read(1, "song", cache.ValueRevision, () => Task.FromResult(prior.Cover), () => true);
+        replacement.SetResult(new("same-song", "new-cover"));
+        await refreshed.Task.WaitAsync(TimeSpan.FromSeconds(3));
+        check(changes == 2 && cache.ValueRevision == 1,
+            "same-song metadata event still notifies promptly even when visible title fields are unchanged");
+        check(await covers.Read(1, "song", cache.ValueRevision, () => Task.FromResult(cache.Value!.Cover), () => true) == "new-cover",
+            "newly completed same-song thumbnail bypasses the old artwork's thirty-second reuse window");
+        cache.Clear();
+        check(cache.ValueRevision == long.MinValue, "source invalidation releases completed metadata revision together with its properties");
     }
 
     private static async Task Cancelled(Task<string> pending, Action<bool, string> check, string message)
@@ -63,4 +99,5 @@ internal static class MetadataChecks
         public override DateTimeOffset GetUtcNow() => now;
         public void Advance(double seconds) => now = now.AddSeconds(seconds);
     }
+    private sealed record Packet(string Title, string Cover);
 }

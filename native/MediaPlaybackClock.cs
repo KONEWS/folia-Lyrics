@@ -4,6 +4,7 @@ internal readonly record struct MediaTimelineSample(double Position, double Dura
 internal readonly record struct MediaClockSnapshot(double Position, double Duration, bool Playing, double Rate);
 internal sealed class MediaPlaybackClock
 {
+    private const double PauseTransitionDriftSeconds = 1.5;
     private nint session;
     private string song = "";
     private bool initialized, playing;
@@ -23,12 +24,17 @@ internal sealed class MediaPlaybackClock
         // A player may re-stamp the last whole-second position on pause/resume. Only a changed position
         // establishes a new anchor; a timestamp-only update must not undo already displayed progress.
         var fresh = reset || sample.UpdatedAt >= timeline.UpdatedAt && sample.Position != timeline.Position;
+        var pausing = !reset && playing && !sample.Playing;
         if (!reset && !playing && sample.Playing) resumedAt = utcNow;
         if (fresh)
         {
             var datedAt = sample.UpdatedAt > resumedAt ? sample.UpdatedAt : resumedAt;
             var elapsed = (utcNow - datedAt).TotalSeconds;
-            position = sample.Position + (sample.Playing && elapsed is >= 0 and < 21600 ? elapsed * sample.Rate : 0);
+            var sampled = sample.Position + (sample.Playing && elapsed is >= 0 and < 21600 ? elapsed * sample.Rate : 0);
+            // Only the playback-to-pause sample is known to race the final playing frame. Later changed
+            // samples may be a paused seek, so they must remain authoritative even immediately after pause.
+            var stalePause = pausing && sampled < projected && projected - sampled <= PauseTransitionDriftSeconds;
+            position = stalePause ? projected : sampled;
         }
         else position = projected;
         if (reset || sample.UpdatedAt >= timeline.UpdatedAt) timeline = sample;

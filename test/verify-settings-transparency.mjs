@@ -45,7 +45,13 @@ export async function verifySettingsTransparency(page, song, output) {
   await slider.press('Home'); for (let index = 0; index < 30; index++) await slider.press('ArrowRight');
   assert.equal(await saved(), '70'); await material(main, .3, 'keyboard-thirty');
   await page.mouse.click(80, 400); await main.waitFor({ state: 'detached' });
+  const followTitle = page.getByRole('button', { name: 'Folia 桌面歌词，切换跟随音乐软件' });
+  const followMenu = page.getByRole('menu', { name: '选择跟随的音乐软件' });
+  await followTitle.click(); await followMenu.waitFor(); await material(followMenu, .3, 'follow-source-menu');
+  await page.screenshot({ path: `${output}/settings-transparency-follow-menu.png` });
+  await followTitle.click(); await followMenu.waitFor({ state: 'detached' });
   checks.push('theme settings contain opacity with 85% default; increasing the slider makes settings more opaque, dragging preserves renderer references and saves on release, and outside click still closes');
+  checks.push('title source menu uses the same saved 30% glass opacity as settings');
 
   const common = await openVisualSettings(page, 'common');
   assert.equal(await common.getByRole('slider', { name: '设置透明度', exact: true }).inputValue(), '30');
@@ -87,6 +93,8 @@ export async function verifySettingsTransparency(page, song, output) {
   const reloadedCommon = await openVisualSettings(page, 'common'); await reloadedCommon.getByRole('button', { name: '默认', exact: true }).click();
   assert.equal(await saved(), '15'); await material(visualDialog(page), .85, 'reset-default');
   await closeVisualSettings(page);
+  await followTitle.click(); await followMenu.waitFor(); await material(followMenu, .85, 'follow-source-menu-reset');
+  await followTitle.click(); await followMenu.waitFor({ state: 'detached' });
   checks.push('reload keeps the choice, while the existing common-settings reset restores the more opaque 15% default');
   await writeFile(`${output}/settings-transparency-results.json`, JSON.stringify({ checks, samples }, null, 2));
   return { checks, samples };

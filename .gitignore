@@ -122,6 +122,8 @@ test/persistence-smoke/bin/
 test/persistence-smoke/obj/
 test/window-placement-smoke/bin/
 test/window-placement-smoke/obj/
+test/launch-foreground-smoke/bin/
+test/launch-foreground-smoke/obj/
 test/lyric-performance/bin/
 test/lyric-performance/obj/
 test/startup-performance/bin/

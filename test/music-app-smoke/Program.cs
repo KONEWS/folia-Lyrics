@@ -15,6 +15,7 @@ void Reject(Action action, string label)
     throw new Exception(label);
 }
 var json = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+IconChecks.Run(Check);
 var legacy = JsonSerializer.Deserialize<Preferences>("{\"topmost\":true,\"source\":\"salt\",\"immersiveDelay\":5}", json)!;
 Check(legacy.MusicApps.Length == 0 && legacy.ShowMusicAppAddButton && legacy.Topmost && legacy.Source == "salt" && legacy.ImmersiveDelay == 5,
     "legacy preferences default to empty shortcuts and a visible add button without changing existing settings");
@@ -109,6 +110,7 @@ finally
     Directory.Delete(directory);
 }
 Console.WriteLine($"{checks} music-app checks passed; no player was launched and no user preferences were changed.");
+if (args is ["--normalize-icon", var inputIcon, var outputIcon]) IconChecks.NormalizeFixture(inputIcon, outputIcon);
 if (args.Contains("--read-only-discovery"))
 {
     using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(15));

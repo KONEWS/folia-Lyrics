@@ -13,7 +13,7 @@ const checks = [], samples = [], errors = [];
 try {
   let url = process.env.FOLIA_TEST_URL;
   if (!url) {
-    server = await createServer({ configFile: resolve('vite.desktop.config.ts'), server: { host: '127.0.0.1', port: 0, hmr: false } });
+    server = await createServer({ configFile: resolve('vite.desktop.config.ts'), server: { host: '127.0.0.1', port: 0, hmr: false, watch: null } });
     await server.listen(); url = `http://127.0.0.1:${server.httpServer.address().port}/desktop.html`;
   }
   const origin = new URL(url).origin;
@@ -57,10 +57,17 @@ try {
 
   await publish('计时测试'); await page.clock.runFor(4999); assert.equal(await notice.innerText(), '计时测试\n关闭');
   await page.clock.runFor(1); await notice.waitFor({ state: 'detached' });
-  checks.push('the rendered transient notice disappears exactly five seconds after its host message');
+  checks.push('the rendered ordinary transient notice disappears exactly five seconds after its host message');
   await publish('旧消息'); await page.clock.runFor(4000); await publish('新消息'); await page.clock.runFor(1000);
   assert.match(await notice.innerText(), /新消息/); await page.clock.runFor(4000); await notice.waitFor({ state: 'detached' });
   checks.push('a newer host notice survives the old deadline and receives its own five seconds');
+
+  await emit('connectionError', { text: '系统媒体连接暂不可用。' }); await notice.waitFor();
+  assert.match(await notice.innerText(), /系统媒体连接暂不可用/);
+  await page.clock.runFor(2500); await notice.waitFor({ state: 'detached' });
+  assert.equal(await page.locator('.waiting-status').count(), 1);
+  await emit('connectionError', { text: '系统媒体连接暂不可用。' }); assert.equal(await notice.count(), 0);
+  checks.push('connection failure toast expires once while the waiting screen retains the error status');
 
   await publish('打开设置', { id: 'player-source' }); await notice.getByRole('button', { name: '查看设置', exact: true }).click();
   await notice.waitFor({ state: 'detached' }); await page.locator('.control-panel').waitFor();

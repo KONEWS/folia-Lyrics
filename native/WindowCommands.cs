@@ -24,10 +24,7 @@ internal sealed partial class MainWindow
                 break;
             case "rescan": await Scan(null); break;
             case "source":
-                StartWork(); sourceRevision++; media.Invalidate();
-                song = new("", "", "", "", "", false, 0, 0, 1, false, song?.Sources ?? [], Sequence: ++clockSequence);
-                Send("session", song); preferences.Source = cmd.GetProperty("value").GetString() ?? "";
-                lyricKey = "\0"; presentedSong = null; SavePreferences(); await Poll(); break;
+                await ChangeMediaSource(cmd.GetProperty("value").GetString() ?? ""); break;
             case "addMusicApp": await ChooseMusicApp(null); break;
             case "bindMusicApp": await ChooseMusicApp(MusicAppLauncher.ReadSlot(cmd)); break;
             case "removeMusicApp": RemoveMusicApp(MusicAppLauncher.ReadSlot(cmd)); break;
@@ -42,7 +39,7 @@ internal sealed partial class MainWindow
             case "window": WindowCommand(cmd.GetProperty("value")); break;
             case "mediaControl": await ControlMedia(cmd.GetProperty("value")); break;
             case "systemVolume": ChangeSystemVolume(cmd); break;
-            case "topmost": TopMost = preferences.Topmost = cmd.GetProperty("value").GetBoolean(); SavePreferences(); break;
+            case "topmost": SetTopmostPreference(cmd.GetProperty("value").GetBoolean()); break;
             case "closeToTaskbar": preferences.CloseToTaskbar = cmd.GetProperty("value").GetBoolean(); SavePreferences(); break;
             case "audioReactive": preferences.AudioReactive = cmd.GetProperty("value").GetBoolean(); UpdateAudioCapture(); ApplyBackgroundStateForCurrentWindow(); SavePreferences(); break;
             case "transparentBackground": preferences.TransparentBackground = cmd.GetProperty("value").GetBoolean(); ApplyAppearance(); SavePreferences(); break;

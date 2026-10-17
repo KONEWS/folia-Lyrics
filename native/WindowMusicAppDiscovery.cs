@@ -5,6 +5,7 @@ internal sealed partial class MainWindow
     private readonly System.Windows.Forms.Timer musicAppDiscoveryTimer = new() { Interval = 10000 };
     private readonly MusicAppDiscoveryInbox musicAppInbox = new();
     private bool musicAppDiscoveryInitialized, musicAppDiscoveryBusy, musicAppInstalledScanCompleted, musicAppExplicitScanPending, musicAppExplicitScanNotifyPending;
+    private bool musicAppBoundIconsRefreshed;
     private int musicAppDiscoveryRevision;
 
     private void StartMusicAppDiscovery()
@@ -15,9 +16,51 @@ internal sealed partial class MainWindow
             musicAppDiscoveryTimer.Tick += async (_, _) => await DiscoverMusicApps(installed: !musicAppInstalledScanCompleted, notify: false);
             FormClosed += (_, _) => musicAppDiscoveryTimer.Dispose();
         }
+        if (!musicAppBoundIconsRefreshed)
+        {
+            musicAppBoundIconsRefreshed = true;
+            _ = RefreshBoundStoreIcons();
+        }
         if (!preferences.AutoDiscoverMusicApps) { musicAppDiscoveryTimer.Stop(); return; }
         musicAppDiscoveryTimer.Start();
         if (!musicAppInstalledScanCompleted) _ = DiscoverMusicApps(installed: true, notify: false);
+    }
+
+    // Refresh only saved Store artwork once per host run, without scanning or launching any player.
+    private async Task RefreshBoundStoreIcons()
+    {
+        var bound = preferences.MusicApps.Where(app => app.LaunchKind == "store"
+            && MusicAppDiscoveryPolicy.ValidAppUserModelId(app.AppUserModelId)).ToArray();
+        if (bound.Length == 0) return;
+        try
+        {
+            using var deadline = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token);
+            deadline.CancelAfter(TimeSpan.FromSeconds(10));
+            var refreshed = await Task.Run(async () =>
+            {
+                var icons = new Dictionary<int, MusicAppBinding>();
+                foreach (var app in bound)
+                {
+                    deadline.Token.ThrowIfCancellationRequested();
+                    try
+                    {
+                        if (await MusicAppStore.ReadBindingAsync(app.AppUserModelId, deadline.Token) is { Icon.Length: > 0 } current)
+                            icons.Add(app.Slot, current);
+                    }
+                    catch (Exception error) when (error is not OperationCanceledException) { }
+                }
+                return icons;
+            }, deadline.Token);
+            if (IsDisposed || Disposing || lifetime.IsCancellationRequested) return;
+            var updated = MusicAppLauncher.ApplyRefreshedStoreIcons(preferences.MusicApps, refreshed);
+            if (!ReferenceEquals(updated, preferences.MusicApps))
+            {
+                preferences.MusicApps = updated;
+                SavePreferences();
+            }
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception error) { DataFiles.Log(error); }
     }
 
     // Snapshot bound/blocked identities before background IO, then reject results invalidated by a user action.

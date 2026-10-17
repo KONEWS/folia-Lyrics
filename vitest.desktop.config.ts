@@ -6,5 +6,5 @@ import { fileURLToPath } from 'node:url';
 export default defineConfig({
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
   test: { environment: 'node', include: ['test/desktopClock.test.ts', 'test/onlinePackets.test.ts', 'test/audioProgressSpectrum.test.ts', 'test/desktopCoverTheme.test.ts',
-    'test/unit/desktop/**/*.test.ts'] },
+    'test/unit/desktop/**/*.test.ts', 'test/unit/utils/colorExtractor.test.ts'] },
 });

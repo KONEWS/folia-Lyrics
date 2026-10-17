@@ -88,6 +88,16 @@ jobs:
         env:
           FOLIA_UI_OUTPUT: test-results/music-apps-ci
 
+      - name: Run title-bar music app follow menu regression
+        run: node test/verify-desktop-follow-menu.mjs
+        env:
+          FOLIA_UI_OUTPUT: test-results/desktop-follow-menu-ci
+
+      - name: Run desktop player and lyric replacement regression
+        run: node test/verify-desktop-switching.mjs
+        env:
+          FOLIA_UI_OUTPUT: test-results/desktop-switching-ci
+
       - name: Run desktop notice timing and layout regression
         run: node test/verify-desktop-notices.mjs
         env:
@@ -177,7 +187,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.nuget/packages
-          key: desktop-nuget-${{ runner.os }}-dotnet10-${{ hashFiles('native/**/*.csproj', 'test/transport-smoke/*.csproj', 'test/lyric-performance/*.csproj', 'test/window-close-smoke/*.csproj', 'test/music-app-smoke/*.csproj', 'test/window-background-smoke/*.csproj', 'test/tray-menu-smoke/*.csproj', 'test/persistence-smoke/*.csproj', 'test/window-placement-smoke/*.csproj', 'test/diagnostics-smoke/*.csproj') }}
+          key: desktop-nuget-${{ runner.os }}-dotnet10-${{ hashFiles('native/**/*.csproj', 'test/transport-smoke/*.csproj', 'test/lyric-performance/*.csproj', 'test/window-close-smoke/*.csproj', 'test/music-app-smoke/*.csproj', 'test/window-background-smoke/*.csproj', 'test/tray-menu-smoke/*.csproj', 'test/persistence-smoke/*.csproj', 'test/window-placement-smoke/*.csproj', 'test/diagnostics-smoke/*.csproj', 'test/launch-foreground-smoke/*.csproj') }}
           restore-keys: desktop-nuget-${{ runner.os }}-dotnet10-
 
       - name: Run transport smoke checks
@@ -200,6 +210,9 @@ jobs:
 
       - name: Run music app binding smoke checks
         run: dotnet run --project test/music-app-smoke/MusicAppSmoke.csproj -c Release
+
+      - name: Run music app launch foreground checks
+        run: dotnet run --project test/launch-foreground-smoke/LaunchForegroundSmoke.csproj -c Release
 
       # Exercise native tray geometry, commands and readable fallback without WebView, audio or player actions.
       - name: Run offline tray menu smoke checks

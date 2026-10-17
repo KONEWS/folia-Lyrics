@@ -9,7 +9,7 @@ import { createFrameDemand, type FrameDemand } from '../../../src/desktopLyrics/
 const hooks = vi.hoisted(() => ({ effects: [] as (() => (() => void) | void)[], states: [] as unknown[] }));
 vi.mock('react', async importOriginal => ({
   ...await importOriginal<typeof import('react')>(),
-  useEffect: (effect: () => (() => void) | void) => hooks.effects.push(effect),
+  useLayoutEffect: (effect: () => (() => void) | void) => hooks.effects.push(effect),
   useMemo: (create: () => unknown) => create(),
   useRef: (current: unknown) => ({ current }),
   useState: (initial: unknown) => {
@@ -24,14 +24,14 @@ vi.mock('framer-motion', async importOriginal => {
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); hooks.effects.length = 0; hooks.states.length = 0; });
 
 // The RAF stub executes each requested frame once and exposes cleanup cancellation.
-function mount(reactive: boolean, demand?: FrameDemand) {
+function mount(reactive: boolean, demand?: FrameDemand, lyricKey?: string, presentationReady = true) {
   const scheduled = new Map<number, FrameRequestCallback>(); let identifier = 0;
   vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => { scheduled.set(++identifier, callback); return identifier; });
   vi.stubGlobal('cancelAnimationFrame', (id: number) => scheduled.delete(id));
   const clock = { current: { ...EMPTY, hasTimeline: true, position: 2, duration: 180, received: 1000 } };
   const input = { current: { bins: new Uint8Array(1024).fill(128), sampleRate: 48000, received: 1000 } };
   const manual: ManualClock = { enabled: false, playing: false, position: 0, received: 1000 };
-  const runtime = useVisualizerClock([], clock, input, manual, 0, reactive, demand);
+  const runtime = useVisualizerClock([], clock, input, manual, 0, reactive, demand, lyricKey, presentationReady);
   const cleanup = hooks.effects.at(-1)!();
   const tick = (now: number) => {
     const pending = scheduled.entries().next().value!;
@@ -40,6 +40,29 @@ function mount(reactive: boolean, demand?: FrameDemand) {
   return { clock, input, runtime, tick, cleanup, scheduled };
 }
 describe('desktop clock audio work', () => {
+  it('publishes an already ready paused scene before its first animation frame', () => {
+    const mounted = mount(false);
+    expect(mounted.runtime.currentTime.get()).toBe(2); expect(mounted.runtime.playbackTime.get()).toBe(2);
+    mounted.cleanup?.();
+  });
+  it('holds lyric time even for the new key until its font and presentation are ready', () => {
+    const demand = createFrameDemand(), mounted = mount(false, demand, '', false);
+    mounted.clock.current = { ...mounted.clock.current, position: 43 };
+    demand.request(); mounted.tick(1000);
+    expect(mounted.runtime.currentTime.get()).toBe(0); expect(mounted.runtime.playbackTime.get()).toBe(43);
+    mounted.cleanup?.();
+  });
+  it('freezes the outgoing lyric clock while transport follows a new song, and still supports legacy clocks', () => {
+    const demand = createFrameDemand(), mounted = mount(false, demand, 'visible-song');
+    mounted.clock.current = { ...mounted.clock.current, key: 'visible-song' }; mounted.tick(1000);
+    expect(mounted.runtime.currentTime.get()).toBe(2);
+    mounted.clock.current = { ...mounted.clock.current, key: 'new-song', position: 43, playing: true };
+    vi.stubGlobal('performance', { now: () => 1000 }); demand.request(); mounted.tick(1100);
+    expect(mounted.runtime.currentTime.get()).toBe(2); expect(mounted.runtime.playbackTime.get()).toBeCloseTo(43.1);
+    mounted.clock.current = { ...mounted.clock.current, key: undefined, position: 6, playing: false };
+    demand.request(); expect(mounted.runtime.currentTime.get()).toBe(6);
+    mounted.cleanup?.();
+  });
   it('coalesces active audio requests into the next RAF without publishing extra lyric clock changes', () => {
     const demand = createFrameDemand(), mounted = mount(true, demand);
     mounted.clock.current = { ...mounted.clock.current, playing: true };
