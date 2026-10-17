@@ -1,10 +1,10 @@
-# folia-Lyrics 0.4.39
+# folia-Lyrics 0.4.40
 
 Windows 歌词显示器，自身不播放音频。使用 Windows GSMTC 获取其他播放器公开的歌曲和进度，使用 WASAPI 默认输出设备的混合声音驱动原版歌词动效。
 
-GitHub 已发布版本：[0.4.39 发布页](https://github.com/KONEWS/folia-Lyrics/releases/tag/desktop-v0.4.39)。下载 `FoliaLyrics-0.4.39-win-x64.zip`，解压后运行 `FoliaLyrics.exe`；发布页提供 `SHA256SUMS.txt` 用于核对压缩包和程序。本地重新编译默认输出到 `release/0.4.39/win-x64/FoliaLyrics.exe`。
+GitHub 发布页：[0.4.40 发布页](https://github.com/KONEWS/folia-Lyrics/releases/tag/desktop-v0.4.40)。完整便携包为 `FoliaLyrics-0.4.40-win-x64.zip`，解压后运行 `FoliaLyrics.exe`；也可下载独立程序 `FoliaLyrics-0.4.40-win-x64.exe` 直接运行。发布页提供 `SHA256SUMS.txt` 用于核对压缩包和程序。本地重新编译默认输出到 `release/0.4.40/win-x64/FoliaLyrics.exe`。
 
-## 本地预览中的未发布改动
+## 0.4.40 播放器切换与歌词性能
 
 - 椒盐等商店应用优先读取高分辨率图标，自动更新已有绑定；从首页或设置启动音乐软件成功后，直接跟随所点击的软件，无需再从左上角切换。启动失败保留原来源，较晚完成的启动不会覆盖之后的手动选择；歌词窗口前置并临时置顶约 5 秒。
 - 暂停时避免播放器首次滞后进度使歌词回跳；后续暂停中拖动仍更新画面。系统媒体连接故障提示约 2.5 秒后收起，同一次故障不反复弹出。
@@ -315,7 +315,7 @@ npm run typecheck:desktop
 npm run build:desktop
 npm run test:desktop
 node tools/package-web.mjs
-dotnet publish native/FoliaLyrics.csproj -c Release -r win-x64 --self-contained true -o release/0.4.39/win-x64
+dotnet publish native/FoliaLyrics.csproj -c Release -r win-x64 --self-contained true -o release/0.4.40/win-x64
 ```
 
 `build-windows.cmd` 从 `native/FoliaLyrics.csproj` 读取版本，输出到 `release/<版本>/win-x64/`。每次更新递增原生版本号后重新构建，即可得到独立的版本文件夹；手动执行上述发布命令时，也应将输出路径中的版本同步更新。
