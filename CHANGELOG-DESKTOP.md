@@ -1,5 +1,11 @@
 # folia-Lyrics 桌面变更记录
 
+## 0.5.0（2026-10-17）
+
+GitHub 发布标签：`desktop-v0.5.0`；完整便携包：`FoliaLyrics-0.5.0-win-x64.zip`；独立程序：`FoliaLyrics-0.5.0-win-x64.exe`；校验文件：`SHA256SUMS.txt`。
+
+- 整理独立 .NET 桌面版的版本编号，功能沿用 0.4.40，重新生成 Windows x64 便携包和独立程序。
+
 ## 0.4.40（2026-10-17）
 
 GitHub 发布标签：`desktop-v0.4.40`；完整便携包：`FoliaLyrics-0.4.40-win-x64.zip`；独立程序：`FoliaLyrics-0.4.40-win-x64.exe`；校验文件：`SHA256SUMS.txt`。

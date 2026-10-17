@@ -12,7 +12,7 @@ folia-Lyrics 基于 [Folia](https://github.com/chthollyphile/folia-major) 的歌
 
 界面会从歌曲封面中取色，让玻璃控制栏、进度频谱和歌词动效使用同一套配色。想换个感觉，可以点顶栏的“刷新主题色”。底部频谱跟随 Windows 默认输出设备的声音变化。
 
-0.4.40 改进播放器来源切换与歌词更新：从首页或设置启动音乐软件后会自动跟随该应用，切换时保留有效画面并丢弃过期读取；同曲歌词替换成功后再整体更新，快速切歌时也能平稳衔接。启动播放器时歌词窗口会临时前置，商店应用图标更清晰，标题栏可直接打开播放器列表。暂停时的进度同步和连接错误提示也更加稳定。
+0.5.0 沿用 0.4.40 的播放器来源切换与歌词更新改进：从首页或设置启动音乐软件后会自动跟随该应用，切换时保留有效画面并丢弃过期读取；同曲歌词替换成功后再整体更新，快速切歌时也能平稳衔接。启动播放器时歌词窗口会临时前置，商店应用图标更清晰，标题栏可直接打开播放器列表。暂停时的进度同步和连接错误提示也更加稳定。
 
 此前版本还加入了全屏沉浸控件、播放器快捷启动、统一设置面板、歌词时间校准，以及降低后台声音采集和空闲动画开销等改进。各版本详情见[桌面变更记录](CHANGELOG-DESKTOP.md)。
 
@@ -27,7 +27,7 @@ folia-Lyrics 基于 [Folia](https://github.com/chthollyphile/folia-major) 的歌
 
 面向 Windows 11 x64。原生亚克力效果需要 Windows 11 22H2（22621）或更新版本，并开启系统透明效果；不满足条件时，界面会使用回退效果。
 
-当前版本是 [0.4.40](https://github.com/KONEWS/folia-Lyrics/releases/tag/desktop-v0.4.40)。从 Releases 下载 `FoliaLyrics-0.4.40-win-x64.zip`，解压后运行 `FoliaLyrics.exe`，再打开播放器播放一首歌。也可以先确认添加发现的音乐软件，再点击首页图标启动播放器。运行界面需要 Microsoft Edge WebView2 Runtime，发布包自带 .NET 运行时。
+当前版本是 [0.5.0](https://github.com/KONEWS/folia-Lyrics/releases/tag/desktop-v0.5.0)。从 Releases 下载 `FoliaLyrics-0.5.0-win-x64.zip`，解压后运行 `FoliaLyrics.exe`，再打开播放器播放一首歌。也可以先确认添加发现的音乐软件，再点击首页图标启动播放器。运行界面需要 Microsoft Edge WebView2 Runtime，发布包自带 .NET 运行时。
 
 窗口没显示歌词时，先确认选中了正在播放的播放器，再尝试重新匹配或加载本地歌词。某些播放器没有公开媒体会话，或没有提供完整进度，这种情况下自动同步会受到限制。
 
@@ -57,7 +57,7 @@ build-windows.cmd
 脚本会按锁文件安装依赖、检查桌面版本和 TypeScript、运行桌面单测、构建界面并发布 Windows 宿主。完成后，程序位于：
 
 ```text
-release/0.4.40/win-x64/FoliaLyrics.exe
+release/0.5.0/win-x64/FoliaLyrics.exe
 ```
 
 输出目录中的版本来自 `native/FoliaLyrics.csproj`，每个版本独立保存；发布目录包含使用说明、许可证和 `SHA256SUMS.txt`。
@@ -100,6 +100,6 @@ dotnet run --project test/transport-smoke/TransportSmoke.csproj
 
 这是从 [chthollyphile/folia-major](https://github.com/chthollyphile/folia-major) 派生的独立项目。感谢上游提供歌词渲染器和视觉效果；这个分支主要加入 Windows 桌面宿主、外部播放器连接、在线歌词匹配，以及围绕桌面使用的界面和操作。
 
-当前桌面宿主版本为 **0.4.40**，上游源码基线为 **v0.7.11**（`6fe68d89abb7031eb266d71fda01b36a0fa0573e`）。两套版本号独立，本项目不是上游官方发行版。
+当前桌面宿主版本为 **0.5.0**，上游源码基线为 **v0.7.11**（`6fe68d89abb7031eb266d71fda01b36a0fa0573e`）。两套版本号独立，本项目不是上游官方发行版。
 
 项目继续使用 [AGPL-3.0](LICENSE) 许可证。第三方许可证见 [licenses/](licenses/)，在线资源来源见 [ONLINE-SOURCES.md](ONLINE-SOURCES.md)。使用在线歌词、封面和音乐资源时，请遵守对应服务条款与版权要求。

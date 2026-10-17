@@ -1,8 +1,10 @@
-# folia-Lyrics 0.4.40
+# folia-Lyrics 0.5.0
 
 Windows 歌词显示器，自身不播放音频。使用 Windows GSMTC 获取其他播放器公开的歌曲和进度，使用 WASAPI 默认输出设备的混合声音驱动原版歌词动效。
 
-GitHub 发布页：[0.4.40 发布页](https://github.com/KONEWS/folia-Lyrics/releases/tag/desktop-v0.4.40)。完整便携包为 `FoliaLyrics-0.4.40-win-x64.zip`，解压后运行 `FoliaLyrics.exe`；也可下载独立程序 `FoliaLyrics-0.4.40-win-x64.exe` 直接运行。发布页提供 `SHA256SUMS.txt` 用于核对压缩包和程序。本地重新编译默认输出到 `release/0.4.40/win-x64/FoliaLyrics.exe`。
+GitHub 发布页：[0.5.0 发布页](https://github.com/KONEWS/folia-Lyrics/releases/tag/desktop-v0.5.0)。完整便携包为 `FoliaLyrics-0.5.0-win-x64.zip`，解压后运行 `FoliaLyrics.exe`；也可下载独立程序 `FoliaLyrics-0.5.0-win-x64.exe` 直接运行。发布页提供 `SHA256SUMS.txt` 用于核对压缩包和程序。本地重新编译默认输出到 `release/0.5.0/win-x64/FoliaLyrics.exe`。
+
+0.5.0 整理独立 .NET 桌面版的版本编号，沿用 0.4.40 的功能。
 
 ## 0.4.40 播放器切换与歌词性能
 
@@ -315,7 +317,7 @@ npm run typecheck:desktop
 npm run build:desktop
 npm run test:desktop
 node tools/package-web.mjs
-dotnet publish native/FoliaLyrics.csproj -c Release -r win-x64 --self-contained true -o release/0.4.40/win-x64
+dotnet publish native/FoliaLyrics.csproj -c Release -r win-x64 --self-contained true -o release/0.5.0/win-x64
 ```
 
 `build-windows.cmd` 从 `native/FoliaLyrics.csproj` 读取版本，输出到 `release/<版本>/win-x64/`。每次更新递增原生版本号后重新构建，即可得到独立的版本文件夹；手动执行上述发布命令时，也应将输出路径中的版本同步更新。
