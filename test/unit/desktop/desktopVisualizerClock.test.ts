@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MotionValue } from 'framer-motion';
 import { useVisualizerClock } from '../../../src/desktopLyrics/useVisualizerClock';
-import { EMPTY } from '../../../src/desktopLyrics/bridge';
+import { EMPTY, type Clock } from '../../../src/desktopLyrics/bridge';
 import type { ManualClock } from '../../../src/desktopLyrics/clock';
 import { createFrameDemand, type FrameDemand } from '../../../src/desktopLyrics/frameDemand';
 
@@ -28,7 +28,7 @@ function mount(reactive: boolean, demand?: FrameDemand, lyricKey?: string, prese
   const scheduled = new Map<number, FrameRequestCallback>(); let identifier = 0;
   vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => { scheduled.set(++identifier, callback); return identifier; });
   vi.stubGlobal('cancelAnimationFrame', (id: number) => scheduled.delete(id));
-  const clock = { current: { ...EMPTY, hasTimeline: true, position: 2, duration: 180, received: 1000 } };
+  const clock: { current: Clock } = { current: { ...EMPTY, hasTimeline: true, position: 2, duration: 180, received: 1000 } };
   const input = { current: { bins: new Uint8Array(1024).fill(128), sampleRate: 48000, received: 1000 } };
   const manual: ManualClock = { enabled: false, playing: false, position: 0, received: 1000 };
   const runtime = useVisualizerClock([], clock, input, manual, 0, reactive, demand, lyricKey, presentationReady);
