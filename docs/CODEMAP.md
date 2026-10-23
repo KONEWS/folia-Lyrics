@@ -18,9 +18,9 @@
 | library | 256+ |
 | services | 256+ |
 | backend/electron | 128+ |
+| src (其他) | 128+ |
 | utils | 128+ |
 | hooks | 64+ |
-| src (其他) | 64+ |
 | 其他 | 64+ |
 | stores | 32+ |
 | types | 16+ |
@@ -52,8 +52,10 @@
 | 32+ | `src/components/visualizer/definition.ts` |
 | 32+ | `src/components/visualizer/hanabi/types.ts` |
 | 32+ | `src/components/visualizer/registry.tsx` |
+| 32+ | `src/components/visualizer/tuningRegistry.ts` |
 | 32+ | `src/components/wall/layout.ts` |
 | 32+ | `src/components/wall/wallSlots.ts` |
+| 32+ | `src/desktopLyrics/bridge.ts` |
 | 32+ | `src/library/core/account/account.contract.ts` |
 | 32+ | `src/library/core/collection/collection.contract.ts` |
 | 32+ | `src/library/core/directory/directory.contract.ts` |
@@ -312,7 +314,6 @@
 
 下面这些边的依赖方向本身就是错的：
 
-- `src/stores/useVisualizerSettingsStore.ts` → `src/components/visualizer/registry.tsx`  —— store 不应依赖组件
 - `src/utils/lyrics/lyricMatchSources.ts` → `src/stores/useOnlineProviderAccountStore.ts`  —— 纯变换不应依赖 UI 或状态
 
 ### 目录归属存疑
@@ -321,11 +322,7 @@
 依赖方向没问题，是文件住在了 UI 目录（`src/components/`、`src/library/` 的 suites / app）下面。修法是移动文件，不是改依赖。
 
 - `src/services/obs/visualSettingsConfig.ts` → `src/components/visualizer/tuningRegistry.ts`
-- `src/services/ponder/pagePonderTarget.ts` → `src/components/modal/settings/navigation/settingsAnchorModel.ts`
 - `src/services/sync/settingsSnapshot.ts` → `src/components/visualizer/tuningRegistry.ts`
 - `src/stores/useExploreFeedStore.ts` → `src/components/app/home/explore/exploreFeedMemory.ts`
-- `src/stores/usePlaybackStore.ts` → `src/components/app/playback/createCoverUrlResolver.ts`
-- `src/stores/useSettingsModalStore.ts` → `src/components/command-palette/pinnedCommandPreferences.ts`
 - `src/stores/useVisualizerSettingsStore.ts` → `src/components/visualizer/tuningRegistry.ts`
-- `src/utils/themeColorMath.ts` → `src/components/visualizer/colorMix.ts`
 
