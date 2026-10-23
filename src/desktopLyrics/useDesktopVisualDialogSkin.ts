@@ -46,12 +46,15 @@ export function useDesktopVisualDialogSkin(panel: RefObject<HTMLElement | null>,
       const windows = node.matches('[data-folia-keyboard-window]') ? [node] : Array.from(node.querySelectorAll('[data-folia-keyboard-window]'));
       windows.forEach(window => {
         addSkin(window, 'desktop-visual-asset-dialog');
-        const dialog = window.firstElementChild;
+        // Keep Sheet identity through its exit, when its active data attributes are removed.
+        if (window.hasAttribute('data-folia-sheet')) addSkin(window, 'desktop-visual-sheet');
+        // A shared Sheet places a non-interactive scrim before its semantic dialog.
+        const dialog = window.querySelector(':scope > [role="dialog"]') ?? window.firstElementChild;
         if (!(dialog instanceof HTMLElement)) return;
         dialog.setAttribute('role', 'dialog'); dialog.setAttribute('aria-modal', 'true');
         const title = dialog.querySelector('h2')?.textContent;
         if (title) dialog.setAttribute('aria-label', title);
-        const close = Array.from(dialog.children).find(child => child instanceof HTMLButtonElement);
+        const close = window.hasAttribute('data-folia-sheet') ? null : Array.from(dialog.children).find(child => child instanceof HTMLButtonElement);
         if (close instanceof HTMLButtonElement) close.setAttribute('aria-label', closeLabel);
         observer.observe(window, { childList: true, subtree: true });
       });

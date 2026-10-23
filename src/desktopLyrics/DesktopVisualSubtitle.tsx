@@ -1,3 +1,4 @@
+import type { SubtitleContentMode } from '../types';
 import DesktopSelect from './DesktopSelect';
 import DesktopVisualFont from './DesktopVisualFont';
 import { useVisualTranslation, VisualCard, VisualRange, VisualToggle } from './DesktopVisualControls';
@@ -19,9 +20,9 @@ export default function DesktopVisualSubtitle({ model }: { model: DesktopVisualS
     <button type="button" className="desktop-visual-reset" onClick={model.resetSubtitle}>{t('ui.default')}</button>
     <VisualToggle label={t('desktopVisual.showTranslation')} checked={model.translated} onChange={model.setTranslated}/>
     <label className="desktop-visual-field"><span>{t('options.subtitleContentMode')}</span><DesktopSelect label={t('options.subtitleContentMode')}
-      value={settings.subtitleContentMode} onChange={value => patch({ subtitleContentMode: value as 'translation' | 'romanization' | 'none' })}
-      options={(['translation', 'romanization', 'none'] as const).map(value => ({ value,
-        label: t(`options.subtitleContent${value === 'translation' ? 'Translation' : value === 'romanization' ? 'Romanization' : 'None'}`) }))}/></label>
+      value={settings.subtitleContentMode} onChange={value => patch({ subtitleContentMode: value as SubtitleContentMode })}
+      options={(['translation', 'romanization', 'both', 'none'] as const).map(value => ({ value,
+        label: t(`options.subtitleContent${value === 'translation' ? 'Translation' : value === 'romanization' ? 'Romanization' : value === 'both' ? 'Both' : 'None'}`) }))}/></label>
     {toggles.map(([key, label]) => <VisualToggle key={key} label={t(label)} checked={settings[key]} onChange={next => patch({ [key]: next })}/>)}
     <VisualRange label={t('options.subtitleFontScale')} value={settings.subtitleFontScale} min={0.85} max={1.4}
       display={`${Math.round(settings.subtitleFontScale * 100)}%`} onChange={subtitleFontScale => patch({ subtitleFontScale })}

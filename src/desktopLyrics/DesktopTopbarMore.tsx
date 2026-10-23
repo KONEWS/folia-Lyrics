@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useId, useImperativeHandle, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { MoreHorizontal } from 'lucide-react';
-import { useCustomSelectPosition } from '../components/shared/useCustomSelectPosition';
-import { useCustomSelectKeyboard } from '../components/shared/useCustomSelectKeyboard';
-import type { CustomSelectMenuNavigation } from '../components/shared/useCustomSelectOptionFocus';
+import { useCustomSelectPosition } from './select/useCustomSelectPosition';
+import { useCustomSelectKeyboard } from './select/useCustomSelectKeyboard';
+import type { CustomSelectMenuNavigation } from './select/useCustomSelectOptionFocus';
 import './topbar-more.css';
 
 // src/desktopLyrics/DesktopTopbarMore.tsx — compact actions on the shared glass menu and keyboard navigation.

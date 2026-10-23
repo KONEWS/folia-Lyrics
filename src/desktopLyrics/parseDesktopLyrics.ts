@@ -18,7 +18,7 @@ async function parseProviderLyrics(...args: Parameters<typeof parseLyricsAsync>)
 export async function parseDesktopLyrics(packet: LyricPacket) {
   if (packet.format === 'qq-qrc') {
     try {
-      const { qrcDecrypt } = await import('../utils/lyrics/providers/qrcDecrypt');
+      const { qrcDecrypt } = await import('../services/onlineMusic/qq/qrcDecrypt');
       const content = await qrcDecrypt(packet.content);
       const decodeOptional = async (value?: string) => value ? qrcDecrypt(value).catch(() => '') : '';
       const translation = await decodeOptional(packet.translation), roma = await decodeOptional(packet.romanization);

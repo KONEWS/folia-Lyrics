@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { extractColors, extractRepresentativeColors } from '../../../src/utils/colorExtractor';
+import { extractColors, extractRepresentativeColors, loadImagePixels } from '../../../src/utils/colorExtractor';
 
 // test/unit/utils/colorExtractor.test.ts — obsolete cover loads release image work before palette extraction.
 class ImageStub {
@@ -52,5 +52,28 @@ describe.each([['representative', extractRepresentativeColors], ['vibrant', extr
         const result = extract('cover-a', 5, controller.signal);
         ImageStub.instances[0].onload!(); controller.abort();
         expect(await result).toEqual([]); expect(drawImage).toHaveBeenCalledTimes(1);
+    });
+});
+
+// The upstream wall's silent pixel read and the desktop's cancellation share one load lifecycle.
+describe('shared image pixel options', () => {
+    it('silences unreadable wall covers and releases their abort listener', async () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const controller = new AbortController(), removeListener = vi.spyOn(controller.signal, 'removeEventListener');
+        getImageData.mockImplementationOnce(() => { throw new Error('tainted canvas'); });
+        const result = loadImagePixels('wall-cover', { silent: true, signal: controller.signal });
+        ImageStub.instances[0].onload!();
+        expect(await result).toBeNull(); expect(warn).not.toHaveBeenCalled();
+        expect(removeListener).toHaveBeenCalledWith('abort', expect.any(Function));
+        expect(ImageStub.instances[0].onload).toBeNull();
+        warn.mockRestore();
+    });
+    it('still reports ordinary image failures and resolves them once', async () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const result = loadImagePixels('unreadable-cover');
+        const image = ImageStub.instances[0]; image.onerror!(new Event('error'));
+        expect(await result).toBeNull(); expect(warn).toHaveBeenCalledOnce();
+        expect(image.onerror).toBeNull(); expect(image.onload).toBeNull();
+        warn.mockRestore();
     });
 });

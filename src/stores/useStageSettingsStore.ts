@@ -54,7 +54,8 @@ export type StageSettingsState = {
     /** auto 模式下的显示时长（秒），3-60 */
     stageTrackPillTimeoutSec: number;
     stageTrackPillOnHome: boolean;
-    handleToggleNowPlayingStage: (enable: boolean) => void;
+    /** OBS 浏览器源有客户端连接时，主窗口是否继续渲染重动画（默认 false = 主窗口切到 still） */
+    obsKeepMainWindowAnimation: boolean;
     // Web stage-source tri-state mutually-exclusive selection: null disables, else one of 'now-playing' or 'playercap'. Electron uses stageStatus.source.
     setWebStageSource: (source: 'now-playing' | 'playercap' | null) => void;
     setPlayerCapHost: (host: string) => void;
@@ -65,6 +66,7 @@ export type StageSettingsState = {
     handleSetStageTrackPillMode: (mode: StageTrackPillMode) => void;
     handleSetStageTrackPillTimeoutSec: (sec: number) => void;
     handleToggleStageTrackPillOnHome: (enable: boolean) => void;
+    handleToggleObsKeepMainWindowAnimation: (enable: boolean) => void;
 };
 
 export const useStageSettingsStore = create<StageSettingsState>((set, get) => ({
@@ -78,6 +80,7 @@ export const useStageSettingsStore = create<StageSettingsState>((set, get) => ({
     stageTrackPillMode: readStoredStageTrackPillMode(),
     stageTrackPillTimeoutSec: readStoredStageTrackPillTimeoutSec(),
     stageTrackPillOnHome: getStoredBoolean('stage_track_pill_on_home', false),
+    obsKeepMainWindowAnimation: getStoredBoolean('obs_keep_main_window_animation', false),
     setWebStageSource: (source) => {
         const wasEnabled = get().enableNowPlayingStage || get().enablePlayerCapStage;
         const enableNowPlaying = source === 'now-playing';
@@ -110,14 +113,6 @@ export const useStageSettingsStore = create<StageSettingsState>((set, get) => ({
         setStoredBoolean('playercap_sticky', sticky);
         set({ playerCapSticky: sticky });
     },
-    handleToggleNowPlayingStage: (enable) => {
-        setStoredBoolean('enable_now_playing_stage', enable);
-        set({ enableNowPlayingStage: enable });
-        setStatusMessage({
-            type: 'info',
-            text: i18n.t('notifications.' + (enable ? 'stageModeOn' : 'stageModeOff')),
-        });
-    },
     setWebObsThemeMode: (mode) => {
         if (typeof window !== 'undefined') localStorage.setItem('web_obs_theme_mode', mode);
         set({ webObsThemeMode: mode });
@@ -141,6 +136,10 @@ export const useStageSettingsStore = create<StageSettingsState>((set, get) => ({
         }
         set({ stageTrackPillOnHome: enable });
     },
+    handleToggleObsKeepMainWindowAnimation: (enable) => {
+        setStoredBoolean('obs_keep_main_window_animation', enable);
+        set({ obsKeepMainWindowAnimation: enable });
+    },
 }));
 
 /**
@@ -158,7 +157,7 @@ export const selectStageSettingsSnapshot = (state: StageSettingsState) => ({
     stageTrackPillMode: state.stageTrackPillMode,
     stageTrackPillTimeoutSec: state.stageTrackPillTimeoutSec,
     stageTrackPillOnHome: state.stageTrackPillOnHome,
-    handleToggleNowPlayingStage: state.handleToggleNowPlayingStage,
+    obsKeepMainWindowAnimation: state.obsKeepMainWindowAnimation,
     setWebStageSource: state.setWebStageSource,
     setPlayerCapHost: state.setPlayerCapHost,
     setPlayerCapPlayer: state.setPlayerCapPlayer,
@@ -168,4 +167,5 @@ export const selectStageSettingsSnapshot = (state: StageSettingsState) => ({
     handleSetStageTrackPillMode: state.handleSetStageTrackPillMode,
     handleSetStageTrackPillTimeoutSec: state.handleSetStageTrackPillTimeoutSec,
     handleToggleStageTrackPillOnHome: state.handleToggleStageTrackPillOnHome,
+    handleToggleObsKeepMainWindowAnimation: state.handleToggleObsKeepMainWindowAnimation,
 });

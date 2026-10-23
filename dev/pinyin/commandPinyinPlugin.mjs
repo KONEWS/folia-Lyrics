@@ -30,8 +30,13 @@ const RESOLVED_VIRTUAL_MODULE_ID = `\0${VIRTUAL_MODULE_ID}`;
 const ZH_LOCALE_PATH = path.join(ROOT, 'src/i18n/locales/zh-CN.ts');
 const COMMANDS_DIR = path.join(ROOT, 'src/components/command-palette/commands');
 const COMMAND_FACTORIES_PATH = path.join(ROOT, 'src/components/command-palette/commandFactories.ts');
+const LIBRARY_SUITES_DIR = path.join(ROOT, 'src/library/suites');
+/** library suite 的外观动作（manifest 的 chromeActions）只能声明在这两种文件里，关键词才会生成拼音。 */
+const SUITE_CHROME_FILE_NAMES = ['entry.ts', 'chromeActions.ts'];
+const VISUALIZER_DIR = path.join(ROOT, 'src/components/visualizer');
+const MODE_ENTRY_FILE = 'entry.tsx';
 
-const parse = (filePath) => parseAst(fs.readFileSync(filePath, 'utf8'), { lang: 'ts' });
+const parse = (filePath) => parseAst(fs.readFileSync(filePath, 'utf8'), { lang: filePath.endsWith('.tsx') ? 'tsx' : 'ts' });
 
 /** 泛型 ESTree 遍历：任何带 type 的对象都当节点，数组逐个下钻。 */
 const walk = (node, visit) => {
@@ -143,10 +148,61 @@ const collectCommandSynonymPhrases = (sink) => {
     files.forEach(filePath => collectCjkStrings(parse(filePath), sink));
 };
 
+/**
+ * library suite 的外观动作（B2）：命令由命令面板在启动时按各 suite manifest 的 chromeActions 生成，
+ * 手写的中文关键词就在 `src/library/suites/<id>/entry.ts` 或同目录的 `chromeActions.ts` 里。
+ * 只扫这两种文件（不扫整个 suite：组件里的中文字面量与命令检索无关）。
+ */
+const listSuiteChromeFiles = () => {
+    if (!fs.existsSync(LIBRARY_SUITES_DIR)) {
+        return [];
+    }
+    return fs.readdirSync(LIBRARY_SUITES_DIR, { withFileTypes: true })
+        .filter(entry => entry.isDirectory())
+        .flatMap(entry => SUITE_CHROME_FILE_NAMES.map(name => path.join(LIBRARY_SUITES_DIR, entry.name, name)))
+        .filter(filePath => fs.existsSync(filePath));
+};
+
+const collectSuiteChromePhrases = (sink) => {
+    listSuiteChromeFiles().forEach(filePath => collectCjkStrings(parse(filePath), sink));
+};
+
+/** 歌词动画模式和背景的入口文件：visualizer/<mode>/entry.tsx 与 visualizer/backgrounds/<mode>/entry.tsx。 */
+const isModeEntryPath = (filePath) => {
+    const modeDir = path.dirname(filePath);
+    const parentDir = path.dirname(modeDir);
+    return path.basename(filePath) === MODE_ENTRY_FILE
+        && (parentDir === VISUALIZER_DIR || parentDir === path.join(VISUALIZER_DIR, 'backgrounds'));
+};
+
+const listModeEntryPaths = () => [VISUALIZER_DIR, path.join(VISUALIZER_DIR, 'backgrounds')].flatMap(dir => (
+    fs.readdirSync(dir, { withFileTypes: true })
+        .filter(item => item.isDirectory())
+        .map(item => path.join(dir, item.name, MODE_ENTRY_FILE))
+        .filter(entryPath => fs.existsSync(entryPath))
+));
+
+/**
+ * 切换到某个歌词动画模式或背景的那条命令，文案写在该模式自己的 entry.tsx 的 command 里
+ * （commands/visualizerCommands.ts 按 registry 生成命令），所以同义词也得到那里去收。
+ * 只收 command 这个属性下面的字面量：入口文件里还有显示名之类的中文，和命令检索无关。
+ */
+const collectModeEntryCommandPhrases = (sink) => {
+    listModeEntryPaths().forEach((entryPath) => {
+        walk(parse(entryPath), (node) => {
+            if (propertyKeyName(node) === 'command') {
+                collectCjkStrings(node.value, sink);
+            }
+        });
+    });
+};
+
 export const collectPhrases = () => {
     const phrases = new Set();
     collectLocaleCommandPhrases(phrases);
     collectCommandSynonymPhrases(phrases);
+    collectSuiteChromePhrases(phrases);
+    collectModeEntryCommandPhrases(phrases);
     return phrases;
 };
 
@@ -165,7 +221,8 @@ export const renderDictionary = () => {
     return [
         '// 由 dev/pinyin/commandPinyinPlugin.mjs 在构建期生成，不签入仓库，不要手改。',
         '// 来源：src/i18n/locales/zh-CN.ts 的 commandPalette.commands，以及',
-        '//       src/components/command-palette/commands/*.ts 里手写的中文同义词。',
+        '//       src/components/command-palette/commands/*.ts 和各模式 entry.tsx 的 command 里手写的中文同义词，',
+        '//       src/library/suites/*/{entry,chromeActions}.ts 里外观动作的中文关键词。',
         '',
         '/** @type {Record<string, { full: string; initials: string }>} */',
         'export const PINYIN_BY_PHRASE = {',
@@ -180,7 +237,14 @@ export const renderDictionary = () => {
 /** 源文件变了就让虚拟模块失效——否则 dev 下改了中文文案，拼音还是旧的。 */
 const WATCHED_PATHS = [ZH_LOCALE_PATH, COMMANDS_DIR, COMMAND_FACTORIES_PATH];
 
-const isWatchedPath = (changedPath) => WATCHED_PATHS.some(watched => (
+/** `src/library/suites/<id>/entry.ts` 或 `chromeActions.ts`（新增的 suite 也算，所以按形状判断而不是按清单）。 */
+const isSuiteChromePath = (changedPath) => (
+    path.dirname(path.dirname(changedPath)) === LIBRARY_SUITES_DIR
+    && SUITE_CHROME_FILE_NAMES.includes(path.basename(changedPath))
+);
+
+// 模式目录里只认入口文件：整个 visualizer 目录都算进来的话，改任何一个 renderer 都会整页刷新。
+const isWatchedPath = (changedPath) => isSuiteChromePath(changedPath) || isModeEntryPath(changedPath) || WATCHED_PATHS.some(watched => (
     changedPath === watched || changedPath.startsWith(`${watched}${path.sep}`)
 ));
 

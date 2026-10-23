@@ -21,8 +21,8 @@ export async function verifyDesktopVisualAssets(page, song, packet, output, samp
   await page.keyboard.press('Escape'); await images.waitFor({ state: 'detached' });
   assert(await visualDialog(page).isVisible(), 'an immediate asset-dialog Escape must not dismiss its parent visual settings');
   const add = upstream.getByRole('button', { name: '添加图片', exact: true });
-  await page.waitForFunction(() => document.activeElement?.closest('[data-visualizer-settings="tempera"]')
-    && document.activeElement.textContent.trim() === '添加图片');
+  // The settings kit names picture buttons through aria-labelledby rather than button text.
+  await page.waitForFunction(element => element === document.activeElement, await add.elementHandle());
   assert(await add.evaluate(element => element === document.activeElement), 'child dismissal restores its original parent trigger');
   await add.click(); await images.waitFor();
   const tabCount = await images.evaluate(element => [...element.querySelectorAll('button:not(:disabled),input:not(:disabled),textarea:not(:disabled),select:not(:disabled),[tabindex="0"]')]

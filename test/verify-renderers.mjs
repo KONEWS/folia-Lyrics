@@ -20,6 +20,7 @@ import { verifySettingsRefresh } from './verify-settings-refresh.mjs';
 import { reproduceStyleMenu, verifyStyleMenu } from './verify-style-menu.mjs';
 import { captureUxBaseline, verifyUxPolish } from './verify-ux-polish.mjs';
 import { verifyDesktopVisualSettings } from './verify-desktop-visual-settings.mjs';
+import { verifyDesktopVisualAssets } from './verify-desktop-visual-assets.mjs';
 import { installDesktopSegmentationProbe } from './verify-desktop-segmentation.mjs';
 import { verifyBackgroundTopbar } from './verify-background-topbar.mjs';
 import { verifySelectedControls } from './verify-selected-controls.mjs';
@@ -55,7 +56,7 @@ let page;
 try {
   page = await browser.newPage({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1 });
   if (!process.env.FOLIA_CHECKS_ONLY || process.env.FOLIA_CHECKS_ONLY === 'input') await installPlaybackInputProbe(page);
-  if (!process.env.FOLIA_CHECKS_ONLY || ['settings-transparency', 'settings-dismiss', 'theme', 'parser', 'settings-refresh', 'visual-settings', 'background-topbar', 'selected-controls', 'secondary-ui', 'cover-fixture', 'popup-motion'].includes(process.env.FOLIA_CHECKS_ONLY)) await installDesktopParserProbe(page);
+  if (!process.env.FOLIA_CHECKS_ONLY || ['settings-transparency', 'settings-dismiss', 'theme', 'parser', 'settings-refresh', 'visual-settings', 'visual-assets', 'background-topbar', 'selected-controls', 'secondary-ui', 'cover-fixture', 'popup-motion'].includes(process.env.FOLIA_CHECKS_ONLY)) await installDesktopParserProbe(page);
   if (process.env.FOLIA_CHECKS_ONLY === 'popup-motion') await installPopupMotionProbe(page);
   if (!process.env.FOLIA_CHECKS_ONLY || process.env.FOLIA_CHECKS_ONLY === 'visual-settings') await installDesktopSegmentationProbe(page);
   page.on('pageerror', e => errors.push(String(e)));
@@ -143,6 +144,12 @@ try {
     const report = JSON.parse(await readFile(`${output}/background-topbar-results.json`, 'utf8'));
     await writeFile(`${output}/background-topbar-results.json`, JSON.stringify({ ...report, appearanceChecks, errors }, null, 2));
     console.log(`PASS focused background topbar: ${checks.length} checks`);
+  } else if (process.env.FOLIA_CHECKS_ONLY === 'visual-assets') {
+    const samples = [], packet = { key: song.key, title: song.title, artist: song.artist, cover: '', source: '图片窗口回归', content: raw, format: 'lrc' };
+    const checks = await verifyDesktopVisualAssets(page, song, packet, output, samples);
+    await writeFile(output + '/visual-assets-results.json', JSON.stringify({ checks, samples, errors }, null, 2));
+    assert.equal(errors.length, 0, errors.join('\n'));
+    console.log('PASS focused asset dialogs: ' + checks.length + ' groups');
   } else if (process.env.FOLIA_CHECKS_ONLY === 'visual-settings') {
     const checks = await verifyDesktopVisualSettings(page, song, output);
     assert.equal(errors.length, 0, errors.join('\n'));
@@ -212,9 +219,10 @@ try {
   const modes = await readDesktopOptions(page, '歌词样式');
   const modeCount = modes.length;
   assert(modeCount > 0, 'registry must expose dynamic modes');
-  assert.equal(modeCount, 13, 'the desktop exposes all 13 dynamic modes');
+  assert.equal(modeCount, 14, 'the desktop exposes all 14 dynamic modes');
   assert.equal(modes.filter(mode => mode.value === 'still').length, 0);
   assert.equal(modes.filter(mode => mode.label === '绘光').length, 1);
+  assert.equal(modes.filter(mode => mode.value === 'hanabi' && mode.label === '花火').length, 1);
   const clockMode = () => selectDesktopOption(page, '歌词样式', { label: '流光' });
   for (let i = 0; i < modeCount; i++) {
     if (singleMode !== undefined && i !== Number(singleMode)) continue;

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createRequire } from 'module';
+import { FOLIUM_VERSION as CLIENT_FOLIUM_VERSION } from '@/mods/folium/contract';
 
 // test/unit/mod-system/manifest.test.ts
 // Focused unit coverage for the pure manifest validation and dependency
@@ -13,6 +14,7 @@ const {
     satisfiesRange,
     satisfiesHostRange,
     parseDependency,
+    FOLIUM_VERSION,
 } = require('../../../electron/modSystem/manifest.cjs');
 
 const validManifest = {
@@ -78,6 +80,15 @@ describe('validateManifest', () => {
         }
     });
 
+    // Folium 1.7: replaceQueue's own permission, taken on its own (it needs no playback.control).
+    it('accepts playback.queue', () => {
+        const result = validateManifest({ ...validManifest, permissions: ['playback.queue'] });
+        expect(result.ok).toBe(true);
+        if (result.ok) {
+            expect(result.value.permissions).toEqual(['playback.queue']);
+        }
+    });
+
     it('rejects duplicate permissions', () => {
         const result = validateManifest({ ...validManifest, permissions: ['render.export', 'render.export'] });
         expect(result.ok).toBe(false);
@@ -111,22 +122,6 @@ describe('parseDependency / satisfiesRange', () => {
 });
 
 describe('validateManifest Folium entries and opt-ins', () => {
-    it('rejects the pre-Folium fields with a pointed message', () => {
-        const result = validateManifest({
-            ...validManifest,
-            apiVersion: 1,
-            entry: 'index.cjs',
-            visualizers: [{ id: 'a', entry: 'v.mjs' }],
-        });
-        expect(result.ok).toBe(false);
-        if (!result.ok) {
-            const joined = result.errors.join('\n');
-            expect(joined).toContain('apiVersion-replaced-by-folium');
-            expect(joined).toContain('entry-replaced-by-main');
-            expect(joined).toContain('visualizers-moved-to-client');
-        }
-    });
-
     it('accepts a client-only mod and requires at least one entry', () => {
         const clientOnly = { ...validManifest, main: undefined, client: 'client.mjs', permissions: [] };
         expect(validateManifest(clientOnly).ok).toBe(true);
@@ -148,6 +143,28 @@ describe('validateManifest Folium entries and opt-ins', () => {
     it('only accepts known experimental opt-ins', () => {
         expect(validateManifest({ ...validManifest, experimental: ['omni.providers'] }).ok).toBe(true);
         expect(validateManifest({ ...validManifest, experimental: ['mixins'] }).ok).toBe(false);
+    });
+
+    // Folium 1.7: the platform.raw permissions work only with the opt-in, and writing goes with reading.
+    it('takes platform permissions only with the platform.raw opt-in, and write only with read', () => {
+        const platform = (permissions: string[], experimental: string[] = ['platform.raw']) => (
+            validateManifest({ ...validManifest, permissions, experimental })
+        );
+        expect(platform(['platform.netease.read']).ok).toBe(true);
+        expect(platform(['platform.netease.read', 'platform.netease.write']).ok).toBe(true);
+        expect(platform(['platform.netease.read'], []).errors).toEqual(['permission platform.netease.read needs "platform.raw" under experimental']);
+        expect(platform(['platform.netease.write']).errors).toEqual(['permission platform.netease.write needs platform.netease.read as well']);
+        // Only platforms that can be called through it have permissions.
+        expect(platform(['platform.nowhere.read']).ok).toBe(false);
+        // The opt-in alone asks for nothing.
+        expect(platform([]).ok).toBe(true);
+    });
+
+    // Folium 1.7: folium.equalizer's writes; no opt-in and no other permission goes with it.
+    it('accepts equalizer.control on its own', () => {
+        const result = validateManifest({ ...validManifest, permissions: ['equalizer.control'] });
+        expect(result.ok).toBe(true);
+        expect(result.value.permissions).toEqual(['equalizer.control']);
     });
 
     it('accepts an optional preview image path inside the mod directory', () => {
@@ -325,5 +342,13 @@ describe('resolveLoadPlan', () => {
         expect(plan.failures.has('leaf')).toBe(true);
         expect(plan.failures.has('middle')).toBe(true);
         expect(plan.failures.has('unrelated')).toBe(false);
+    });
+});
+
+describe('FOLIUM_VERSION', () => {
+    // The main process (api.host) and the client contract (folium.host) each declare the version; a mod
+    // probing for a feature must read the same minor from both entries.
+    it('matches the client contract', () => {
+        expect(FOLIUM_VERSION).toEqual(CLIENT_FOLIUM_VERSION);
     });
 });

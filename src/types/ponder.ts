@@ -84,7 +84,14 @@ export type PonderTargetId =
     // 歌词导出：命令面板里那一页批量导出。面板上那颗单曲导出按钮归 panel-source-tab 讲。
     | 'lyric-export'
     // 随机播放在哪：没有随机模式，只有打乱队列，以及它的四个入口。连点循环按钮的提示送人来这里。
-    | 'queue-shuffle';
+    | 'queue-shuffle'
+    // bravais 资料库：墙（页面教程，bravais 的首页 / 集合 / 歌手页都映射到它；平移、翻牌、磁贴、聚焦卡、透光）与中间那道缝（信息条）各是一篇，互为 related。
+    | 'bravais-wall'
+    | 'bravais-seam'
+    // 登录：主页的登录按钮、右下角那一枚，和它们打开的登录窗口。
+    | 'sign-in'
+    // 匹配歌词的窗口：面板来源页的「在线匹配」打开它。
+    | 'lyric-match';
 
 /**
  * 导航页把目标按这个分组。
@@ -141,7 +148,7 @@ export type PonderViewportRect = {
     anchorY?: 'top' | 'center' | 'bottom';
 };
 
-/** 锚在某个骨架框上的一个点：归一化坐标 + 像素偏移。光标和字幕的落点都用它。 */
+/** 锚在某个骨架框上的一个点：归一化坐标 + 像素偏移。光标和按键提示的落点都用它。 */
 export type PonderAnchorPoint = {
     anchor: string;
     /** 0..1，默认 0.5 */
@@ -231,7 +238,17 @@ export type PonderSurfaceKind =
     /** 歌词样式：调参台的布局，预览和右栏各自可换，背景和歌词也各自可换。 */
     | 'lyric-style'
     /** 命令面板里的批量导出歌词页：输入行、三节多选卡（范围 / 格式 / 命名），底边一条操作栏。 */
-    | 'lyric-export';
+    | 'lyric-export'
+    /** bravais 的墙：缝在正中、左右两半的磁贴墙，以及平移、翻牌、聚焦卡、透光、进 Lattice 的结果层。 */
+    | 'bravais-wall'
+    /** bravais 首页：墙中间 120px 的窄缝（页签、二级切换、直达、账户、工具格）。 */
+    | 'bravais-seam-home'
+    /** bravais 集合 / 歌手页：300px 的完整信息条，以及书脊、折叠、列表面板几档。 */
+    | 'bravais-seam-strip'
+    /** 没有人登录时的主页，和盖在它上面的登录窗口。 */
+    | 'sign-in'
+    /** 匹配歌词的窗口：左边来源、搜索和结果，右边选中的那一条和它的歌词。 */
+    | 'lyric-match';
 
 /**
  * 以来源矩形为 0..1 坐标系的相对矩形。
@@ -324,14 +341,13 @@ export type PonderStep =
     | (PonderStepBase & {
           kind: 'caption';
           textKey: string;
-          at: PonderAnchorPoint | 'bottom';
           durationMs: number;
           /**
-           * 从字幕引一条线指向这个点，并在终点画一个小圈。
-           * 原版 Ponder 的说明文字总是连着它在讲的那个东西 —— 没有这条线，
-           * 一段居中的字幕和画面上五个框之间就没有任何对应关系。
+           * 这段字幕在讲哪个锚点：聚焦框落到它身上，并带上它的名字。
+           * 字幕固定在画面下方，没有它，一句话和画面上五个框之间就没有任何对应关系。
+           * 框圈的是整个锚点。
            */
-          pointTo?: PonderAnchorPoint;
+          pointTo?: { anchor: string };
       })
     | (PonderStepBase & {
           kind: 'cursor';
@@ -374,9 +390,6 @@ export type PonderStep =
 
 /** pausePoint 的默认停留时长。留给读字幕，短了会逼着人倒回去重看。 */
 export const PONDER_DEFAULT_DWELL_MS = 1400;
-
-/** 一段场景跑完后、显示「下一章」卡片之前的停顿。 */
-export const PONDER_DEFAULT_LOOP_DELAY_MS = 600;
 
 /**
  * 一章播完之后自动进入下一章的读条时长。
@@ -442,7 +455,6 @@ export type PonderSceneScript = {
     action?: PonderSceneAction;
     anchors: Record<string, PonderAnchorSource>;
     steps: PonderStep[];
-    loopDelayMs?: number;
     /**
      * 这一章此刻讲不讲得通。
      *

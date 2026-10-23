@@ -29,7 +29,7 @@ export function useDesktopVisualDialogFocus(panel: RefObject<HTMLElement | null>
     // Capture the opener before moving focus. Track removal after the upstream exit animation.
     const sync = () => {
       for (const window of windows()) {
-        if (entries.has(window)) continue;
+        if (window.matches('[data-folia-sheet],.desktop-visual-sheet') || entries.has(window)) continue;
         entries.set(window, document.activeElement instanceof HTMLElement ? document.activeElement : null);
         enter(window);
       }
@@ -41,7 +41,7 @@ export function useDesktopVisualDialogFocus(panel: RefObject<HTMLElement | null>
     };
     const keyboard = (event: KeyboardEvent) => {
       const window = current();
-      if (!window || event.isComposing || event.keyCode === 229) return;
+      if (!window || window.matches('[data-folia-sheet],.desktop-visual-sheet') || event.isComposing || event.keyCode === 229) return;
       if (event.key === 'Escape') {
         // The original import submenu owns its document-level Escape listener.
         if (window.querySelector('[role="menu"]')) return;
@@ -58,7 +58,7 @@ export function useDesktopVisualDialogFocus(panel: RefObject<HTMLElement | null>
     };
     const keepFocus = (event: FocusEvent) => {
       const window = current();
-      if (window && !window.contains(event.target as Node | null)) enter(window);
+      if (window && !window.matches('[data-folia-sheet],.desktop-visual-sheet') && !window.contains(event.target as Node | null)) enter(window);
     };
     sync();
     const observer = new MutationObserver(sync);

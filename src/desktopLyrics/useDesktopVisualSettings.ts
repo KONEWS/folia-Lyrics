@@ -65,14 +65,10 @@ export function useDesktopVisualSettings(input: Options) {
     showSubtitleTranslation: input.translated, hideTranslationSubtitle: typography.hidePlayerTranslationSubtitle || !input.translated,
     subtitleContentMode: input.translated ? typography.subtitleContentMode === 'none' ? 'translation' as const : typography.subtitleContentMode : 'none' as const,
     cappellaCustomEmojiImages: assets.cappellaCustomEmojiImages, cappellaCustomAvatarImages: assets.cappellaCustomAvatarImages, monetPortraitImage: assets.monetPortraitImage,
-    onMonetTuningChange: visualizer.handleSetMonetTuning, onCladdaghTuningChange: visualizer.handleSetCladdaghTuning,
-    onPendoloTuningChange: visualizer.handleSetPendoloTuning, onSonnetTuningChange: visualizer.handleSetSonnetTuning,
-    onTemperaTuningChange: visualizer.handleSetTemperaTuning, onLumiereTuningChange: visualizer.handleSetLumiereTuning,
   }), [themes.visualizerSubtitleTheme, tunings, background, staticMode, visualizer.visualizerOpacity, typography.lyricsFontScale,
     typography.subtitleFontScale, typography.subtitleOverlayOpacity, typography.subtitleOverlayBackground, typography.subtitleUpcomingLyricsBlur,
     typography.showHarmonySubtitle, typography.harmonySubtitleBackground, typography.hidePlayerTranslationSubtitle, typography.subtitleContentMode,
-    input.translated, assets.cappellaCustomEmojiImages, assets.cappellaCustomAvatarImages, assets.monetPortraitImage,
-    visualizer.handleSetMonetTuning, visualizer.handleSetCladdaghTuning, visualizer.handleSetPendoloTuning, visualizer.handleSetSonnetTuning, visualizer.handleSetTemperaTuning, visualizer.handleSetLumiereTuning]);
+    input.translated, assets.cappellaCustomEmojiImages, assets.cappellaCustomAvatarImages, assets.monetPortraitImage]);
   const draftVisualizer = useMemo(() => {
     const value = { ...visualizer, ...assetActions, ...edits.draft.visualizer };
     for (const key of Object.keys(edits.draft.visualizer) as (keyof DesktopVisualizerPatch)[]) {
@@ -89,7 +85,7 @@ export function useDesktopVisualSettings(input: Options) {
   }), [background, draftVisualizer.backgroundOpacity, draftVisualizer.disableVisualizerGeometricBackground, draftVisualizer.disableVisualizerVignette,
     draftVisualizer.monetBackgroundTuning, draftVisualizer.nomandBackgroundTuning, draftVisualizer.latentBackgroundTuning, draftVisualizer.soraBackgroundTuning, draftVisualizer.visualizerBackgroundMode]);
   const backgroundActions = buildDesktopBackgroundActions(draftVisualizer, assets, edits.patchVisualizer);
-  const panelProps = buildDesktopModePanelProps(draftVisualizer, assets, edits.patchVisualizer, edits.beginSlider, edits.commitSlider);
+  const panelProps = (mode: VisualizerMode) => buildDesktopModePanelProps(mode, draftVisualizer, edits.patchVisualizer, edits.beginSlider, edits.commitSlider);
   const resetCommon = () => { edits.commitSlider(); applyTypographyPatch(commonDefaults); visualizer.handleSetVisualizerOpacity(1); useThemeSettingsStore.getState().handleToggleStaticMode(false); useDesktopPanelSettingsStore.getState().setSettingsTransparency(DEFAULT_SETTINGS_TRANSPARENCY); localStorage.removeItem(INTENSITY_KEY); setIntensityOverride(null); };
   const resetSubtitle = () => { edits.commitSlider(); applyTypographyPatch(subtitleDefaults); input.onTranslated(true); };
   const resetMode = (mode: VisualizerMode) => { edits.commitSlider(); resetDesktopMode(mode); };

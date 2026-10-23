@@ -94,7 +94,9 @@ export const createLineArt = (
 ): LineArtLayer => {
     const { height, spec } = options;
     const view = new pixi.Container();
-    const pathsHolder = new pixi.Container();
+    // 描线期间每帧都有线在重画。Pixi 8 里重画过的 Graphics 会让它所在的渲染组把绘制指令整组重排，原来就是整个舞台；
+    // 各条线放进自己的渲染组，重排的只有这些线。画的先后不变。
+    const pathsHolder = new pixi.Container({ isRenderGroup: true });
     const nodesHolder = new pixi.Container();
     view.addChild(pathsHolder, nodesHolder);
 
@@ -212,4 +214,21 @@ export const createLineArt = (
         // 两块顶点 / 索引缓冲）要等 Pixi 的 GC 空闲 60 秒后才回收；单元换得勤时，WebGL 缓冲会一直涨到那个窗口的量。
         destroy: () => view.destroy({ children: true, context: true }),
     };
+};
+
+/**
+ * 线稿 / 图标组藏起来时从显示树上摘下，而不是只设 visible = false：Pixi 每帧会把动过的容器整棵子树
+ * （包括藏着的节点）的变换都走一遍，整首一个单元时几十组线稿、每组上百条线，大半在白走。
+ * 挂回去时按镜头顺序插回原位，叠放次序与一直挂着时相同。
+ */
+export const showLineArtLayer = (holder: Container, layers: readonly LineArtLayer[], index: number, shown: boolean) => {
+    const view = layers[index]!.view;
+    if (shown === (view.parent === holder)) return;
+    if (!shown) {
+        holder.removeChild(view);
+        return;
+    }
+    let position = 0;
+    for (let k = 0; k < index; k += 1) if (layers[k]!.view.parent === holder) position += 1;
+    holder.addChildAt(view, position);
 };

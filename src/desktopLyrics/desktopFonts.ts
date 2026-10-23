@@ -1,6 +1,6 @@
 import type { Line, SubtitleContentMode, Theme } from '../types';
 import { resolveThemeFontStack, resolveThemeFontWeight, resolveThemeTranslationFontStack } from '../utils/fontStacks';
-import { resolveLyricAlternateText } from '../utils/lyrics/alternateText';
+import { resolveLyricSubtitleTracks } from '../utils/lyrics/alternateText';
 import { getLineBackgroundVocals } from '../components/visualizer/harmonyRuntime';
 
 // src/desktopLyrics/desktopFonts.ts — prepare the fonts used by this song before any renderer measures or rasterizes it.
@@ -17,10 +17,10 @@ export function desktopFontRequests(input: DesktopFontInput): DesktopFontRequest
   const subtitle: string[] = [], contentMode = input.subtitleContentMode ?? 'translation';
   for (const line of lines) {
     main.push(line.fullText, ...line.words.map(word => word.text));
-    subtitle.push(line.fullText, resolveLyricAlternateText(line, contentMode) || '');
+    subtitle.push(line.fullText, ...resolveLyricSubtitleTracks(line, contentMode).map(track => track.text));
     if (input.showHarmonySubtitle !== false) for (const vocal of getLineBackgroundVocals(line)) {
       main.push(vocal.text, ...vocal.words.map(word => word.text));
-      subtitle.push(resolveLyricAlternateText(vocal, contentMode) || '');
+      subtitle.push(...resolveLyricSubtitleTracks(vocal, contentMode).map(track => track.text));
     }
   }
   const requests = [{ font: `${resolveThemeFontWeight(theme, 400)} 16px ${resolveThemeFontStack(theme)}`, text: uniqueText(main) }];

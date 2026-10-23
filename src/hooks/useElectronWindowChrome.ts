@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useAppChromeStore } from '../stores/useAppChromeStore';
 import { usePlayerChromeSettingsStore } from '../stores/usePlayerChromeSettingsStore';
+import { isWithinClickThroughUnlockHotspot } from '../utils/clickThroughUnlockHotspot';
 import { useClickThroughPointerLock } from './useClickThroughPointerLock';
 
 // src/hooks/useElectronWindowChrome.ts
@@ -81,24 +82,13 @@ export const useElectronWindowChrome = () => {
             return;
         }
 
-        const toggleHotspotWidth = 48;
-        const toggleHotspotHeight = 40;
-        const toggleHotspotRightInset = 176;
-        const toggleHotspotTopInset = 4;
-
         const syncToggleHotspot = (active: boolean) => {
             setIsClickThroughToggleHotspotActive(prev => (prev === active ? prev : active));
             void window.electron!.setMainWindowClickThroughUnlockHover(active);
         };
 
         const handleMouseMove = (event: MouseEvent) => {
-            const withinHorizontalBounds =
-                event.clientX >= window.innerWidth - toggleHotspotRightInset - toggleHotspotWidth
-                && event.clientX <= window.innerWidth - toggleHotspotRightInset;
-            const withinVerticalBounds =
-                event.clientY >= toggleHotspotTopInset
-                && event.clientY <= toggleHotspotTopInset + toggleHotspotHeight;
-            const withinHotspot = withinHorizontalBounds && withinVerticalBounds;
+            const withinHotspot = isWithinClickThroughUnlockHotspot(event.clientX, event.clientY, window.innerWidth);
 
             setIsClickThroughToggleHotspotActive(prev => {
                 if (prev === withinHotspot) {
@@ -114,12 +104,15 @@ export const useElectronWindowChrome = () => {
             syncToggleHotspot(false);
         };
 
+        // `mouseleave` never fires on `window`; the document gets it when the pointer exits the
+        // viewport. On Wayland the main process can't poll the cursor, so this is the only signal
+        // that drops the unlock when the pointer leaves straight from the hotspot.
         window.addEventListener('mousemove', handleMouseMove);
-        window.addEventListener('mouseleave', handleMouseLeave);
+        document.addEventListener('mouseleave', handleMouseLeave);
 
         return () => {
             window.removeEventListener('mousemove', handleMouseMove);
-            window.removeEventListener('mouseleave', handleMouseLeave);
+            document.removeEventListener('mouseleave', handleMouseLeave);
             syncToggleHotspot(false);
         };
     }, [isElectronWindow, isMainWindowClickThroughEnabled]);

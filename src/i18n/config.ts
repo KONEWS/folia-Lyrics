@@ -3,6 +3,7 @@ import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 import en from './locales/en.ts';
 import zhCN from './locales/zh-CN.ts';
+import zhTW from 'virtual:folia-locale-zh-TW';
 import ind from './locales/in.ts';
 import { resolveMissingTranslation } from './missingTranslation';
 import { flattenLocale } from './flattenLocale';
@@ -17,12 +18,29 @@ import { flattenLocale } from './flattenLocale';
 let zhFallbacks: Record<string, string> | undefined;
 const getZhFallbacks = (): Record<string, string> => (zhFallbacks ??= flattenLocale(zhCN));
 
-export type AppLanguagePreference = 'system' | 'en' | 'zh-CN' | 'in';
+export type AppLanguagePreference = 'system' | 'en' | 'zh-CN' | 'zh-TW' | 'in';
 export const APP_LANGUAGE_STORAGE_KEY = 'folia_app_language';
 
 const isSupportedManualLanguage = (value: string | null | undefined): value is Exclude<AppLanguagePreference, 'system'> => (
-  value === 'en' || value === 'zh-CN' || value === 'in'
+  value === 'en' || value === 'zh-CN' || value === 'zh-TW' || value === 'in'
 );
+
+/*
+ * A `zh` tag has to be split into Simplified and Traditional before it can be
+ * matched to a bundle. Explicit script and region subtags win; only a bare `zh`
+ * falls back to Simplified, so `zh-TW` / `zh-HK` / `zh-Hant` all land on the
+ * traditional bundle while `zh-CN` / `zh-SG` / `zh` stay simplified.
+ */
+const normalizeChineseLanguage = (value: string): 'zh-CN' | 'zh-TW' => {
+  const lowered = value.toLowerCase();
+  const subtags = lowered.split('-').slice(1);
+
+  if (subtags.some(tag => tag === 'hant' || tag === 'tw' || tag === 'hk' || tag === 'mo')) {
+    return 'zh-TW';
+  }
+
+  return 'zh-CN';
+};
 
 const normalizeSupportedLanguage = (value: string | null | undefined): Exclude<AppLanguagePreference, 'system'> => {
   if (!value) {
@@ -34,7 +52,7 @@ const normalizeSupportedLanguage = (value: string | null | undefined): Exclude<A
   }
 
   if (value.toLowerCase().startsWith('zh')) {
-    return 'zh-CN';
+    return normalizeChineseLanguage(value);
   }
 
   return 'en';
@@ -83,6 +101,9 @@ i18n
       'zh-CN': {
         translation: zhCN
       },
+      'zh-TW': {
+        translation: zhTW
+      },
       in: {
         translation: ind
       }
@@ -91,7 +112,7 @@ i18n
     parseMissingKeyHandler: (key: string, defaultValue?: string): string => (
       resolveMissingTranslation(getZhFallbacks(), key, defaultValue)
     ),
-    supportedLngs: ['en', 'zh-CN', 'in'],
+    supportedLngs: ['en', 'zh-CN', 'zh-TW', 'in'],
     ...(initialLanguagePreference !== 'system' ? { lng: initialLanguagePreference } : {}),
     detection: {
       order: ['localStorage', 'navigator', 'htmlTag'],

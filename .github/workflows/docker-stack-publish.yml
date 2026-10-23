@@ -25,6 +25,8 @@ env:
 
 jobs:
   prepare:
+    # Upstream automatic releases belong to upstream; this fork retains explicit manual runs.
+    if: github.repository == 'chthollyphile/folia-major' || github.event_name == 'workflow_dispatch'
     name: Validate Docker stack release
     runs-on: ubuntu-latest
     outputs:
@@ -156,6 +158,7 @@ jobs:
             VCS_REF=${{ github.sha }}
             STACK_VERSION=${{ needs.prepare.outputs.version }}
             REQUIRE_COMMIT_NAME=true
+            GITHUB_REPOSITORY=${{ github.repository }}
           tags: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.image }}:${{ needs.prepare.outputs.version }}-${{ matrix.arch }}
           labels: |
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}

@@ -6,13 +6,14 @@ import zhCN from '../../../src/i18n/locales/zh-CN';
 import id from '../../../src/i18n/locales/in';
 
 // test/unit/settings/settingsNavModel.test.ts
-// The nav model replaced four parallel id-keyed lists in SettingsModal; these lock in that every
-// section still appears exactly once and that every key it points at actually exists in all locales.
+// The nav model is the one list of settings categories; these lock in that every category appears
+// exactly once, that every place other code can open belongs to one of them, and that every key the
+// model points at exists in all locales.
 
 const echo = (key: string) => key;
 
 const ALL_SECTIONS: SettingsSectionId[] = [
-    'appearance', 'general', 'playback', 'interaction', 'integration', 'storage', 'desktop', 'graphics', 'mods', 'lab', 'developer',
+    'appearance', 'player', 'home', 'playback', 'lyrics', 'general', 'interaction', 'integration', 'storage', 'desktop', 'graphics', 'mods', 'developer',
 ];
 
 const lookup = (bundle: Record<string, unknown>, key: string): unknown => (
@@ -22,9 +23,9 @@ const lookup = (bundle: Record<string, unknown>, key: string): unknown => (
 );
 
 describe('settingsNavModel', () => {
-    it('lists every section exactly once on desktop', () => {
+    it('lists every section exactly once on desktop, in side-list order', () => {
         const ids = flattenSettingsNavItems(buildSettingsNavGroups(echo, { isElectron: true })).map(item => item.id);
-        expect([...ids].sort()).toEqual([...ALL_SECTIONS].sort());
+        expect(ids).toEqual(ALL_SECTIONS);
     });
 
     it('drops desktop-only sections on web without leaving an empty group', () => {
@@ -37,11 +38,6 @@ describe('settingsNavModel', () => {
         expect(groups.every(group => group.items.length > 0)).toBe(true);
     });
 
-    it('keeps the section order the flat sidebar list used', () => {
-        const ids = flattenSettingsNavItems(buildSettingsNavGroups(echo, { isElectron: true })).map(item => item.id);
-        expect(ids).toEqual(ALL_SECTIONS);
-    });
-
     it('resolves a nav item for every section id', () => {
         const groups = buildSettingsNavGroups(echo, { isElectron: true });
         for (const sectionId of ALL_SECTIONS) {
@@ -49,20 +45,18 @@ describe('settingsNavModel', () => {
         }
     });
 
-    it('expands every declared anchor under its owning section', () => {
-        const items = flattenSettingsNavItems(buildSettingsNavGroups(echo, { isElectron: true }));
-        const rendered = items.flatMap(item => item.anchors.map(anchor => [anchor.id, item.id]));
-        const declared = Object.entries(SETTINGS_ANCHOR_DEFINITIONS).map(([id, definition]) => [id, definition.section]);
-
-        expect(rendered).toEqual(declared);
+    // A command or a link names an anchor; the table has to send it to a category that exists.
+    it('places every anchor in a category of the model', () => {
+        for (const [anchorId, definition] of Object.entries(SETTINGS_ANCHOR_DEFINITIONS)) {
+            expect(ALL_SECTIONS, `${anchorId} → ${definition.section}`).toContain(definition.section);
+        }
     });
 
-    it.each([['en', en], ['zh-CN', zhCN], ['in', id]] as const)('has every label and description key in %s', (_name, bundle) => {
+    it.each([['en', en], ['zh-CN', zhCN], ['in', id]] as const)('has every label key in %s', (_name, bundle) => {
         const keys = SETTINGS_NAV_GROUP_SPECS.flatMap(group => [
             group.labelKey,
-            ...group.sections.flatMap(section => [section.labelKey, section.descriptionKey]),
+            ...group.sections.map(section => section.labelKey),
         ]);
-        keys.push(...Object.values(SETTINGS_ANCHOR_DEFINITIONS).map(definition => definition.labelKey));
 
         for (const key of keys) {
             expect(typeof lookup(bundle as unknown as Record<string, unknown>, key), `${key} missing`).toBe('string');

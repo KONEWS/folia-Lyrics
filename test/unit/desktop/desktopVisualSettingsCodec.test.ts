@@ -118,6 +118,18 @@ describe('desktop appearance codec', () => {
     expect(config).not.toHaveProperty('cappellaCustomEmojiImages'); expect(config).not.toHaveProperty('monetPortraitImage');
   });
 
+  it.each(['json', 'code'] as const)('preserves Hanabi tuning and dual subtitles through %s without legacy style fields', format => {
+    const options = makeOptions();
+    expect(importDesktopVisualConfig(encode(format, { visualizerMode: 'hanabi', subtitleContentMode: 'both',
+      visualizerTunings: { hanabi: { collage: 0, overlayFrame: false } } }), options).ok).toBe(true);
+    expect(useVisualizerSettingsStore.getState().hanabiTuning).toMatchObject({ collage: 0, overlayFrame: false });
+    expect(useTypographySettingsStore.getState().subtitleContentMode).toBe('both');
+    const exported = decompressConfig(exportDesktopVisualConfig(format, options, 'hanabi'));
+    expect(exported.visualizerTunings.hanabi).toMatchObject({ collage: 0, overlayFrame: false });
+    expect(exported.subtitleContentMode).toBe('both');
+    expect(exported).not.toHaveProperty('hanabiTuning');
+  });
+
   it('ignores unrelated host fields, validates numeric settings and delegates tuning clamping to the original setters', () => {
     const options = makeOptions(), frameRate = useVisualizerSettingsStore.getState().visualizerFrameRate;
     expect(importDesktopVisualConfig(JSON.stringify({ lyricsFontScale: 'bad', visualizerFrameRate: 1,

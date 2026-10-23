@@ -2,31 +2,8 @@ import type { MotionValue } from 'framer-motion';
 import type { AudioBands, SonnetTuning, Theme } from '../../../types';
 import type { SonnetProgram } from './types';
 import { findSonnetParagraphIndexAtTime } from './sonnetProgram';
-import { buildSonnetIconDataUrl, buildSonnetIconTextureKey, resolveSonnetIconNames } from './sonnetIcons';
-import {
-    clamp01,
-    easeSonnetInOut,
-    resolveSegmentProgress,
-    resolveSonnetAnimationScale,
-    resolveSonnetBreathWeight,
-    resolveSonnetCameraBreath,
-    resolveSonnetFocusWeights,
-    resolveSonnetSmoothedCameraFocus,
-    resolveShotMotionFrame,
-    resolveShotProgress,
-    resolveTimelineShake,
-} from './sonnetMotion';
-import { hashSonnetSeed } from './sonnetRandom';
-import {
-    IDLE_SONNET_TRANSITION_FRAME,
-    resolveSonnetEnterTransitionFrame,
-    resolveSonnetExitTransitionFrame,
-    resolveSonnetShotTransitionFrame,
-} from './sonnetTransitions';
-import { buildSonnetScene, type SceneView, type ShotView } from './sonnetSceneBuilder';
-import { isSonnetEmphasisRole } from './sonnetTypographyLayout';
-import { getSonnetTexturePool } from './sonnetTexturePool';
-import { snapResolutionToTexturePool } from '../pixiTextureBudget';
+import { buildSonnetScene, type SceneView } from './sonnetSceneBuilder';
+import { snapResolutionToTexturePool } from '../pixi/pixiTextureBudget';
 import {
     destroySonnetContainerChildren,
     destroySonnetDisplayTree,
@@ -37,12 +14,26 @@ import {
     hasSonnetCreditsMetadata,
     resolveSonnetCreditsFrame,
 } from './sonnetCredits';
-import { loadPixi } from '../loadPixi';
+import { PixiSceneCache } from '../pixiSceneCache';
+import { loadPixi } from '../pixi/loadPixi';
+import { linkPixiPrograms } from '../pixi/pixiProgramLinks';
+import { makePixiContext } from '../pixi/pixiWebGLContext';
 import { sonnetDebugState } from './sonnetDebug';
-import { resolveSonnetSegmentCameraFocus } from './sonnetCameraTracking';
+import { createSonnetBeatFxReader } from './sonnetBeatFx';
+import { readSonnetModulation, type SonnetShotFrameContext, updateSonnetShot } from './sonnetShotFrame';
+import { findSonnetActiveShotIndex, resolveSonnetSceneTransitionFrame } from './sonnetSceneFrame';
+import { drawSonnetFrameOverlay } from './sonnetFrameOverlay';
+import { SonnetOutroBlur } from './sonnetOutroBlur';
+import {
+    loadSonnetIconTextures,
+    releaseSonnetIconUrls,
+    type SonnetIconTextures,
+} from './sonnetIconTextures';
 
 // src/components/visualizer/sonnet/createSonnetPixiRuntime.ts
 // Owns Pixi lifecycle and mutates bounded scene views directly from absolute playback time.
+// shot 逐帧姿态、场景转场选择、画框、片尾模糊与主题图标纹理在相邻模块；这里只管生命周期、
+// 段落场景缓存、换歌溶解和每帧调度。
 type PixiModule = typeof import('pixi.js');
 
 export interface SonnetSongMetadata {
@@ -75,11 +66,6 @@ export const SONNET_SONG_SWAP_MS = 560;
  */
 const SONNET_SWAP_STAGE_PROGRESS = 0.35;
 
-interface SonnetIconTextures {
-    textures: Map<string, import('pixi.js').Texture>;
-    urls: Set<string>;
-}
-
 export interface SonnetRuntimeOptions {
     host: HTMLDivElement;
     /** Track identity of `program`; see SonnetSongContext.seed. */
@@ -87,6 +73,8 @@ export interface SonnetRuntimeOptions {
     program: SonnetProgram;
     theme: Theme;
     tuning: SonnetTuning;
+    /** 智能动感模式 (`smartBeatActive`: on or cached); its strengths reach the frame through the beat clock. */
+    smartBeatEnabled: boolean;
     currentTime: MotionValue<number>;
     audioPower?: MotionValue<number>;
     audioBands?: AudioBands;
@@ -103,11 +91,21 @@ export interface SonnetRuntimeOptions {
 }
 
 export class SonnetPixiRuntime {
-    private readonly sceneCache = new Map<number, SceneView>();
+    private readonly sceneCache = new PixiSceneCache<SceneView>({
+        count: () => this.options.program.paragraphs.length,
+        build: index => {
+            const scene = this.buildScene(this.liveSong, this.iconTextures, index);
+            this.sceneContainer.addChild(scene.container);
+            return scene;
+        },
+        destroy: scene => this.destroyScene(scene),
+    });
     private readonly iconTextures = new Map<string, import('pixi.js').Texture>();
     private readonly iconUrls = new Set<string>();
     private activeParagraphIndex = -1;
     private destroyed = false;
+    /** 智能动感模式 frame reader; yields null unless it is on and the track's beats are installed. */
+    private readonly readBeatFx = createSonnetBeatFxReader();
     /**
      * An in-flight song handover. Driven by the wall clock, unlike every other transition here:
      * those derive their progress from absolute playback time so a seek stays stable, but that
@@ -133,8 +131,7 @@ export class SonnetPixiRuntime {
     private sceneContainer!: import('pixi.js').Container;
     private creditsContainer!: import('pixi.js').Container;
     private overlayContainer!: import('pixi.js').Container;
-    private outroBlurFilter: import('pixi.js').BlurFilter | null = null;
-    private outroBlurScene: SceneView | null = null;
+    private outroBlur!: SonnetOutroBlur;
 
     private constructor(
         private readonly pixi: PixiModule,
@@ -144,51 +141,76 @@ export class SonnetPixiRuntime {
 
     static async create(options: SonnetRuntimeOptions) {
         const pixi = await loadPixi();
+        // The options the WebGL context is made with, ahead of Pixi (makePixiContext).
+        const contextOptions = {
+            backgroundAlpha: 0,
+            // With post-processing the scene is drawn into the filter's own multisampled target and
+            // the canvas only gets the filtered picture and the frame marks: its 4-sample buffers
+            // would cost about 190 MB of video memory for those. The marks' edges are then not
+            // smoothed. postProcessEnabled is part of the host's rebuild key, so the switch applies.
+            antialias: !options.tuning.postProcessEnabled,
+            powerPreference: 'high-performance',
+        } as const;
+        const context = await makePixiContext(pixi, contextOptions, options.signal);
         const app = new pixi.Application();
         const width = Math.max(options.host.clientWidth, 320);
         const height = Math.max(options.host.clientHeight, 240);
         await app.init({
             width,
             height,
-            backgroundAlpha: 0,
-            antialias: true,
+            ...contextOptions,
+            ...context,
             autoDensity: true,
             resolution: snapResolutionToTexturePool(width, height, options.tuning.textureResolution),
             autoStart: false,
             sharedTicker: false,
             preference: 'webgl',
-            powerPreference: 'high-performance',
         });
         const runtime = new SonnetPixiRuntime(pixi, options, app);
         runtime.sceneContainer = new pixi.Container();
         runtime.creditsContainer = new pixi.Container();
         runtime.overlayContainer = new pixi.Container();
+        runtime.outroBlur = new SonnetOutroBlur(pixi);
         app.stage.addChild(runtime.sceneContainer, runtime.creditsContainer, runtime.overlayContainer);
 
         if (options.signal?.aborted) {
             runtime.destroy();
             throw new DOMException('Sonnet runtime creation was cancelled', 'AbortError');
         }
-        options.host.appendChild(app.canvas);
-        app.canvas.style.cssText = 'width:100%;height:100%;display:block';
         await runtime.preloadIcons();
         if (options.signal?.aborted) {
             runtime.destroy();
             throw new DOMException('Sonnet runtime creation was cancelled', 'AbortError');
         }
-        runtime.install();
+        await runtime.install();
+        if (options.signal?.aborted) {
+            runtime.destroy();
+            throw new DOMException('Sonnet runtime creation was cancelled', 'AbortError');
+        }
         return runtime;
     }
 
-    private install() {
+    /**
+     * The first frame, in steps the page runs between: the first scene is built in a task of its own,
+     * its shader programs are linked while the page goes on (linkPixiPrograms), and only then does the
+     * canvas go on the page, drawn. Returns early when the creation is cancelled meanwhile.
+     */
+    private async install() {
+        await new Promise((resolve) => { window.setTimeout(resolve); });
+        if (this.options.signal?.aborted) return;
         this.resizeToHost();
+        this.renderFrame();
+        await linkPixiPrograms(this.pixi, this.app.renderer, this.app.stage, 'Sonnet', this.options.signal);
+        if (this.options.signal?.aborted) return;
+        this.options.host.appendChild(this.app.canvas);
+        this.app.canvas.style.cssText = 'width:100%;height:100%;display:block';
         this.app.ticker.add(this.renderFrame);
         this.resizeObserver = new ResizeObserver(() => {
             if (this.destroyed || !this.resizeToHost()) return;
             if (this.options.paused) this.renderOnce();
         });
         this.resizeObserver.observe(this.options.host);
-        this.renderOnce();
+        this.app.renderer.render(this.app.stage);
         if (!this.options.paused) this.app.start();
     }
 
@@ -256,123 +278,16 @@ export class SonnetPixiRuntime {
         }
     }
 
-    private clearOutroBlur() {
-        if (this.outroBlurFilter && this.outroBlurScene) {
-            this.outroBlurScene.container.filters = (this.outroBlurScene.container.filters ?? [])
-                .filter(filter => filter !== this.outroBlurFilter);
-            this.outroBlurFilter.destroy();
-        }
-        this.outroBlurFilter = null;
-        this.outroBlurScene = null;
-    }
-
-    private updateOutroBlur(scene: SceneView, strength: number) {
-        if (strength <= 0) {
-            this.clearOutroBlur();
-            return;
-        }
-        if (this.outroBlurScene !== scene) this.clearOutroBlur();
-        if (!this.outroBlurFilter) {
-            this.outroBlurFilter = new this.pixi.BlurFilter({
-                strength: 0,
-                quality: 2,
-                kernelSize: 5,
-                resolution: 0.75,
-            });
-            // Shares the scene's filter chain with the post-process vignette, so its padding would
-            // grow the shared render frame and drift the vignette outward as the outro blur ramps.
-            this.outroBlurFilter.repeatEdgePixels = true;
-            scene.container.filters = [...(scene.container.filters ?? []), this.outroBlurFilter];
-            this.outroBlurScene = scene;
-        }
-        this.outroBlurFilter.strength = strength;
-    }
-
     private drawOverlay(width: number, height: number) {
-        destroySonnetContainerChildren(this.overlayContainer);
-        if (this.options.tuning.showOnlyText || this.options.tuning.outerFrameMode === 'none') return;
-        const g = new this.pixi.Graphics();
-
-        const paddingX = Math.max(30, width * 0.05);
-        const paddingY = Math.max(30, height * 0.05);
-
-        const primary = this.pixi.Color.shared.setValue(this.options.theme.primaryColor).toNumber();
-        const alpha = 0.5;
-
-        // Asymmetrical, partial perimeter (Not enclosing the whole screen)
-        // 1. Top-Left cluster
-        g.rect(paddingX, paddingY, 30, 4).fill({ color: primary, alpha: 0.8 }); // Thick bar
-        g.moveTo(paddingX, paddingY + 16).lineTo(paddingX, paddingY + 120).stroke({ color: primary, width: 1, alpha }); // Dropping line
-
-        // 2. Bottom-Right cluster
-        g.rect(width - paddingX - 4, height - paddingY - 16, 4, 16).fill({ color: primary, alpha: 0.8 }); // Thick vertical bar
-        g.moveTo(width - paddingX - 160, height - paddingY).lineTo(width - paddingX - 20, height - paddingY).stroke({ color: primary, width: 1, alpha }); // Horizontal line
-        g.moveTo(width - paddingX, height - paddingY - 180).lineTo(width - paddingX, height - paddingY - 30).stroke({ color: primary, width: 1, alpha }); // Rising line
-
-        // 3. Floating accents
-        const drawCross = (cx: number, cy: number, size: number) => {
-            g.moveTo(cx - size, cy).lineTo(cx + size, cy).stroke({ color: primary, width: 1, alpha: 0.8 });
-            g.moveTo(cx, cy - size).lineTo(cx, cy + size).stroke({ color: primary, width: 1, alpha: 0.8 });
-        };
-        // Top-Right cross
-        drawCross(width - paddingX, paddingY + 20, 6);
-
-        // Bottom-Left diamond
-        g.moveTo(paddingX, height - paddingY - 4).lineTo(paddingX + 4, height - paddingY).lineTo(paddingX, height - paddingY + 4).lineTo(paddingX - 4, height - paddingY).fill({ color: primary, alpha: 0.7 });
-
-        // Typographic star ✦
-        const starStyle = new this.pixi.TextStyle({
-            fontFamily: 'sans-serif',
-            fontSize: 12,
-            fill: primary,
-        });
-        const starText = new this.pixi.Text({ text: '✦', style: starStyle });
-        starText.alpha = 0.6;
-        starText.position.set(width - paddingX - 10, height - paddingY);
-        starText.anchor.set(1, 0.5);
-
-        this.overlayContainer.addChild(g, starText);
+        drawSonnetFrameOverlay(this.pixi, this.overlayContainer, width, height, this.options.tuning, this.options.theme);
     }
 
-    /**
-     * Acquires the decor icon textures a theme asks for. Kept separate from the live maps so a
-     * song handover can warm the incoming theme's icons while the outgoing one is still on
-     * screen, and only adopt them once the cover hides the swap.
-     */
     private async loadIconTextures(theme: Theme): Promise<SonnetIconTextures> {
-        const loaded: SonnetIconTextures = { textures: new Map(), urls: new Set() };
-        if (this.options.tuning.showOnlyText || !this.options.tuning.showBackgroundDecor) return loaded;
-        const names = resolveSonnetIconNames(theme.lyricsIcons);
-        const resolution = this.options.tuning.textureResolution;
-        const texturePool = getSonnetTexturePool(this.pixi);
-        await Promise.all(names.map(async (name, index) => {
-            const size = 192 + (index % 4) * 32;
-            const colors = [
-                theme.accentColor,
-                theme.secondaryColor,
-                theme.primaryColor,
-            ];
-            const color = colors[index % colors.length];
-            const key = buildSonnetIconTextureKey(name, color, 3.5, size, resolution);
-            const url = buildSonnetIconDataUrl(name, color, 3.5, size);
-            if (!url) return;
-            try {
-                loaded.textures.set(key, await texturePool.acquire(url));
-                loaded.urls.add(url);
-            } catch {
-                // Invalid theme icons are optional; geometric MG remains available.
-            }
-        }));
-        return loaded;
+        return loadSonnetIconTextures(this.pixi, theme, this.options.tuning);
     }
 
-    /** Hands the pool back the urls this runtime is holding. Refcounted, so order does not matter. */
     private releaseIconUrls(urls: Set<string>) {
-        const texturePool = getSonnetTexturePool(this.pixi);
-        urls.forEach(url => {
-            texturePool.release(url);
-        });
-        urls.clear();
+        releaseSonnetIconUrls(this.pixi, urls);
     }
 
     private async preloadIcons() {
@@ -382,15 +297,12 @@ export class SonnetPixiRuntime {
     }
 
     private clearScenes() {
-        this.clearOutroBlur();
-        this.sceneCache.forEach(scene => {
-            this.destroyScene(scene);
-        });
+        this.outroBlur.clear();
         this.sceneCache.clear();
         this.activeParagraphIndex = -1;
     }
     private destroyScene(scene: SceneView) {
-        if (this.outroBlurScene === scene) this.clearOutroBlur();
+        if (this.outroBlur.isOn(scene)) this.outroBlur.clear();
         this.sceneContainer.removeChild(scene.container);
         unloadSonnetDisplayTree(scene.container);
         scene.container.filters = null;
@@ -417,6 +329,7 @@ export class SonnetPixiRuntime {
             host: this.options.host,
             theme: song.theme,
             tuning: this.options.tuning,
+            smartBeatEnabled: this.options.smartBeatEnabled,
             lyricsFontScale: this.options.lyricsFontScale,
             staticMode: this.options.staticMode,
             transparentBackground: this.options.transparentBackground,
@@ -430,269 +343,6 @@ export class SonnetPixiRuntime {
             program: this.options.program,
             theme: this.options.theme,
         };
-    }
-
-    private ensureScene(index: number) {
-        if (index < 0 || index >= this.options.program.paragraphs.length) return null;
-        const cached = this.sceneCache.get(index);
-        if (cached) return cached;
-        const scene = this.buildScene(this.liveSong, this.iconTextures, index);
-        this.sceneCache.set(index, scene);
-        this.sceneContainer.addChild(scene.container);
-        return scene;
-    }
-
-    private pruneScenes(index: number) {
-        this.sceneCache.forEach((scene, sceneIndex) => {
-            if (Math.abs(sceneIndex - index) <= 1) return;
-            this.destroyScene(scene);
-            this.sceneCache.delete(sceneIndex);
-        });
-    }
-
-    private updateShot(view: ShotView, time: number, width: number, height: number, shakeIntensity: number) {
-        const progress = resolveShotProgress(view.shot, time);
-        const motion = this.options.tuning.typographyMotion * resolveSonnetAnimationScale(this.options.theme) * this.mod('motionScale');
-        const camera = this.options.tuning.cameraIntensity * resolveSonnetAnimationScale(this.options.theme) * this.mod('cameraScale');
-        const cameraFrame = resolveShotMotionFrame(view.shot.kind, progress);
-
-        // Add a slow continuous pan during the time gap to prevent the scene from looking frozen
-        const gapTime = Math.max(0, time - view.shot.endTime);
-        if (gapTime > 0) {
-            // Inherit the movement direction from the tail end of the shot (progress 0.8 to 1.0)
-            const tailStart = resolveShotMotionFrame(view.shot.kind, 0.8);
-            const dx = cameraFrame.x - tailStart.x;
-            const dy = cameraFrame.y - tailStart.y;
-            const dScale = cameraFrame.scale - tailStart.scale;
-            const dRot = cameraFrame.rotation - tailStart.rotation;
-
-            // Continue drifting in that direction at a slow, relaxed PV pace
-            // speed = 0.8 means it takes 1.25 seconds of gap to drift the same distance 
-            // the camera covered in the last 20% of the shot.
-            const maxDrift = 2.0;
-            const driftSpeed = (1 - Math.exp(-gapTime * 0.4)) * maxDrift * this.mod('driftScale');
-            cameraFrame.x += dx * driftSpeed;
-            cameraFrame.y += dy * driftSpeed;
-            cameraFrame.scale += dScale * driftSpeed;
-            cameraFrame.rotation += dRot * driftSpeed;
-        }
-
-        const shake = resolveTimelineShake(time, shakeIntensity);
-
-        let trackSegments = view.segments.filter(s => s.role !== 'decoration' && s.trackingGlyphs.length > 0);
-        if (trackSegments.length === 0) {
-            trackSegments = view.segments.filter(s => s.trackingGlyphs.length > 0);
-        }
-
-        // Layer a deterministic breathing float once the lyric reveal completes, so the
-        // frame never goes fully static while the shot holds or drifts through a gap.
-        const revealDoneTime = trackSegments.length > 0
-            ? Math.max(...trackSegments.map(segment => segment.trackingGlyphs.at(-1)?.startTime ?? view.shot.endTime))
-            : view.shot.endTime;
-        const breathWeight = resolveSonnetBreathWeight(time, revealDoneTime);
-        if (breathWeight > 0) {
-            const breathPhase = (hashSonnetSeed(view.shot.id) % 1024) / 1024 * Math.PI * 2;
-            const breath = resolveSonnetCameraBreath(time, breathPhase);
-            const breathScale = this.mod('breathScale');
-            cameraFrame.x += breath.x * breathWeight * breathScale;
-            cameraFrame.y += breath.y * breathWeight * breathScale;
-            cameraFrame.scale += breath.scale * breathWeight * breathScale;
-            cameraFrame.rotation += breath.rotation * breathWeight * breathScale;
-        }
-
-        let currentFocusX = view.basePivotX;
-        let currentFocusY = view.basePivotY;
-
-        if (trackSegments.length > 0) {
-            const focusRanges = trackSegments.map(segment => ({
-                startTime: segment.trackingGlyphs[0]?.startTime ?? view.shot.startTime,
-                endTime: segment.trackingGlyphs.at(-1)?.startTime ?? view.shot.endTime,
-            }));
-            const resolveFocusAtTime = (focusTime: number) => {
-                let focusX = 0;
-                let focusY = 0;
-                const focusWeights = resolveSonnetFocusWeights(focusRanges, focusTime);
-                for (let i = 0; i < trackSegments.length; i++) {
-                    const seg = trackSegments[i];
-                    if (seg.trackingGlyphs.length === 0) continue;
-                    const weight = focusWeights[i] ?? 0;
-                    const pos = resolveSonnetSegmentCameraFocus(seg.trackingGlyphs, focusTime);
-                    focusX += pos.x * weight;
-                    focusY += pos.y * weight;
-                }
-                return { x: focusX, y: focusY };
-            };
-            const focusTime = Math.max(view.shot.startTime, Math.min(time, view.shot.endTime));
-            const smoothedFocus = resolveSonnetSmoothedCameraFocus(
-                focusTime,
-                view.shot.startTime,
-                view.shot.endTime,
-                resolveFocusAtTime,
-            );
-
-            currentFocusX = smoothedFocus.x;
-            currentFocusY = smoothedFocus.y;
-        }
-
-        view.container.pivot.set(
-            view.basePivotX + (currentFocusX - view.basePivotX) * camera,
-            view.basePivotY + (currentFocusY - view.basePivotY) * camera
-        );
-
-        view.container.scale.set(
-            view.shot.camera.zoom
-            * (1 + (cameraFrame.scale - 1) * camera),
-        );
-        view.container.rotation = (
-            view.shot.camera.rotation + cameraFrame.rotation + shake.rotation
-        ) * camera;
-        view.container.x = view.baseX + (cameraFrame.x * width + shake.x * width) * camera;
-        view.container.y = view.baseY + (cameraFrame.y * height + shake.y * height) * camera;
-
-        if (view.mgParticleLayer) {
-            // Create a slight time-difference/parallax effect for decorative elements
-            const particleParallaxX = (cameraFrame.x * width + shake.x * width) * camera * 0.4 * this.mod('parallaxScale');
-            const particleParallaxY = (cameraFrame.y * height + shake.y * height) * camera * 0.4 * this.mod('parallaxScale');
-            view.mgParticleLayer.position.set(particleParallaxX, particleParallaxY);
-            
-            // Continuous independent rotation based on shot time
-            view.mgParticleLayer.rotation = (time - view.shot.startTime) * 0.05 * this.mod('mgSwimScale');
-            // Slower scale response creates depth illusion
-            view.mgParticleLayer.scale.set(1 + (cameraFrame.scale - 1) * 0.3);
-        }
-        
-        if (view.mgFixedGeoLayer) {
-            // Keep fixed geometry upright regardless of camera rotation
-            view.mgFixedGeoLayer.rotation = -view.container.rotation;
-        }
-
-        const audioBass = this.options.audioBands?.bass?.get() ?? 0;
-        const audioPower = this.options.audioPower?.get() ?? 0;
-        const audioVocal = this.options.audioBands?.vocal?.get() ?? 0;
-
-        if ((view.mgLayer as any).updateTime) {
-            (view.mgLayer as any).updateTime(
-                time,
-                view.shot.cues,
-                view.shot.startTime,
-                view.shot.endTime,
-                audioBass,
-                audioPower,
-                audioVocal,
-            );
-        }
-
-        view.segments.forEach(segmentView => {
-            const guide = segmentView.guide;
-            const guideActive = time >= guide.startTime && time <= guide.endTime;
-            guide.container.visible = guideActive && this.options.tuning.showGuide && !this.options.tuning.showOnlyText;
-            if (guideActive) {
-                const guideProgress = clamp01(
-                    (time - guide.startTime) / Math.max(0.001, guide.endTime - guide.startTime),
-                );
-                if ((guide as any).update) {
-                    guide.container.alpha = guide.maxAlpha;
-                    (guide as any).update(guideProgress);
-                } else {
-                    const eased = easeSonnetInOut(guideProgress);
-                    guide.container.alpha = Math.sin(eased * Math.PI) * guide.maxAlpha;
-                    guide.container.scale.set(0.76 + eased * 0.24);
-                }
-            }
-
-            // Decorative open frames share the 文字浮标 (showFixedGeo) toggle.
-            const frameDecor = segmentView.frameDecor;
-            if (frameDecor) {
-                const frameVisible = this.options.tuning.showFixedGeo && !this.options.tuning.showOnlyText;
-                frameDecor.container.visible = frameVisible;
-                if (frameVisible) {
-                    frameDecor.update(clamp01(
-                        (time - frameDecor.startTime) / Math.max(0.001, frameDecor.endTime - frameDecor.startTime),
-                    ));
-                }
-            }
-
-            segmentView.glyphs.forEach(glyph => {
-                const glyphProgress = resolveSegmentProgress(
-                    glyph.startTime,
-                    glyph.settleTime,
-                    time,
-                );
-                const waiting = time < glyph.startTime;
-                const offset = (1 - glyphProgress) * motion;
-                const coreAlpha = waiting ? 0 : 0.16 + glyphProgress * 0.84;
-                const haloAlpha = waiting ? 0 : 1 - glyphProgress * 0.28;
-                const scale = isSonnetEmphasisRole(segmentView.role) && view.shot.kind === 'type-impact'
-                    ? 0.52 + glyphProgress * 0.48
-                    : 0.86 + glyphProgress * 0.14;
-                const x = glyph.baseX + glyph.enterX * offset;
-                const y = glyph.baseY + glyph.enterY * offset;
-                const rotation = glyph.finalRotation + glyph.entryRotation * offset;
-                const isGiantDecorativeText = segmentView.role === 'decoration';
-                const showTextGlyph = glyph.isTextGlyph !== false;
-                const glyphVisible = this.options.tuning.showOnlyText
-                    ? showTextGlyph && (!isGiantDecorativeText || this.options.tuning.showGiantDecorativeText)
-                    : (!glyph.isBackgroundShape || this.options.tuning.showBackgroundDecor)
-                        && (!isGiantDecorativeText || this.options.tuning.showGiantDecorativeText);
-
-                // Simulated Parallax 3D effect
-                const depth = glyph.zDepth || 0;
-                const parallaxScale = this.mod('parallaxScale');
-                // Move faster/slower than camera
-                const parallaxX = (cameraFrame.x * width + shake.x * width) * camera * depth * 2.5 * parallaxScale;
-                const parallaxY = (cameraFrame.y * height + shake.y * height) * camera * depth * 2.5 * parallaxScale;
-                // Scale larger if closer to camera (positive depth)
-                const depthScale = 1 + depth * 0.45 * parallaxScale;
-
-                glyph.display.alpha = coreAlpha;
-                glyph.display.visible = glyphVisible;
-                glyph.display.scale.set(scale * depthScale);
-                glyph.display.position.set(x + parallaxX, y + parallaxY);
-                glyph.display.rotation = rotation;
-                if (glyph.halo) {
-                    glyph.halo.alpha = haloAlpha;
-                    glyph.halo.scale.set(scale * (1.08 - glyphProgress * 0.08));
-                    glyph.halo.position.set(x, y);
-                    glyph.halo.rotation = rotation;
-                }
-
-                // Animate Chromatic Aberration separation and merging
-                if (glyph.caWrapper && glyph.caCyan && glyph.caRed && glyph.caOffset) {
-                    const ca = glyph.caWrapper;
-                    ca.visible = glyphVisible && !this.options.tuning.showOnlyText;
-                    ca.alpha = coreAlpha;
-                    ca.scale.copyFrom(glyph.display.scale);
-                    ca.position.copyFrom(glyph.display.position);
-                    ca.rotation = rotation;
-                    // Starts separated (impact), and gently merges to a very subtle base offset
-                    const mergeEased = easeSonnetInOut(glyphProgress);
-                    const currentOffset = glyph.caOffset * (1 - mergeEased * 0.8) * this.mod('caScale'); // 1.0 -> 0.2
-
-                    glyph.caCyan.position.set(-currentOffset, currentOffset * 0.5);
-                    glyph.caRed.position.set(currentOffset, -currentOffset * 0.5);
-                }
-
-                // Semi-hero echo ghosts: split along the layout normal on glyph entry,
-                // fade in over the first quarter, then quickly vanish. One-shot.
-                if (glyph.ghosts && glyph.ghostDuration) {
-                    const ghostProgress = clamp01((time - glyph.startTime) / glyph.ghostDuration);
-                    const ghostActive = glyphVisible && ghostProgress > 0 && ghostProgress < 1;
-                    // Quick fade-in, then a squared falloff so the echo dies fast.
-                    const envelope = ghostProgress <= 0.2
-                        ? ghostProgress / 0.2
-                        : Math.pow(1 - (ghostProgress - 0.2) / 0.8, 2);
-                    const spread = (1 - Math.pow(1 - ghostProgress, 3)) * this.mod('ghostScale');
-                    for (const ghost of glyph.ghosts) {
-                        ghost.node.visible = ghostActive;
-                        if (!ghostActive) continue;
-                        ghost.node.position.set(ghost.dirX * spread, ghost.dirY * spread);
-                        ghost.node.alpha = envelope * ghost.alphaBase;
-                    }
-                }
-
-                glyph.updateAnimation?.(time);
-            });
-        });
     }
 
     private renderFrame = () => {
@@ -709,8 +359,8 @@ export class SonnetPixiRuntime {
         const paragraphIndex = findSonnetParagraphIndexAtTime(this.options.program, time);
         if (paragraphIndex !== this.activeParagraphIndex) {
             this.activeParagraphIndex = paragraphIndex;
-            this.ensureScene(paragraphIndex);
-            this.pruneScenes(paragraphIndex);
+            this.sceneCache.ensure(paragraphIndex);
+            this.sceneCache.prune(paragraphIndex);
         } else if (!this.songSwap) {
             // Neighbours are pre-rolls for a boundary that is still ahead, so at most one is built
             // per frame rather than piling three onto the frame that just changed paragraph.
@@ -719,19 +369,32 @@ export class SonnetPixiRuntime {
             const next = paragraphIndex + 1;
             const previous = paragraphIndex - 1;
             if (next < this.options.program.paragraphs.length && !this.sceneCache.has(next)) {
-                this.ensureScene(next);
+                this.sceneCache.ensure(next);
             } else if (previous >= 0 && !this.sceneCache.has(previous)) {
-                this.ensureScene(previous);
+                this.sceneCache.ensure(previous);
             }
         }
-        const width = Math.max(this.options.host.clientWidth, 320);
-        const height = Math.max(this.options.host.clientHeight, 240);
+        // The size the renderer was last fitted to. Reading the host here instead would force a
+        // synchronous layout every frame, and the ResizeObserver refits both together anyway.
+        const width = this.lastWidth;
+        const height = this.lastHeight;
         const finalParagraph = this.options.program.paragraphs.at(-1);
         const creditsFrame = resolveSonnetCreditsFrame(
             time,
             finalParagraph?.endTime ?? Number.POSITIVE_INFINITY,
         );
         const hasCredits = this.creditsContainer.children.length > 0;
+        // Read once per frame, before any shot, so every consumer sees the same envelopes.
+        const beatFx = this.options.staticMode ? null : this.readBeatFx(this.options.audioBands, this.options.smartBeatEnabled);
+        const shotFrameContext: SonnetShotFrameContext = {
+            tuning: this.options.tuning,
+            smartBeatEnabled: this.options.smartBeatEnabled,
+            theme: this.options.theme,
+            audioBands: this.options.audioBands,
+            audioPower: this.options.audioPower,
+            mod: this.mod,
+            beatFx,
+        };
 
         this.sceneCache.forEach((scene, index) => {
             const isActive = index === paragraphIndex;
@@ -746,57 +409,20 @@ export class SonnetPixiRuntime {
             }
 
             const transitionsEnabled = this.options.tuning.enableTransitions && !this.options.staticMode;
-            const transitionSeed = hashSonnetSeed(`${this.options.program.seed}:${scene.paragraph.id}:transition-frame`);
-            const previousTransition = index > 0
-                ? this.options.program.paragraphs[index - 1]?.transitionOut
-                : null;
-            const enterDuration = previousTransition
-                ? Math.max(0.16, Math.min(0.3, previousTransition.endTime - previousTransition.startTime))
-                : 0;
-            const entering = transitionsEnabled
-                && previousTransition !== null
-                && time >= scene.paragraph.startTime
-                && time <= scene.paragraph.startTime + enterDuration;
-            const paragraphTransitionFrame = entering
-                ? resolveSonnetEnterTransitionFrame(
-                    previousTransition.kind,
-                    time - scene.paragraph.startTime,
-                    enterDuration,
-                    true,
-                    transitionSeed,
-                )
-                : resolveSonnetExitTransitionFrame(
-                    scene.paragraph,
-                    time,
-                    transitionsEnabled,
-                    transitionSeed,
-                );
-
-            // Strictly determine the single active shot within this scene to avoid intra-scene residues
-            let activeShotIndex = 0;
-            for (let i = scene.shots.length - 1; i >= 0; i--) {
-                if (time >= scene.shots[i].shot.startTime) {
-                    activeShotIndex = i;
-                    break;
-                }
-            }
-
-            const visibleShotIndex = activeShotIndex;
-            const shotTransitionFrame = resolveSonnetShotTransitionFrame(
-                scene.shotTimeline,
+            const visibleShotIndex = findSonnetActiveShotIndex(scene, time);
+            const transitionFrame = resolveSonnetSceneTransitionFrame(
+                this.options.program,
+                scene,
+                index,
                 visibleShotIndex,
                 time,
                 transitionsEnabled,
-                transitionSeed,
             );
-            const transitionFrame = shotTransitionFrame !== IDLE_SONNET_TRANSITION_FRAME
-                ? shotTransitionFrame
-                : paragraphTransitionFrame;
             scene.shots.forEach((shot, shotIndex) => {
                 const isShotActive = shotIndex === visibleShotIndex;
                 shot.container.visible = isShotActive;
                 if (!isShotActive) return;
-                this.updateShot(shot, time, width, height, 0);
+                updateSonnetShot(shot, time, width, height, 0, shotFrameContext);
             });
             if (scene.activeShotIndex !== visibleShotIndex) {
                 const previousShot = scene.shots[scene.activeShotIndex];
@@ -825,16 +451,25 @@ export class SonnetPixiRuntime {
                 scene.transitionBlurFilter.enabled = transitionFrame.blur > 0.01;
             }
             if (scene.transitionGlitchEffect) {
-                scene.transitionGlitchEffect.update(transitionFrame.glitch * transitionGlitchScale, transitionFrame.glitchSeed);
-                scene.transitionGlitchEffect.filter.enabled = transitionFrame.glitch > 0.01;
+                const transitionGlitch = transitionFrame.glitch * transitionGlitchScale;
+                // The downbeat tear shares this filter; the stronger of the two drives it.
+                const beatTearWins = !!beatFx && beatFx.tear > transitionGlitch;
+                const glitchAmount = beatTearWins ? beatFx!.tear : transitionGlitch;
+                scene.transitionGlitchEffect.update(
+                    glitchAmount,
+                    beatTearWins ? beatFx!.tearSeed : transitionFrame.glitchSeed,
+                );
+                scene.transitionGlitchEffect.filter.enabled = beatTearWins
+                    ? glitchAmount > 0.01
+                    : transitionFrame.glitch > 0.01;
             }
 
             if (isFinalScene && hasCredits) {
-                this.updateOutroBlur(scene, creditsFrame.lyricBlur);
+                this.outroBlur.update(scene, creditsFrame.lyricBlur);
             }
         });
 
-        if (!creditsFrame.active || !hasCredits) this.clearOutroBlur();
+        if (!creditsFrame.active || !hasCredits) this.outroBlur.clear();
         this.creditsContainer.visible = creditsFrame.active && hasCredits && !this.options.tuning.showOnlyText;
         this.creditsContainer.alpha = creditsFrame.posterAlpha;
         this.creditsContainer.position.set(
@@ -917,7 +552,7 @@ export class SonnetPixiRuntime {
         this.clearScenes();
         if (staged) {
             staged.scene.container.visible = true;
-            this.sceneCache.set(staged.index, staged.scene);
+            this.sceneCache.adopt(staged.index, staged.scene);
             // Adopted as the active paragraph so the frame that commits builds nothing at all.
             this.activeParagraphIndex = staged.index;
         }
@@ -1006,9 +641,47 @@ export class SonnetPixiRuntime {
     }
 
     /** Reads a mod modulation key, falling back to 1 so the frame is unchanged when absent. */
-    private mod(key: string): number {
-        const value = this.options.modulation?.[key];
-        return typeof value === 'number' && Number.isFinite(value) ? value : 1;
+    private readonly mod = (key: string): number => readSonnetModulation(this.options.modulation, key);
+
+    /**
+     * Applies a settings change to the live runtime. Every scene is rebuilt against the new
+     * tuning, but the WebGL context, the canvas and the icon textures stay; the settings that
+     * shape those (`textureResolution`, `showOnlyText`, `showBackgroundDecor`, and
+     * `postProcessEnabled` for the canvas's antialiasing) are part of the
+     * host's rebuild key instead.
+     */
+    setTuning(tuning: SonnetTuning) {
+        if (this.destroyed || this.options.tuning === tuning) return;
+        this.options.tuning = tuning;
+        this.rebuildScenes();
+    }
+
+    /**
+     * Switches 智能动感模式. Scenes are built with or without its MG onset pop and tear filter, so they
+     * are rebuilt like a tuning change; the 轻拍 / 重拍 strengths never come here, the beat clock
+     * applies them to the signals every frame.
+     */
+    setSmartBeatEnabled(enabled: boolean) {
+        if (this.destroyed || this.options.smartBeatEnabled === enabled) return;
+        this.options.smartBeatEnabled = enabled;
+        this.rebuildScenes();
+    }
+
+    /** Rebuilds every scene against the current options on the live context. */
+    private rebuildScenes() {
+        // Staged against the old options, so it can no longer be adopted.
+        if (this.songSwap?.staged) {
+            this.destroyScene(this.songSwap.staged.scene);
+            this.songSwap.staged = null;
+        }
+        this.clearScenes();
+        // Before the first resize pass there is nothing sized to redraw; the install pass
+        // draws both against real dimensions.
+        if (this.lastWidth > 0 && this.lastHeight > 0) {
+            this.drawCredits(this.lastWidth, this.lastHeight);
+            this.drawOverlay(this.lastWidth, this.lastHeight);
+        }
+        if (this.options.paused) this.renderOnce();
     }
 
     /** Hot-swaps the modulation map every time a mod slider moves, without recreating the Pixi context. */

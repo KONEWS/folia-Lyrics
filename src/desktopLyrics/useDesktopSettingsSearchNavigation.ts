@@ -64,7 +64,7 @@ export function useDesktopSettingsSearchNavigation(panel: RefObject<HTMLElement 
       const prerequisite = prerequisiteLabel ? findPrerequisite(prerequisiteLabel) : undefined;
       // Original panels mount nested controls only after a disclosure opens. This does not toggle the effect itself.
       const disclosureArea = entry.context ? area : prerequisiteLabel ? contextRoot(root, prerequisiteLabel) : undefined;
-      const disclosure = !label ? disclosureArea?.querySelector<HTMLElement>('button[aria-expanded=false][aria-controls]') : undefined;
+      const disclosure = !label ? disclosureArea?.querySelector<HTMLElement>('button[aria-expanded=false]') : undefined;
       if (disclosure && !expanded.has(disclosure)) { expanded.add(disclosure); disclosure.click(); return false; }
       const found = label ?? prerequisite;
       if (!found) return false;

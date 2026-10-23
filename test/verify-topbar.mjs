@@ -48,7 +48,7 @@ export async function verifyTopbar(page, song, output) {
     'the cover and song are the first content at the left edge of the playback bar');
   const mode = page.getByRole('combobox', { name: '歌词样式', exact: true });
   const options = await readDesktopOptions(page, '歌词样式');
-  assert.equal(options.length, 13);
+  assert.equal(options.length, 14);
   assert(!options.some(option => option.value === 'still'));
   assert.equal(options.filter(option => option.label === '绘光').length, 1);
   assert.equal(await page.locator('.control-panel').count(), 0, 'styles are usable without opening settings');
@@ -58,7 +58,7 @@ export async function verifyTopbar(page, song, output) {
   await selectDesktopOption(page, '歌词样式', { label: '流光' });
   await page.locator('.desktop-stage canvas').waitFor({ state: 'detached' });
   assert.equal(await mode.getAttribute('data-value'), 'classic');
-  checks.push('leftmost cover and song without a brand', '13 dynamic styles including Lumiere and excluding still', 'topbar style selection mounts original renderer and persists');
+  checks.push('leftmost cover and song without a brand', '14 dynamic styles including Lumiere and Hanabi and excluding still', 'topbar style selection mounts original renderer and persists');
 
   const translation = page.getByRole('button', { name: '显示译文', exact: true });
   const topmost = page.getByRole('button', { name: '窗口置顶', exact: true });

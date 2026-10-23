@@ -1,6 +1,6 @@
 import { useCallback, useRef, type ReactNode } from 'react';
-import { CustomSelect } from '../components/shared/CustomSelect';
-import type { CustomSelectOption } from '../components/shared/CustomSelectMenu';
+import { CustomSelect } from './select/DesktopCustomSelect';
+import type { CustomSelectOption } from './select/DesktopCustomSelectMenu';
 
 // src/desktopLyrics/DesktopSelect.tsx — existing select behavior with the shared desktop glass skin.
 type Props = { value: string; onChange: (value: string) => void; options: CustomSelectOption[]; label: string; placeholder?: string; topbar?: boolean; triggerPrefix?: ReactNode;

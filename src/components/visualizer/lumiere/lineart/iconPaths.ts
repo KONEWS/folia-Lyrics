@@ -1,6 +1,6 @@
 // Copyright (c) 2026 chthollyphile
 import type { IconNode } from 'lucide-react';
-import { resolveLucideIcon } from '../../../../utils/lucideIconResolver';
+import { resolveLucideIconNode } from '../../../../services/lucideIconResolver';
 import type { Point } from './lineArt';
 
 // src/components/visualizer/lumiere/lineart/iconPaths.ts
@@ -309,31 +309,19 @@ export const iconNodeToPolylines = (node: IconNode): IconPolyline[] => (
     })
 );
 
-/**
- * 取 lucide-react 图标组件里的 IconNode：组件是 forwardRef，它的 render 只是
- * createElement(Icon, { iconNode, ... })（1.48 起是 { icon: { node, ... } }），不跑 hooks，直接调用即可拿到节点数据，
- * 不必渲染 SVG 再解析。
- */
-const readIconNode = (name: string): IconNode | null => {
-    const icon = resolveLucideIcon(name) as unknown as { render?: (props: object, ref: null) => unknown } | null;
-    if (!icon || typeof icon.render !== 'function') return null;
-    try {
-        const element = icon.render({}, null) as { props?: { iconNode?: unknown; icon?: { node?: unknown } } } | null;
-        const node = element?.props?.iconNode ?? element?.props?.icon?.node;
-        return Array.isArray(node) ? node as IconNode : null;
-    } catch {
-        return null;
-    }
-};
-
 const cache = new Map<string, IconPolyline[] | null>();
 
-/** 按图标名（lucide 的 PascalCase 导出名）取折线；未知图标返回 null。结果按名字缓存。 */
+/**
+ * 按图标名（lucide 的 PascalCase 导出名）取折线；未知图标返回 null。结果按名字缓存。
+ * 图标按需加载（loadLucideIcons）：取不到节点的（未知名字、还没加载完、加载失败）返回 null 但不进缓存，
+ * 加载完再取就有了。
+ */
 export const lucideIconPolylines = (name: string): IconPolyline[] | null => {
     if (cache.has(name)) return cache.get(name)!;
-    const node = readIconNode(name);
-    const polylines = node ? iconNodeToPolylines(node).filter(polyline => polyline.points.length > 1) : null;
-    const value = polylines && polylines.length > 0 ? polylines : null;
+    const node = resolveLucideIconNode(name);
+    if (!node) return null;
+    const polylines = iconNodeToPolylines(node).filter(polyline => polyline.points.length > 1);
+    const value = polylines.length > 0 ? polylines : null;
     cache.set(name, value);
     return value;
 };

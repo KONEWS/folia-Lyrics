@@ -1,5 +1,5 @@
-import type { VisualizerSettingsPanelProps, VisualizerSettingsResetProps } from '../components/visualizer/definition';
-import { getVisualizerRegistryEntry } from '../components/visualizer/registry';
+import type { VisualizerSettingsPanelProps } from '../components/visualizer/definition';
+import { getVisualizerTuning } from '../components/visualizer/tuningRegistry';
 import type { VisualizerBackgroundActions } from '../components/visualizer/backgrounds/definition';
 import { useVisualizerSettingsStore, type VisualizerSettingsState } from '../stores/useVisualizerSettingsStore';
 import type { VisualizerAssetState } from '../stores/useVisualizerAssetStore';
@@ -8,29 +8,14 @@ import type { VisualizerMode } from '../types';
 import type { DesktopVisualizerPatch } from './desktopVisualFields';
 
 // src/desktopLyrics/desktopVisualSettingsPanels.ts — bind original registry panels to committed/draft desktop settings.
-export function buildDesktopModePanelProps(v: VisualizerSettingsState, a: VisualizerAssetState, patch: (value: DesktopVisualizerPatch) => void,
+export function buildDesktopModePanelProps(mode: VisualizerMode, v: VisualizerSettingsState, patch: (value: DesktopVisualizerPatch) => void,
   begin: () => void, commit: () => void): Omit<VisualizerSettingsPanelProps, 't' | 'isDaylight' | 'theme' | 'controlCardBg' | 'rangeInputClass'> {
+  const adapter = getVisualizerTuning(mode);
+  const fields = v as unknown as Record<string, unknown>;
   return {
-    classicTuning: v.classicTuning, onClassicTuningChange: value => patch({ classicTuning: value }),
-    partitaTuning: v.partitaTuning, onPartitaTuningChange: value => patch({ partitaTuning: value }),
-    fumeTuning: v.fumeTuning, onFumeTuningChange: value => patch({ fumeTuning: value }),
-    claddaghTuning: v.claddaghTuning, onCladdaghTuningChange: value => patch({ claddaghTuning: value }),
-    cappellaTuning: v.cappellaTuning, onCappellaTuningChange: value => patch({ cappellaTuning: value }),
-    tiltTuning: v.tiltTuning, onTiltTuningChange: value => patch({ tiltTuning: value }),
-    dioramaTuning: v.dioramaTuning, onDioramaTuningChange: value => patch({ dioramaTuning: value }),
-    monetTuning: v.monetTuning, onMonetTuningChange: value => patch({ monetTuning: value }),
-    pendoloTuning: v.pendoloTuning, onPendoloTuningChange: value => patch({ pendoloTuning: value }),
-    sonnetTuning: v.sonnetTuning, onSonnetTuningChange: value => patch({ sonnetTuning: value }),
-    temperaTuning: v.temperaTuning, onTemperaTuningChange: value => patch({ temperaTuning: value }),
-    lumiereTuning: v.lumiereTuning, onLumiereTuningChange: value => patch({ lumiereTuning: value }),
-    cappellaCustomEmojiImages: a.cappellaCustomEmojiImages, cappellaCustomEmojiCount: a.cappellaCustomEmojiImages.length,
-    hasCappellaCustomEmojiPack: a.storedCappellaEmojiPack.length > 0, isCappellaCustomEmojiPackLoading: a.isLoadingCappellaCustomEmojiPack,
-    onImportCappellaCustomEmojiPack: v.handleImportCustomCappellaEmojiPack, onClearCappellaCustomEmojiPack: v.handleClearCustomCappellaEmojiPack,
-    cappellaCustomAvatarImages: a.cappellaCustomAvatarImages, hasCappellaCustomAvatar: a.storedCappellaAvatarPack.length > 0,
-    isCappellaCustomAvatarLoading: a.isLoadingCappellaCustomAvatarPack, onImportCappellaCustomAvatar: v.handleImportCustomCappellaAvatar, onClearCappellaCustomAvatar: v.handleClearCustomCappellaAvatar,
-    monetPortraitImage: a.monetPortraitImage, isLoadingMonetPortraitImage: a.isLoadingMonetPortraitImage,
-    onUploadMonetPortraitImage: v.handleUploadMonetPortraitImage, onClearMonetPortraitImage: v.handleClearMonetPortraitImage,
-    onSliderPointerDown: begin, onSliderCommit: commit,
+    tuning: adapter ? fields[adapter.settingsKey] : undefined,
+    onTuningChange: value => { if (adapter) patch({ [adapter.settingsKey]: value } as DesktopVisualizerPatch); },
+    settings: v, onSliderPointerDown: begin, onSliderCommit: commit,
   };
 }
 export function buildDesktopBackgroundActions(v: VisualizerSettingsState, a: VisualizerAssetState,
@@ -48,9 +33,8 @@ export function buildDesktopBackgroundActions(v: VisualizerSettingsState, a: Vis
   };
 }
 export function resetDesktopMode(mode: VisualizerMode) {
-  const store = useVisualizerSettingsStore.getState(), reset: VisualizerSettingsResetProps = {};
-  for (const kind of ['Classic', 'Partita', 'Fume', 'Claddagh', 'Cappella', 'Tilt', 'Diorama', 'Monet', 'Pendolo', 'Sonnet', 'Tempera', 'Lumiere'] as const) {
-    (reset as Record<string, unknown>)[`reset${kind}Tuning`] = store[`handleReset${kind}Tuning`];
-  }
-  getVisualizerRegistryEntry(mode).resetSettings?.(reset);
+  const adapter = getVisualizerTuning(mode);
+  const store = useVisualizerSettingsStore.getState() as unknown as Record<string, unknown>;
+  const reset = adapter?.settingsResetterKey ? store[adapter.settingsResetterKey] : undefined;
+  if (typeof reset === 'function') reset();
 }

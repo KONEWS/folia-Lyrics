@@ -11,7 +11,8 @@ export const visualizerSetters = {
   classicTuning: 'handleSetClassicTuning', cadenzaTuning: 'handleSetCadenzaTuning', partitaTuning: 'handleSetPartitaTuning',
   fumeTuning: 'handleSetFumeTuning', claddaghTuning: 'handleSetCladdaghTuning', cappellaTuning: 'handleSetCappellaTuning',
   tiltTuning: 'handleSetTiltTuning', dioramaTuning: 'handleSetDioramaTuning', monetTuning: 'handleSetMonetTuning',
-  pendoloTuning: 'handleSetPendoloTuning', sonnetTuning: 'handleSetSonnetTuning', temperaTuning: 'handleSetTemperaTuning', lumiereTuning: 'handleSetLumiereTuning',
+  pendoloTuning: 'handleSetPendoloTuning', sonnetTuning: 'handleSetSonnetTuning', temperaTuning: 'handleSetTemperaTuning', lumiereTuning: 'handleSetLumiereTuning', hanabiTuning: 'handleSetHanabiTuning',
+  smartBeat: 'handleSetSmartBeat',
   monetBackgroundTuning: 'handleSetMonetBackgroundTuning', nomandBackgroundTuning: 'handleSetNomandBackgroundTuning',
   latentBackgroundTuning: 'handleSetLatentBackgroundTuning', soraBackgroundTuning: 'handleSetSoraBackgroundTuning',
 } as const satisfies Partial<Record<keyof VisualizerSettingsState, keyof VisualizerSettingsState>>;

@@ -16,7 +16,8 @@ const SECTION_WORDS = {
 function labelFor(key: string): string {
   let value: unknown = zhCN;
   for (const part of key.split('.')) value = value && typeof value === 'object' ? (value as Record<string, unknown>)[part] : undefined;
-  return typeof value === 'string' ? value : key;
+  // Keep the old direct-entry name searchable; it now lands on the continuous strength slider.
+  return typeof value === 'string' ? value : key === 'options.dioramaCustomStrength' ? '自定义强度' : key;
 }
 
 /** Index every destination before any lazily loaded settings panel is opened. */
@@ -48,7 +49,7 @@ export function buildDesktopSettingsSearchIndex(): DesktopSettingsSearchEntry[] 
   }
   for (const catalog of DESKTOP_BACKGROUND_SEARCH_CATALOG) {
     const backgroundLabel = labelFor(catalog.labelKey);
-    const keywords = [backgroundLabel, catalog.background, ...catalog.keys.filter(key => key.endsWith('Settings')).map(labelFor), ...SECTION_WORDS.background];
+    const keywords = [backgroundLabel, `${backgroundLabel}背景`, catalog.background, ...catalog.keys.filter(key => key.endsWith('Settings')).map(labelFor), ...SECTION_WORDS.background];
     entries.push({ key: `background.${catalog.background}`, label: backgroundLabel, section: 'background', background: catalog.background, keywords });
     for (const labelKey of catalog.keys) {
       const condition = desktopVisualSearchCondition(labelKey, undefined, catalog.background);

@@ -1,6 +1,6 @@
 // Copyright (c) 2026 chthollyphile
 import type { LumiereRenderQuality, LumiereTuning } from '../../../types';
-import { snapResolutionToTexturePool } from '../pixiTextureBudget';
+import { snapResolutionToTexturePool } from '../pixi/pixiTextureBudget';
 import type { LumiereProgramOptions } from './lumiereProgram';
 import type { LumiereSceneTuning } from './types';
 
@@ -97,6 +97,7 @@ export const toLumiereSceneTuning = (
         lineArt: tuning.lineArt,
         frontBokeh: tuning.frontBokeh,
         trails: tuning.trails,
+        hideTrails: tuning.hideTrails,
         overlayFrame: tuning.overlayFrame,
         textOnly: tuning.textOnly,
         keywordColors: tuning.keywordColors,
@@ -116,6 +117,7 @@ export const LUMIERE_LIVE_SCENE_KEYS = [
     'darkField',
     'unlitOpacity',
     'fogOctaves',
+    'hideTrails',
 ] as const satisfies readonly (keyof LumiereSceneTuning)[];
 
 /**

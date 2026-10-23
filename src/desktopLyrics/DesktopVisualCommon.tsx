@@ -14,7 +14,7 @@ export default function DesktopVisualCommon({ model, mode, onSegmentation, canSe
   const patch = model.patchTypography;
   const autoSize = ['sonnet', 'tempera', 'lumiere'].includes(mode);
   return <>
-    <VisualCard title={t('options.previewCommonSettings')}>
+    <VisualCard title={t('desktopVisual.commonTab')}>
       <button type="button" className="desktop-visual-reset" onClick={model.resetCommon}>{t('ui.default')}</button>
       <DesktopSettingsTransparency/>
       <label className="desktop-visual-field"><span>{t('ui.animationIntensity')}</span><DesktopSelect

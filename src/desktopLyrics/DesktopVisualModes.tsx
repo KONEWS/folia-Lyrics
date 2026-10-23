@@ -9,6 +9,7 @@ export default function DesktopVisualModes({ model, mode, onMode, editingMode = 
 }) {
   const t = useVisualTranslation();
   const entry = getVisualizerRegistryEntry(editingMode);
+  const panelProps = model.panelProps(editingMode);
   const dynamicModes = VISUALIZER_REGISTRY.filter(item => item.mode !== 'still');
   return <>
     <VisualCard title={t('options.previewVisualizerSettings')}>
@@ -18,12 +19,12 @@ export default function DesktopVisualModes({ model, mode, onMode, editingMode = 
       </div>
       <div className="desktop-visual-still"><button type="button" data-visual-mode="still" aria-pressed={mode === 'still'}
         onClick={() => onMode('still')}>{getVisualizerModeLabel('still', t)}</button><p>{t('desktopVisual.stillHint')}</p></div>
-      <button type="button" className="desktop-visual-reset" disabled={!entry.resetSettings} onClick={() => model.resetMode(editingMode)}>
+      <button type="button" className="desktop-visual-reset" disabled={!entry.renderSettingsPanel || panelProps.tuning === undefined} onClick={() => model.resetMode(editingMode)}>
         {t('desktopVisual.resetMode')}
       </button>
     </VisualCard>
     <div className="desktop-visual-original-panel" data-visualizer-settings={editingMode}>
-      {entry.renderSettingsPanel ? entry.renderSettingsPanel({ ...model.panelProps, t,
+      {entry.renderSettingsPanel ? entry.renderSettingsPanel({ ...panelProps, t,
         theme: model.mergedTheme, isDaylight: false, controlCardBg: 'transparent', rangeInputClass: 'desktop-visual-native-range',
         onSliderPointerDown: model.beginSlider, onSliderCommit: model.commitSlider }) :
         <p className="desktop-visual-hint">{t('desktopVisual.noModeSettings')}</p>}

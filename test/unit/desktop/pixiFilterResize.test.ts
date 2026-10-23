@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clearDestroyedPixiFilterInputs } from '../../../src/components/visualizer/pixiDisplayResources';
+import { clearDestroyedPixiFilterInputs } from '../../../src/components/visualizer/pixi/pixiDisplayResources';
 
 // test/unit/desktop/pixiFilterResize.test.ts — resize compatibility never replaces live or active filter resources.
 describe('Pixi filter inputs after a desktop resize', () => {

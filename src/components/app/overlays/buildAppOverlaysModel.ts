@@ -11,7 +11,7 @@ import { resolvePlaybackNeighbors } from '../../../utils/playbackNeighbors';
 import { getPlaybackSongKey } from '../../../utils/appPlaybackGuards';
 import { getSongArtistLabel } from '../../../services/onlineMusic/songMetadata';
 import { setPlayerState } from '../../../stores/usePlaybackStore';
-import { focusLatticeCurrentSong } from '../../../stores/useLatticeControlsStore';
+import { locatePlayingSongOnWall } from '../lattice/wallLocate';
 import { setIsDevDebugOverlayVisible, setIsMemoryMonitorVisible } from '../../../stores/useAppChromeStore';
 import type { SlotContextFromApp } from '../../FloatingPlayerControls';
 import type { PlayerControlSlotActionId } from '../../../types/playerControlSlots';
@@ -87,6 +87,8 @@ export type AppOverlaysDeps = {
     handleSearchResultAddToQueue: (track: UnifiedSong) => void;
     handleSearchResultArtistOpen: SearchOverlayProps['onOpenArtist'];
     handleSearchResultAlbumOpen: SearchOverlayProps['onOpenAlbum'];
+    /** 搜索结果按当前本地曲库目录重算展示（见 SearchWorkspace 的同名 prop）。 */
+    resolveSearchResultDisplay: NonNullable<SearchOverlayProps['resolveTrackDisplay']>;
     devDebugSnapshot: any;
     effectiveLoopMode: 'off' | 'all' | 'one';
     canToggleCurrentPlayback: boolean;
@@ -134,6 +136,7 @@ export const buildAppOverlaysModel = ({
     handleSearchResultAddToQueue,
     handleSearchResultArtistOpen,
     handleSearchResultAlbumOpen,
+    resolveSearchResultDisplay,
     isDevDebugOverlayVisible,
     isMemoryMonitorVisible,
     memoryMonitorShortcutLabel,
@@ -203,7 +206,7 @@ export const buildAppOverlaysModel = ({
             onActivate: currentView === 'home'
                 ? navigateToPlayer
                 : currentView === 'lattice'
-                    ? () => { focusLatticeCurrentSong(); }
+                    ? locatePlayingSongOnWall
                     : openSongCardPanel,
             activateLabel: currentView === 'home'
                 ? stageTrackPillOpenPlayerLabel
@@ -223,6 +226,7 @@ export const buildAppOverlaysModel = ({
             onAddTrackToQueue: handleSearchResultAddToQueue,
             onOpenArtist: handleSearchResultArtistOpen,
             onOpenAlbum: handleSearchResultAlbumOpen,
+            resolveTrackDisplay: resolveSearchResultDisplay,
         }
         : null,
     // Not gated on the view, and that was a real hole: the app cold-starts on the home page,
@@ -280,7 +284,7 @@ export const buildAppOverlaysModel = ({
             onTogglePlay: togglePlay,
             onToggleLoop: toggleLoop,
             onNavigateToPlayer: navigateFromPlayerCapsule,
-            onFocusLatticeCurrentSong: () => { focusLatticeCurrentSong(); },
+            onFocusLatticeCurrentSong: locatePlayingSongOnWall,
             noTrackText,
             primaryColor: 'var(--text-primary)',
             secondaryColor: 'var(--text-secondary)',

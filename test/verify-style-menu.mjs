@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile, readdir, writeFile } from 'node:fs/promises';
 import { selectDesktopOption } from './desktop-select.mjs';
 
 // test/verify-style-menu.mjs — real pointer evidence for the fullscreen style menu and whole capsule.
@@ -20,13 +20,21 @@ const state = page => page.evaluate(() => ({ rootClass: document.querySelector('
 
 // Compare the displayed schematics with the original mode glyph source instead of copying its shapes into the fixture.
 async function originalGlyphShapes() {
-  const source = await readFile(new URL('../src/components/visualizer/modeGlyphs.tsx', import.meta.url), 'utf8');
-  const definitions = source.split('const VISUALIZER_MODE_GLYPHS:')[1]?.split('const BACKGROUND_MODE_GLYPHS:')[0];
-  assert(definitions, 'the original visualizer glyph table must remain available');
-  return Object.fromEntries([...definitions.matchAll(/^\s{4}(\w+): \(([\s\S]*?)\n    \),/gm)].map(([, mode, fragment]) => [mode,
-    [...fragment.matchAll(/<(path|circle|ellipse|rect)\b([^>]*?)\s*\/>/g)].map(([, tag, attributes]) => ({ tag,
+  const root = new URL('../src/components/visualizer/', import.meta.url), shapes = {};
+  for (const folder of await readdir(root, { withFileTypes: true })) {
+    if (!folder.isDirectory()) continue;
+    let source;
+    try { source = await readFile(new URL(folder.name + '/entry.tsx', root), 'utf8'); }
+    catch (error) { if (error.code === 'ENOENT') continue; throw error; }
+    const mode = source.match(/mode: '([^']+)'/)?.[1];
+    const fragment = source.split('glyph: (')[1]?.split('\n    ),')[0];
+    if (!mode || !fragment) continue;
+    shapes[mode] = [...fragment.matchAll(/<(path|circle|ellipse|rect)\b([^>]*?)\s*\/>/g)].map(([, tag, attributes]) => ({ tag,
       attributes: Object.fromEntries([...attributes.matchAll(/(\w+)="([^"]*)"/g)]
-        .map(([, name, value]) => [name.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`), value])) }))]));
+        .map(([, name, value]) => [name.replace(/[A-Z]/g, letter => '-' + letter.toLowerCase()), value])) }));
+  }
+  assert(Object.keys(shapes).length >= 14, 'every upstream style declares its glyph alongside its entry');
+  return shapes;
 }
 
 // Keep the old build's failure as evidence instead of changing production behavior for the reproduction.
@@ -91,7 +99,7 @@ export async function verifyStyleMenu(page, song, output) {
     const expectedWidth = Math.min(sample.capsule.width, sample.width - 16), expectedLeft = Math.max(8, Math.min(sample.capsule.left, sample.width - expectedWidth - 8));
     assert(Math.abs(sample.menu.width - expectedWidth) <= 0.75 && Math.abs(sample.menu.left - expectedLeft) <= 0.75, `${context}: both menu edges follow the whole capsule`);
     assert(sample.menu.top >= 7.5 && sample.menu.bottom <= sample.height - 7.5, `${context}: menu stays within the viewport`);
-    assert.equal(sample.count, 13); assert.equal(sample.groupRole, 'group'); assert.equal(sample.footerCount, 1);
+    assert.equal(sample.count, 14); assert.equal(sample.groupRole, 'group'); assert.equal(sample.footerCount, 1);
     assert.equal(sample.scrollbar, 'none'); assert.equal(sample.webkitScrollbar, 'none');
     assert(['auto', 'scroll'].includes(sample.overflow)); assert(sample.scrollHeight > sample.clientHeight);
     samples.push({ context, geometry: sample });
@@ -113,7 +121,7 @@ export async function verifyStyleMenu(page, song, output) {
         shapes: svg ? [...svg.children].map(child => ({ tag: child.tagName.toLowerCase(),
           attributes: Object.fromEntries([...child.attributes].map(attribute => [attribute.name, attribute.value])) })) : [] };
     }));
-    assert.equal(rows.length, 13); assert.equal(rows.some(row => row.value === 'still'), false);
+    assert.equal(rows.length, 14); assert.equal(rows.some(row => row.value === 'still'), false);
     for (const row of rows) {
       assert.equal(row.iconCount, 1, `${context}/${row.value}: exactly one original schematic`); assert.equal(row.labelCount, 1);
       assert(glyphShapes[row.value]?.length, `${row.value}: original source has actual drawing commands`);
@@ -203,11 +211,11 @@ export async function verifyStyleMenu(page, song, output) {
     assert.equal((await counts()).volume, beforeWheel.volume, 'selector wheel scroll must not adjust system volume');
     await last.click(); await menu(page).waitFor({ state: 'detached' }); assert.equal(await trigger(page).getAttribute('data-value'), lastValue);
     await selectDesktopOption(page, menuName, { value: 'classic' }); await trigger(page).focus(); await page.keyboard.press('End'); await settle(page);
-    await page.waitForFunction(() => document.activeElement?.getAttribute('data-option-index') === '12');
+    await page.waitForFunction(() => document.activeElement?.getAttribute('data-option-index') === '13');
     await page.keyboard.press('Enter'); await menu(page).waitFor({ state: 'detached' }); assert.equal(await trigger(page).getAttribute('data-value'), lastValue);
     await selectDesktopOption(page, menuName, { value: 'classic' }); await open(); await bounds('450x300-after-selection');
     await page.screenshot({ path: `${output}/style-menu-narrow.png` }); await close();
-    checks.push('450x300 menu hides its scrollbar while wheel and End/Enter can select the thirteenth original style without changing system volume');
+    checks.push('450x300 menu hides its scrollbar while wheel and End/Enter can select the fourteenth upstream style without changing system volume');
 
     await windowState(true); await open(); await bounds('450x300-fullscreen'); await icons('450x300-fullscreen-icons'); await enterMenu('450x300-fullscreen');
     await page.screenshot({ path: `${output}/style-icons-narrow-fullscreen.png` }); await close(); await windowState();

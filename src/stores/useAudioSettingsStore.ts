@@ -9,9 +9,18 @@
 import { create } from 'zustand';
 import type { AudioQualityPreference } from '../types/onlineMusic';
 import { type QueueAddBehavior } from '../types';
-import { getAudioEqualizerCustomSlotIndex, isAudioEqualizerCustomSlotId, readStoredAudioEqualizerSettings, resolveAudioEqualizerSettings, writeStoredAudioEqualizerSettings, type AudioEqualizerModeId, type AudioEqualizerSettings } from '../utils/audioEqualizer';
-import { AUDIO_SOUND_PRESETS } from '../utils/audioPresets';
-import { getStoredBoolean, setStoredBoolean } from './storagePrimitives';
+import { areAudioEqualizerSettingsEqual, planAudioSoundPreset, readStoredAudioEqualizerSettings, resolveAudioEqualizerSettings, writeStoredAudioEqualizerSettings, type AudioEqualizerCustomSlotId, type AudioEqualizerModeId, type AudioEqualizerSettings } from '../utils/audioEqualizer';
+import {
+    areAudioEqualizerModCurvesEqual,
+    isSameOwnSound,
+    normalizeAudioEqualizerModCurveGains,
+    parseStoredAudioEqualizerModCurve,
+    saveAudioEqualizerModCurveToSlot,
+    serializeAudioEqualizerModCurve,
+    type AudioEqualizerChangeOrigin,
+    type AudioEqualizerModCurve,
+} from '../utils/audioEqualizerModCurve';
+import { getStoredBoolean, getStoredString, removeStoredKey, setStoredBoolean, setStoredString } from './storagePrimitives';
 import { setStatusMessage } from './useStatusMessageStore';
 import i18n from '../i18n/config';
 
@@ -32,13 +41,28 @@ export const ENABLE_TRANSCODE_FALLBACK_KEY = 'folia_enable_transcode_fallback';
 /** Whether finished plays of online NetEase tracks are reported to the signed-in account. */
 export const NETEASE_SCROBBLE_KEY = 'folia_netease_scrobble';
 
+/** Whether pause fades out and resume fades in (services/playbackFade). On unless switched off. */
+export const PLAYBACK_FADE_KEY = 'folia_playback_fade_enabled';
+
+/**
+ * Whether a song that cannot be played for an account restriction or an unknown reason counts down to
+ * a skip, like a taken-down one (services/onlineMusic/failure/onlineFailureCase). Off unless asked for.
+ */
+export const AUTO_SKIP_UNPLAYABLE_KEY = 'folia_auto_skip_unplayable';
+
+/**
+ * Folium 1.7: the equalizer curve a mod put in place over the listener's own sound (utils/audioEqualizerModCurve.ts),
+ * removed when the listener's own sound plays again. audio_equalizer_settings never holds it.
+ */
+export const AUDIO_EQUALIZER_MOD_CURVE_KEY = 'folia_audio_equalizer_mod_curve';
+
 /** Gigabytes of cached audio to keep. Zero is the listener asking for no ceiling at all. */
 export const DEFAULT_MEDIA_CACHE_LIMIT_GB = 5;
 
 export type AudioQuality = AudioQualityPreference;
 
 export const resolveStoredAudioQuality = (saved: string | null): AudioQuality => (
-    saved === 'standard' || saved === 'lossless' || saved === 'hires' ? saved : 'high'
+    saved === 'standard' || saved === 'ultra' || saved === 'lossless' || saved === 'hires' ? saved : 'high'
 );
 
 /**
@@ -117,6 +141,48 @@ const readStoredLoopMode = (): 'off' | 'all' | 'one' => {
     return saved === 'all' || saved === 'one' ? saved : 'off';
 };
 
+/**
+ * The mod curve kept from the last run, checked against the listener's own sound: one saved by a later
+ * version is left in place unused (going back to that version finds it again), a broken one is removed, and
+ * so is one whose base the listener's sound no longer matches (it was changed where nothing ended the curve,
+ * an older version for one: the listener has chosen since).
+ */
+const readStoredAudioEqualizerModCurve = (settings: AudioEqualizerSettings): AudioEqualizerModCurve | null => {
+    const raw = getStoredString(AUDIO_EQUALIZER_MOD_CURVE_KEY, '');
+    if (!raw) {
+        return null;
+    }
+
+    const stored = parseStoredAudioEqualizerModCurve(raw);
+    if ('ignore' in stored) {
+        console.info(`[AudioEqualizer] kept a mod curve saved by a later version (v=${String(stored.version)}); not used here`);
+        return null;
+    }
+    if ('drop' in stored) {
+        console.info('[AudioEqualizer] dropped a stored mod curve that could not be read');
+        removeStoredKey(AUDIO_EQUALIZER_MOD_CURVE_KEY);
+        return null;
+    }
+    if (!isSameOwnSound(stored.curve.base, settings)) {
+        console.info(`[AudioEqualizer] dropped the curve of ${stored.curve.modId}: your own sound changed since it was applied`);
+        removeStoredKey(AUDIO_EQUALIZER_MOD_CURVE_KEY);
+        return null;
+    }
+    return stored.curve;
+};
+
+const writeStoredAudioEqualizerModCurve = (curve: AudioEqualizerModCurve | null) => {
+    if (curve) {
+        setStoredString(AUDIO_EQUALIZER_MOD_CURVE_KEY, serializeAudioEqualizerModCurve(curve));
+    } else {
+        removeStoredKey(AUDIO_EQUALIZER_MOD_CURVE_KEY);
+    }
+};
+
+const USER_ORIGIN: AudioEqualizerChangeOrigin = { kind: 'user' };
+const COMMAND_ORIGIN: AudioEqualizerChangeOrigin = { kind: 'command' };
+const HOST_ORIGIN: AudioEqualizerChangeOrigin = { kind: 'host' };
+
 const readStoredVolume = () => {
     if (typeof window === 'undefined') {
         return 1;
@@ -139,8 +205,22 @@ export type AudioSettingsState = {
     enableTranscodeFallback: boolean;
     /** Report finished plays of online NetEase tracks to the signed-in account. Off by default. */
     neteaseScrobbleEnabled: boolean;
+    /** Short fade when pausing and resuming instead of cutting the sound. On by default. */
+    playbackFadeEnabled: boolean;
+    /** Count down to a skip when a song is restricted or fails for an unknown reason. Off by default. */
+    autoSkipUnplayable: boolean;
     audioOutputDeviceId: string;
+    /** The listener's own sound, always: a mod's curve is never written into it. */
     audioEqualizerSettings: AudioEqualizerSettings;
+    /** A curve a mod put in place over the listener's own sound; null while the listener's own sound plays. Persisted. */
+    audioEqualizerModCurve: AudioEqualizerModCurve | null;
+    /**
+     * True while the mod of that curve is disabled or removed: the curve is kept but not heard. Not persisted; the
+     * Folium host layer sets it from the mod list (runtime/equalizer/hostEqualizer.ts). False whenever there is no curve.
+     */
+    audioEqualizerModCurveSuspended: boolean;
+    /** Who made the last equalizer change; not persisted. Read by the Folium host layer and the audio bridge. */
+    audioEqualizerChangeOrigin: AudioEqualizerChangeOrigin;
     isAudioEqualizerOpen: boolean;
     volume: number;
     isMuted: boolean;
@@ -152,15 +232,80 @@ export type AudioSettingsState = {
     handleToggleAutoPlayOnLaunch: (enable: boolean) => void;
     handleToggleTranscodeFallback: (enable: boolean) => void;
     handleToggleNeteaseScrobble: (enable: boolean) => void;
+    handleTogglePlaybackFade: (enable: boolean) => void;
+    handleToggleAutoSkipUnplayable: (enable: boolean) => void;
     handleSetAudioOutputDeviceId: (deviceId: string) => void;
-    handleSetAudioEqualizerSettings: (settings: AudioEqualizerSettings) => void;
-    handleApplyAudioSoundPreset: (modeId: AudioEqualizerModeId) => void;
+    /*
+     * The equalizer actions below return whether anything changed: the listener's settings they leave
+     * (compared field by field) or the mod curve record. When nothing did they neither set nor save.
+     * Each change is one set, with the origin beside the settings.
+     */
+    /** Writes the listener's whole sound (the window: a preset, the reset, an edit); ends a mod's curve. */
+    handleSetAudioEqualizerSettings: (settings: AudioEqualizerSettings, origin?: AudioEqualizerChangeOrigin) => boolean;
+    /** Flips only the processing switch; a mod's curve stays. */
+    handleSetAudioEqualizerEnabled: (enabled: boolean, origin?: AudioEqualizerChangeOrigin) => boolean;
+    /**
+     * Applies a built-in sound or a saved custom slot and ends a mod's curve. Turns processing on unless
+     * `keepEnabled` (a mod's write never touches the switch). The origin is `command` unless given.
+     */
+    handleApplyAudioSoundPreset: (
+        modeId: AudioEqualizerModeId,
+        options?: { origin?: AudioEqualizerChangeOrigin; keepEnabled?: boolean },
+    ) => boolean;
+    /** Folium 1.7: puts a mod's curve in place over the listener's own sound, which stays as it is. */
+    handleApplyModEqualizerCurve: (curve: { modId: string; modName: string; gains: readonly number[] }) => boolean;
+    /** Takes the mod curve off, back to the listener's own sound; false when there is none. */
+    handleReleaseModEqualizerCurve: (origin: AudioEqualizerChangeOrigin) => boolean;
+    /** The window's "save to custom N": that slot becomes the curve with the listener's effects, and is chosen. */
+    handleSaveModEqualizerCurveToSlot: (slotId: AudioEqualizerCustomSlotId) => boolean;
+    /** For the Folium host layer only: holds the curve back while its mod is disabled or removed. No-op without a curve. */
+    handleSetAudioEqualizerModCurveSuspended: (suspended: boolean) => boolean;
     openAudioEqualizer: () => void;
     closeAudioEqualizer: () => void;
     handleSetVolume: (val: number) => void;
+    /** Sets the mute switch; the same value is a no-op. */
+    handleSetMuted: (muted: boolean) => void;
     handleToggleMute: () => void;
+    /** Sets the repeat mode and toasts it like the repeat button; the mode already in effect is a no-op. */
+    handleSetLoopMode: (mode: 'off' | 'all' | 'one') => void;
     handleToggleLoopMode: () => void;
 };
+
+/*
+ * One equalizer change: the listener's settings it leaves and the mod curve record after it. Nothing
+ * changes when both are the same as now: then no set and nothing saved, and false. Otherwise what changed
+ * is saved and set at once, with the origin. A curve that changes is heard (the mod putting it there runs,
+ * and with none there is nothing to hold back), so the suspension goes with it.
+ */
+const commitAudioEqualizerChange = (
+    get: () => AudioSettingsState,
+    set: (partial: Partial<AudioSettingsState>) => void,
+    settings: AudioEqualizerSettings,
+    curve: AudioEqualizerModCurve | null,
+    origin: AudioEqualizerChangeOrigin,
+): boolean => {
+    const current = get();
+    const settingsChanged = !areAudioEqualizerSettingsEqual(settings, current.audioEqualizerSettings);
+    const curveChanged = !areAudioEqualizerModCurvesEqual(curve, current.audioEqualizerModCurve);
+    if (!settingsChanged && !curveChanged) {
+        return false;
+    }
+
+    if (settingsChanged) {
+        writeStoredAudioEqualizerSettings(settings);
+    }
+    if (curveChanged) {
+        writeStoredAudioEqualizerModCurve(curve);
+    }
+    set({
+        ...(settingsChanged ? { audioEqualizerSettings: settings } : {}),
+        ...(curveChanged ? { audioEqualizerModCurve: curve, audioEqualizerModCurveSuspended: false } : {}),
+        audioEqualizerChangeOrigin: origin,
+    });
+    return true;
+};
+
+const initialAudioEqualizerSettings = readStoredAudioEqualizerSettings();
 
 export const useAudioSettingsStore = create<AudioSettingsState>((set, get) => ({
     audioQuality: readStoredAudioQuality(),
@@ -174,8 +319,14 @@ export const useAudioSettingsStore = create<AudioSettingsState>((set, get) => ({
     ),
     // Off unless asked for: it writes to the listener's music account, so it is never a default.
     neteaseScrobbleEnabled: getStoredBoolean(NETEASE_SCROBBLE_KEY, false),
+    playbackFadeEnabled: getStoredBoolean(PLAYBACK_FADE_KEY, true),
+    // Off unless asked for: skipping a song the listener picked is not something to do by default.
+    autoSkipUnplayable: getStoredBoolean(AUTO_SKIP_UNPLAYABLE_KEY, false),
     audioOutputDeviceId: readStoredAudioOutputDeviceId(),
-    audioEqualizerSettings: readStoredAudioEqualizerSettings(),
+    audioEqualizerSettings: initialAudioEqualizerSettings,
+    audioEqualizerModCurve: readStoredAudioEqualizerModCurve(initialAudioEqualizerSettings),
+    audioEqualizerModCurveSuspended: false,
+    audioEqualizerChangeOrigin: HOST_ORIGIN,
     isAudioEqualizerOpen: false,
     volume: readStoredVolume(),
     isMuted: getStoredBoolean('player_is_muted', false),
@@ -223,6 +374,14 @@ export const useAudioSettingsStore = create<AudioSettingsState>((set, get) => ({
         setStoredBoolean(NETEASE_SCROBBLE_KEY, enable);
         set({ neteaseScrobbleEnabled: enable });
     },
+    handleTogglePlaybackFade: (enable) => {
+        setStoredBoolean(PLAYBACK_FADE_KEY, enable);
+        set({ playbackFadeEnabled: enable });
+    },
+    handleToggleAutoSkipUnplayable: (enable) => {
+        setStoredBoolean(AUTO_SKIP_UNPLAYABLE_KEY, enable);
+        set({ autoSkipUnplayable: enable });
+    },
     handleSetAudioOutputDeviceId: (deviceId) => {
         set({ audioOutputDeviceId: deviceId });
         if (typeof window === 'undefined') {
@@ -235,30 +394,68 @@ export const useAudioSettingsStore = create<AudioSettingsState>((set, get) => ({
             localStorage.removeItem('audio_output_device_id');
         }
     },
-    handleSetAudioEqualizerSettings: (settings) => {
-        const resolved = resolveAudioEqualizerSettings(settings);
-        writeStoredAudioEqualizerSettings(resolved);
-        set({ audioEqualizerSettings: resolved });
+    handleSetAudioEqualizerSettings: (settings, origin = USER_ORIGIN) => (
+        commitAudioEqualizerChange(get, set, resolveAudioEqualizerSettings(settings), null, origin)
+    ),
+    // The switch stops the processing and keeps every value, a mod's curve included.
+    handleSetAudioEqualizerEnabled: (enabled, origin = USER_ORIGIN) => {
+        const current = get();
+        return commitAudioEqualizerChange(
+            get,
+            set,
+            { ...current.audioEqualizerSettings, enabled },
+            current.audioEqualizerModCurve,
+            origin,
+        );
     },
     // Applies a built-in sound preset or a saved custom slot, and turns processing on.
-    handleApplyAudioSoundPreset: (modeId) => {
-        const current = get().audioEqualizerSettings;
-        const source = isAudioEqualizerCustomSlotId(modeId)
-            ? current.customSlots[getAudioEqualizerCustomSlotIndex(modeId)]
-            : AUDIO_SOUND_PRESETS[modeId];
-        if (!source) {
-            return;
+    handleApplyAudioSoundPreset: (modeId, options = {}) => {
+        const next = planAudioSoundPreset(get().audioEqualizerSettings, modeId, { keepEnabled: options.keepEnabled });
+        if (!next) {
+            return false;
         }
-
-        const resolved = resolveAudioEqualizerSettings({
-            ...current,
-            enabled: true,
-            preset: modeId,
-            gains: [...source.gains],
-            effects: { ...source.effects },
-        });
-        writeStoredAudioEqualizerSettings(resolved);
-        set({ audioEqualizerSettings: resolved });
+        return commitAudioEqualizerChange(get, set, next, null, options.origin ?? COMMAND_ORIGIN);
+    },
+    // The listener's own settings stay as they are: the curve lies over them and is taken off again whole.
+    handleApplyModEqualizerCurve: ({ modId, modName, gains }) => {
+        const settings = get().audioEqualizerSettings;
+        const curve: AudioEqualizerModCurve = {
+            modId,
+            modName,
+            gains: normalizeAudioEqualizerModCurveGains(gains),
+            base: { preset: settings.preset, gains: [...settings.gains], effects: { ...settings.effects } },
+        };
+        return commitAudioEqualizerChange(get, set, settings, curve, { kind: 'mod', modId });
+    },
+    handleReleaseModEqualizerCurve: (origin) => {
+        const current = get();
+        if (!current.audioEqualizerModCurve) {
+            return false;
+        }
+        return commitAudioEqualizerChange(get, set, current.audioEqualizerSettings, null, origin);
+    },
+    handleSaveModEqualizerCurveToSlot: (slotId) => {
+        const current = get();
+        if (!current.audioEqualizerModCurve) {
+            return false;
+        }
+        return commitAudioEqualizerChange(
+            get,
+            set,
+            saveAudioEqualizerModCurveToSlot(current.audioEqualizerSettings, current.audioEqualizerModCurve, slotId),
+            null,
+            USER_ORIGIN,
+        );
+    },
+    // Not saved: the host layer works it out again from the mod list at every start.
+    handleSetAudioEqualizerModCurveSuspended: (suspended) => {
+        const current = get();
+        const next = current.audioEqualizerModCurve ? suspended : false;
+        if (next === current.audioEqualizerModCurveSuspended) {
+            return false;
+        }
+        set({ audioEqualizerModCurveSuspended: next, audioEqualizerChangeOrigin: HOST_ORIGIN });
+        return true;
     },
     openAudioEqualizer: () => set({ isAudioEqualizerOpen: true }),
     closeAudioEqualizer: () => set({ isAudioEqualizerOpen: false }),
@@ -268,10 +465,32 @@ export const useAudioSettingsStore = create<AudioSettingsState>((set, get) => ({
         }
         set({ volume: val });
     },
+    // The toggles below delegate to these setters, so persistence and the toast live in one place
+    // (Folium's playback.setMuted / setLoopMode call the setters directly).
+    handleSetMuted: (muted) => {
+        if (muted === get().isMuted) {
+            return;
+        }
+        setStoredBoolean('player_is_muted', muted);
+        set({ isMuted: muted });
+    },
     handleToggleMute: () => {
-        const next = !get().isMuted;
-        setStoredBoolean('player_is_muted', next);
-        set({ isMuted: next });
+        get().handleSetMuted(!get().isMuted);
+    },
+    handleSetLoopMode: (mode) => {
+        if (mode === get().loopMode) {
+            return;
+        }
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('player_loop_mode', mode);
+        }
+        set({ loopMode: mode });
+        const loopModeKey = mode === 'off' ? 'loopOff' : mode === 'one' ? 'loopOne' : 'loopAll';
+        setStatusMessage({
+            type: 'success',
+            text: i18n.t(`player.${loopModeKey}`),
+            nonce: Date.now(),
+        });
     },
     handleToggleLoopMode: () => {
         const prev = get().loopMode;
@@ -280,16 +499,7 @@ export const useAudioSettingsStore = create<AudioSettingsState>((set, get) => ({
             : prev === 'all'
                 ? 'one'
                 : 'off';
-        if (typeof window !== 'undefined') {
-            localStorage.setItem('player_loop_mode', next);
-        }
-        set({ loopMode: next });
-        const loopModeKey = next === 'off' ? 'loopOff' : next === 'one' ? 'loopOne' : 'loopAll';
-        setStatusMessage({
-            type: 'success',
-            text: i18n.t(`player.${loopModeKey}`),
-            nonce: Date.now(),
-        });
+        get().handleSetLoopMode(next);
     },
 }));
 
@@ -305,6 +515,8 @@ export const selectAudioSettingsSnapshot = (state: AudioSettingsState) => ({
     autoPlayOnLaunch: state.autoPlayOnLaunch,
     enableTranscodeFallback: state.enableTranscodeFallback,
     neteaseScrobbleEnabled: state.neteaseScrobbleEnabled,
+    playbackFadeEnabled: state.playbackFadeEnabled,
+    autoSkipUnplayable: state.autoSkipUnplayable,
     audioOutputDeviceId: state.audioOutputDeviceId,
     audioEqualizerSettings: state.audioEqualizerSettings,
     isAudioEqualizerOpen: state.isAudioEqualizerOpen,
@@ -318,6 +530,8 @@ export const selectAudioSettingsSnapshot = (state: AudioSettingsState) => ({
     handleToggleAutoPlayOnLaunch: state.handleToggleAutoPlayOnLaunch,
     handleToggleTranscodeFallback: state.handleToggleTranscodeFallback,
     handleToggleNeteaseScrobble: state.handleToggleNeteaseScrobble,
+    handleTogglePlaybackFade: state.handleTogglePlaybackFade,
+    handleToggleAutoSkipUnplayable: state.handleToggleAutoSkipUnplayable,
     handleSetAudioOutputDeviceId: state.handleSetAudioOutputDeviceId,
     handleSetAudioEqualizerSettings: state.handleSetAudioEqualizerSettings,
     handleApplyAudioSoundPreset: state.handleApplyAudioSoundPreset,

@@ -2,10 +2,12 @@ import { collectVisualizerTunings } from '../../components/visualizer/tuningRegi
 import { readStoredThemeAutoGenerateEnabled, readStoredThemeAutoSwitchEnabled, readStoredThemeGenerationSource } from '../themePreferences';
 import type { CappellaAvatarImage, CappellaEmojiImage, CappellaTuning, MonetBackgroundImage, MonetBackgroundTuning, MonetPortraitImage, MonetTuning, NomandBackgroundTuning } from '../../types';
 import { useVisualizerSettingsStore } from '../../stores/useVisualizerSettingsStore';
+import { toStoredSmartBeat } from '../../stores/visualizerSettingsPersistence';
 import { useVisualizerAssetStore } from '../../stores/useVisualizerAssetStore';
 import { useTypographySettingsStore } from '../../stores/useTypographySettingsStore';
 import { useThemeSettingsStore } from '../../stores/useThemeSettingsStore';
 import { useStageSettingsStore } from '../../stores/useStageSettingsStore';
+import { useLibraryWallLookStore } from '../../stores/useLibraryWallLookStore';
 
 // src/services/obs/visualSettingsConfig.ts
 // Everything compressConfig serializes except the theme. Reads the live settings store, so both
@@ -30,6 +32,7 @@ export function buildVisualSettingsConfig(): Record<string, unknown> {
     followSystemTheme: storeThemeSettings.followSystemTheme,
     visualizerMode: storeVisualizer.visualizerMode,
     randomVisualizerModePerSong: storeVisualizer.randomVisualizerModePerSong,
+    randomVisualizerModes: storeVisualizer.randomVisualizerModes,
     visualizerBackgroundMode: storeVisualizer.visualizerBackgroundMode,
     backgroundOpacity: storeVisualizer.backgroundOpacity,
     // The other three legs of background.common, alongside the opacity above. The local OBS browser
@@ -69,6 +72,8 @@ export function buildVisualSettingsConfig(): Record<string, unknown> {
     // (its generated family resolves nowhere else), so it is not carried.
     lyricsCustomFontFamily: storeTypographySettings.lyricsCustomFont?.source === 'system' ? storeTypographySettings.lyricsCustomFont.family : null,
     visualizerTunings: collectVisualizerTunings(storeVisualizer as unknown as Record<string, unknown>),
+    // Frozen: the 13 lyric-style tunings below predate the visualizerTunings bundle, which carries any
+    // new style. Do not add a lyric style here.
     classicTuning: storeVisualizer.classicTuning,
     cadenzaTuning: storeVisualizer.cadenzaTuning,
     partitaTuning: storeVisualizer.partitaTuning,
@@ -84,6 +89,8 @@ export function buildVisualSettingsConfig(): Record<string, unknown> {
     monetTuning: storeVisualizer.monetTuning,
     pendoloTuning: storeVisualizer.pendoloTuning,
     sonnetTuning: storeVisualizer.sonnetTuning,
+    // With the one switch an older build reads (toStoredSmartBeat).
+    smartBeat: toStoredSmartBeat(storeVisualizer.smartBeat),
     temperaTuning: storeVisualizer.temperaTuning,
     lumiereTuning: storeVisualizer.lumiereTuning,
     urlBackgroundList: storeVisualizer.urlBackgroundList,
@@ -94,6 +101,20 @@ export function buildVisualSettingsConfig(): Record<string, unknown> {
     stageTrackPillMode: storeStageSettings.stageTrackPillMode,
     stageTrackPillTimeoutSec: storeStageSettings.stageTrackPillTimeoutSec,
     stageTrackPillOnHome: storeStageSettings.stageTrackPillOnHome,
+    // The bravais wall's collection stack edges (a tile look, so it travels with a shared look by the
+    // settings rule). The wall's transparency and windows per block deliberately stay out — the user
+    // decided so; see useLibraryWallLookStore.
+    libraryWallStackEdges: useLibraryWallLookStore.getState().collectionStackEdges,
+    // The bravais info strip's material (always see-through, or the solid preset) and how the
+    // visualizer behind the wall is drawn (lyrics, blur): visual settings with no user exception,
+    // so they travel with a shared look as well.
+    libraryWallSeamClear: useLibraryWallLookStore.getState().seamClear,
+    libraryWallSeamStyle: useLibraryWallLookStore.getState().seamStyle,
+    libraryWallBackdropLyrics: useLibraryWallLookStore.getState().backdropLyrics,
+    libraryWallBackdropBlur: useLibraryWallLookStore.getState().backdropBlur,
+    // Which way the info strip opens (a column split, a row split across the wall, or by the screen's
+    // shape): part of the wall's look, no user exception.
+    libraryWallSeamDirection: useLibraryWallLookStore.getState().seamDirection,
   };
 }
 

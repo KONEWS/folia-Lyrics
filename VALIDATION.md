@@ -549,3 +549,13 @@ dotnet publish native/FoliaLyrics.csproj -c Release -r win-x64 --self-contained 
 浏览器检查需要 Playwright Chromium；可用 `FOLIA_CHROMIUM_PATH` 指向本机 Chromium。`FOLIA_MODE_INDEX=2` 可只进行绘光挂载及完整交互检查，默认遍历实际全部动态样式。时钟检查按 Luminous 名称定位，避免新增模式改变序号后选择错误模式。
 
 Windows 可直接运行 `build-windows.cmd`。证据见 `validation/`：上游指纹核对、测试与构建日志、完整浏览器检查 JSON、绘光截图以及 EXE 的 SHA-256。浏览器检查 JSON 中的共享交互覆盖项不是每项各一条独立单测。
+
+## 上游 v0.7.22 源码同步（2026-10-24，未发布）
+
+- 将 Folia 基线从 v0.7.11（6fe68d89abb7031eb266d71fda01b36a0fa0573e）更新到 v0.7.22（1f6d0f468f5bc81b23a8b40ad7ca96ccd4b1ecbe），合入 957 项上游提交。独立 .NET 桌面版仍为 0.5.0，没有制作或发布新安装包。
+- 桌面新增花火 Hanabi，14 种动态样式全部挂载通过；保留独立宿主、原播放器与歌词匹配流程、桌面选择器的真实焦点和底部动作。接入上游统一 tuning、双轨字幕、字体准备和虚拟分词／语言数据；新样式仅通过 visualizerTunings 参数包导出。
+- 修正新版 Sheet 的桌面样式目标、Escape 与离场焦点恢复；选择器的桌面实现迁到 src/desktopLyrics/select，应用其他页面使用上游控件。封面取色同时支持上游静默读取与桌面取消读取。
+- 全项目与桌面类型检查、桌面版本检查、299 项桌面单测通过，3 项既有在线样本跳过。上游相关回归首轮除 fork 既有存储键快照外 232 项通过；补回该快照后存储契约 6 项通过，参数包／字幕专项共 59 项通过。
+- 实际隔离 Chrome 回归：14 种动态样式、12 项菜单交互、17 项完整视觉设置检查全部通过；另独立图片素材三组检查通过。设置覆盖六种背景、JSON／短码往返、图片 IndexedDB 保存／重开／移除、分词和小窗口键盘操作。截图已检查。使用模拟 WebView 与播放器，没有改写用户偏好或操作真实播放器。
+- 504 个上游 visualizer 路径已核对，20 个预期 fork 适配差异列于 validation/upstream-0.7.22.json；许可证未改变。上游安装包、Docker 和 nightly 自动发行仅在原仓库运行，fork 保留手动触发，避免源码同步误发布原版发行物。
+- 同步前全部未提交源码与新增文件已保存至 Git 备份 refs/backup/upstream-sync-20261023-local；不纳入这次上游合并提交，合并后恢复并单独核对。

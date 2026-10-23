@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Theme } from '../types';
-import FontFallbackStackControl from '../components/visualizer/FontFallbackStackControl';
+import FontFallbackStackControl from '../components/visualizer/window/FontFallbackStackControl';
 import DesktopSelect from './DesktopSelect';
 import { useVisualTranslation, VisualRange, VisualToggle } from './DesktopVisualControls';
 
@@ -12,7 +12,7 @@ type Props = {
   beginSlider: () => void; commitSlider: () => void;
 };
 
-export default function DesktopVisualFont({ theme, fontStyle, family, fallback, weight, onStyle, onFamily,
+export default function DesktopVisualFont({ fontStyle, family, fallback, weight, onStyle, onFamily,
   onFallback, onWeight, beginSlider, commitSlider }: Props) {
   const t = useVisualTranslation();
   const [draft, setDraft] = useState(family ?? '');
@@ -30,7 +30,7 @@ export default function DesktopVisualFont({ theme, fontStyle, family, fallback, 
       placeholder={t('desktopVisual.customFontPlaceholder')}/></label>
     <p className="desktop-visual-hint">{t('desktopVisual.customFontHint')}</p>
     <FontFallbackStackControl label={t('options.fontFallbackFamilies')} value={fallback} onChange={onFallback}
-      theme={theme} placeholder={t('options.fontFallbackFamiliesPlaceholder')}/>
+      placeholder={t('options.fontFallbackFamiliesPlaceholder')}/>
     <VisualToggle label={t('options.fontWeightAuto')} checked={weight === null} onChange={auto => onWeight(auto ? null : 400)}/>
     {weight !== null ? <VisualRange label={t('options.fontWeight')} value={weight} min={100} max={900} step={10}
       display={String(weight)} onChange={onWeight} beginSlider={beginSlider} commitSlider={commitSlider}/> : null}

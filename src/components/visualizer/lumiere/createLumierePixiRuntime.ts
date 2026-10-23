@@ -2,7 +2,10 @@
 import type { MotionValue } from 'framer-motion';
 import type { Filter } from 'pixi.js';
 import type { AudioBands, LumiereTuning, Theme } from '../../../types';
-import { loadPixi } from '../loadPixi';
+import { PixiSceneCache } from '../pixiSceneCache';
+import { loadPixi } from '../pixi/loadPixi';
+import { linkPixiPrograms } from '../pixi/pixiProgramLinks';
+import { makePixiContext } from '../pixi/pixiWebGLContext';
 import { createLumiereAudioSampler, type LumiereAudioSampler } from './lumiereAudio';
 import { findLumiereParagraphIndexAtTime, type LumiereProgram } from './lumiereProgram';
 import {
@@ -23,7 +26,7 @@ import {
 } from './lumiereSceneEntry';
 import { LumiereCreditsLayer } from './lumiereCreditsLayer';
 import { LumiereDarkFieldLayer } from './lumiereDarkField';
-import { LumiereSongSwap } from './lumiereSongSwap';
+import { PixiSongSwap } from '../pixiSongSwap';
 import { buildLumiereOverlay } from './overlay';
 import { createLightSprites, type LightSprites } from './light/sprites';
 import type { LumiereSceneTuning } from './types';
@@ -69,9 +72,17 @@ const MIN_WIDTH = 320;
 const MIN_HEIGHT = 240;
 
 export class LumierePixiRuntime {
-    private readonly sceneCache = new Map<number, LumiereSceneEntry>();
-    /** 换歌时换下来的场景，之后一帧销毁一个，免得交接那一帧卡住。 */
-    private readonly retired: LumiereSceneEntry[] = [];
+    /** 换歌时换下来的场景进缓存的 retired 队列，之后一帧销毁一个，免得交接那一帧卡住。 */
+    private readonly sceneCache = new PixiSceneCache<LumiereSceneEntry>({
+        count: () => this.options.song.program.paragraphs.length,
+        build: index => {
+            const entry = this.buildEntry(this.options.song, index);
+            this.sceneLayer.addChild(entry.holder);
+            return entry;
+        },
+        destroy: entry => this.destroyEntry(entry),
+        detach: entry => entry.holder.parent?.removeChild(entry.holder),
+    });
     private activeIndex = -1;
     private destroyed = false;
     private resizeObserver: ResizeObserver | null = null;
@@ -85,7 +96,7 @@ export class LumierePixiRuntime {
     private readonly sceneTuning: LumiereSceneTuning;
     private rebuildTimer: ReturnType<typeof setTimeout> | null = null;
     private rebuildDue = false;
-    private readonly songSwap = new LumiereSongSwap<LumiereSongContext, LumiereSceneEntry>({
+    private readonly songSwap = new PixiSongSwap<LumiereSongContext, LumiereSceneEntry>({
         stage: song => this.stageSong(song),
         commit: (song, staged) => this.commitSong(song, staged),
         discard: entry => this.destroyEntry(entry),
@@ -112,6 +123,15 @@ export class LumierePixiRuntime {
 
     static async create(options: LumiereRuntimeOptions) {
         const pixi = await loadPixi();
+        // WebGL 上下文按这几项先建好，再交给 Pixi（makePixiContext）。
+        const contextOptions = {
+            // 画布透明：folia 的共享背景层要透出来，由运行时的暗场层按暗场强度压暗。
+            backgroundAlpha: 0,
+            // 大头（图形组）画进 filter 纹理，MSAA 管不到；只剩画框细线，不值得整屏多重采样的解析开销。
+            antialias: false,
+            powerPreference: 'high-performance',
+        } as const;
+        const context = await makePixiContext(pixi, contextOptions, options.signal);
         const app = new pixi.Application();
         const width = Math.max(options.host.clientWidth, MIN_WIDTH);
         const height = Math.max(options.host.clientHeight, MIN_HEIGHT);
@@ -119,16 +139,13 @@ export class LumierePixiRuntime {
         await app.init({
             width,
             height,
-            // 画布透明：folia 的共享背景层要透出来，由运行时的暗场层按暗场强度压暗。
-            backgroundAlpha: 0,
-            // 大头（图形组）画进 filter 纹理，MSAA 管不到；只剩画框细线，不值得整屏多重采样的解析开销。
-            antialias: false,
+            ...contextOptions,
+            ...context,
             autoDensity: true,
             resolution,
             autoStart: false,
             sharedTicker: false,
             preference: 'webgl',
-            powerPreference: 'high-performance',
         });
         if (app.renderer.type !== pixi.RendererType.WEBGL) {
             app.destroy({ removeView: true });
@@ -151,21 +168,34 @@ export class LumierePixiRuntime {
             runtime.destroy();
             throw new DOMException('Lumiere runtime creation was cancelled', 'AbortError');
         }
-        options.host.appendChild(app.canvas);
-        app.canvas.style.cssText = 'width:100%;height:100%;display:block';
-        runtime.install();
+        await runtime.install();
+        if (options.signal?.aborted) {
+            runtime.destroy();
+            throw new DOMException('Lumiere runtime creation was cancelled', 'AbortError');
+        }
         return runtime;
     }
 
-    private install() {
+    /**
+     * 第一帧分几步做，步与步之间页面照常跑：建 WebGL 上下文之后另起一个任务建第一个场景，它的着色器程序
+     * 在页面照常跑时链接（linkPixiPrograms），之后画布才放上页面、画出来。中途取消就提前返回。
+     */
+    private async install() {
+        await new Promise((resolve) => { window.setTimeout(resolve); });
+        if (this.options.signal?.aborted) return;
         this.resizeToHost(true);
+        this.renderFrame();
+        await linkPixiPrograms(this.pixi, this.app.renderer, this.app.stage, 'Lumiere', this.options.signal);
+        if (this.options.signal?.aborted) return;
+        this.options.host.appendChild(this.app.canvas);
+        this.app.canvas.style.cssText = 'width:100%;height:100%;display:block';
         this.app.ticker.add(this.renderFrame);
         this.resizeObserver = new ResizeObserver(() => {
             if (this.destroyed || !this.resizeToHost(false)) return;
             if (this.options.paused) this.renderOnce();
         });
         this.resizeObserver.observe(this.options.host);
-        this.renderOnce();
+        this.app.renderer.render(this.app.stage);
         if (!this.options.paused) this.app.start();
     }
 
@@ -239,32 +269,13 @@ export class LumierePixiRuntime {
         }, index);
     }
 
-    private ensureScene(index: number) {
-        if (index < 0 || index >= this.options.song.program.paragraphs.length) return null;
-        const cached = this.sceneCache.get(index);
-        if (cached) return cached;
-        const entry = this.buildEntry(this.options.song, index);
-        this.sceneCache.set(index, entry);
-        this.sceneLayer.addChild(entry.holder);
-        return entry;
-    }
-
     private destroyEntry(entry: LumiereSceneEntry) {
         destroyLumiereSceneEntry(entry, this.passthrough);
     }
 
     private clearScenes() {
-        this.sceneCache.forEach(entry => this.destroyEntry(entry));
         this.sceneCache.clear();
         this.activeIndex = -1;
-    }
-
-    private pruneScenes(index: number, keep: ReadonlySet<number>) {
-        this.sceneCache.forEach((entry, sceneIndex) => {
-            if (Math.abs(sceneIndex - index) <= 1 || keep.has(sceneIndex)) return;
-            this.destroyEntry(entry);
-            this.sceneCache.delete(sceneIndex);
-        });
     }
 
     private renderFrame = () => {
@@ -282,15 +293,14 @@ export class LumierePixiRuntime {
         // 暗场强度每帧从共享 tuning 现读：拖滑块不重建场景；场景还没建好的第一帧也已经铺上。
         this.darkField.update(theme, this.sceneTuning.darkField, this.width, this.height);
         const frames = resolveLumiereSceneFrames(program, time, !this.options.staticMode);
-        const visible = new Set(frames.layers.map(layer => layer.index));
         let builtThisFrame = false;
         if (frames.activeIndex !== this.activeIndex) {
             this.activeIndex = frames.activeIndex;
-            this.pruneScenes(frames.activeIndex, visible);
+            this.sceneCache.prune(frames.activeIndex, new Set(frames.layers.map(layer => layer.index)));
         }
         frames.layers.forEach(layer => {
             if (!this.sceneCache.has(layer.index)) {
-                this.ensureScene(layer.index);
+                this.sceneCache.ensure(layer.index);
                 builtThisFrame = true;
             }
         });
@@ -300,26 +310,26 @@ export class LumierePixiRuntime {
             // 一帧只做一件贵的事，按优先级：释放换下的场景 → 预建下一段 → 片尾卡 → 预建上一段。
             const next = frames.activeIndex + 1;
             const previous = frames.activeIndex - 1;
-            if (this.retired.length > 0) {
-                this.destroyEntry(this.retired.shift()!);
+            if (this.sceneCache.hasRetired) {
+                this.sceneCache.drainRetired();
             } else if (next < program.paragraphs.length && !this.sceneCache.has(next)) {
-                this.ensureScene(next);
+                this.sceneCache.ensure(next);
             } else if (this.credits.needsBuild(time, program, this.options.metadata)) {
                 this.credits.build(this.creditBuildContext(theme));
             } else if (previous >= 0 && !this.sceneCache.has(previous)) {
-                this.ensureScene(previous);
+                this.sceneCache.ensure(previous);
             }
         }
         if (creditsFrame.active && !this.credits.built && this.credits.hasMetadata(this.options.metadata)) {
             this.credits.build(this.creditBuildContext(theme));
         }
 
-        const layerByIndex = new Map(frames.layers.map(layer => [layer.index, layer]));
         const lyricAlpha = creditsFrame.active ? creditsFrame.lyricAlpha : 1;
         const lyricBlur = creditsFrame.active ? creditsFrame.lyricBlur : 0;
         const blurResolution = this.renderResolution * 0.5;
         this.sceneCache.forEach((entry, index) => {
-            const layer = layerByIndex.get(index);
+            // 同时在画的段落最多两三个，直接找，不必每帧建一张表。
+            const layer = frames.layers.find(candidate => candidate.index === index);
             const alpha = (layer?.alpha ?? 0) * lyricAlpha;
             entry.holder.visible = alpha > 0.002;
             if (!entry.holder.visible || !layer) return;
@@ -387,12 +397,8 @@ export class LumierePixiRuntime {
         const themeChanged = next.theme !== this.options.song.theme;
         this.options.song = next;
         if (staged) {
-            this.sceneCache.forEach(entry => {
-                entry.holder.parent?.removeChild(entry.holder);
-                this.retired.push(entry);
-            });
-            this.sceneCache.clear();
-            this.sceneCache.set(staged.index, staged);
+            this.sceneCache.retireAll();
+            this.sceneCache.adopt(staged.index, staged);
             this.activeIndex = staged.index;
         } else {
             this.clearScenes();
@@ -475,9 +481,7 @@ export class LumierePixiRuntime {
         this.resizeObserver = null;
         this.app.stop();
         this.app.ticker.remove(this.renderFrame);
-        this.clearScenes();
-        this.retired.forEach(entry => this.destroyEntry(entry));
-        this.retired.length = 0;
+        this.sceneCache.destroyAll();
         this.credits?.destroy();
         this.darkField?.destroy();
         this.overlayLayer?.removeChildren().forEach(child => child.destroy({ children: true, context: true }));

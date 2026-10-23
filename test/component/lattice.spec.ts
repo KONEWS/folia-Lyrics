@@ -69,13 +69,14 @@ test('expanded cover drags and coasts; pressing again stops inertia', async ({ m
     await expect(wall.locator('.lattice-poster.is-expanded')).toHaveCount(1);
 });
 
-test('wheel applies exact deltas immediately without a tail and leaves browser zoom intact', async ({ mount, page }) => {
+// 触控板式的增量（单轴小于一格、或两轴同时）照旧当帧直接写进相机；鼠标滚轮的平滑见 wallWheelSmoothing.spec.ts。
+test('trackpad-sized wheel deltas apply immediately without a tail and leave browser zoom intact', async ({ mount, page }) => {
     const wall = await mount('lattice');
     await settle(page);
     const before = await cameraX(wall);
     const result = await wall.locator('.lattice-field').evaluate(node => {
-        const first = new WheelEvent('wheel', { deltaX: 60, bubbles: true, cancelable: true });
-        const second = new WheelEvent('wheel', { deltaX: 60, bubbles: true, cancelable: true });
+        const first = new WheelEvent('wheel', { deltaX: 30, bubbles: true, cancelable: true });
+        const second = new WheelEvent('wheel', { deltaX: 30, bubbles: true, cancelable: true });
         node.dispatchEvent(first);
         node.dispatchEvent(second);
         return {
@@ -84,9 +85,9 @@ test('wheel applies exact deltas immediately without a tail and leaves browser z
         };
     });
     expect(result.cancelled).toBe(true);
-    expect(result.x).toBeCloseTo(before - 120, 4);
+    expect(result.x).toBeCloseTo(before - 60, 4);
     await page.waitForTimeout(300);
-    expect(await cameraX(wall)).toBeCloseTo(before - 120, 0);
+    expect(await cameraX(wall)).toBeCloseTo(before - 60, 0);
     expect(await wall.locator('.lattice-field').evaluate(node => {
         const event = new WheelEvent('wheel', { ctrlKey: true, deltaY: 20, bubbles: true, cancelable: true });
         node.dispatchEvent(event);
@@ -187,8 +188,8 @@ test('Shift and line-mode wheels pan horizontally with normalized distance', asy
     await settle(page);
     const before = await cameraX(wall);
     await wall.locator('.lattice-field').dispatchEvent('wheel', { shiftKey: true, deltaY: 3, deltaMode: 1 });
-    await page.waitForTimeout(300);
-    expect(await cameraX(wall)).toBeCloseTo(before - 48, 0);
+    // 按行的是鼠标滚轮：平滑地走过去，落定后正好 3 行。
+    await expect.poll(() => cameraX(wall)).toBeCloseTo(before - 48, 1);
 });
 
 test('Tab adopts the actual poster for arrow navigation without stealing nested focus', async ({ mount, page }) => {
@@ -376,33 +377,58 @@ test('playback follow uses the expanded card position after reflow', async ({ mo
     await expectExpandedCentered(wall);
 });
 
-test('the wall tool panel focuses the current song', async ({ mount, page }) => {
+test('the locate button of the wall goes to the playing song', async ({ mount, page }) => {
     const wall = await mount('lattice');
     await settle(page);
     await wall.locator('.lattice-field').dispatchEvent('wheel', { deltaX: 600, deltaY: 400 });
-    const toolsButton = wall.getByRole('button', { name: 'Lattice tools', exact: true });
-    const focusButton = wall.getByRole('menuitem', { name: 'Focus current song', exact: true });
-    await toolsButton.click();
+    // The button a collection's page has, above the wall's tools button: lit, for the song has a tile here.
+    const locate = wall.locator('[data-grid-locate]');
+    await expect(locate).toHaveAttribute('data-grid-locate', 'here');
     await wall.screenshot({ path: 'test-results/lattice-focus-button.png' });
-    await focusButton.click();
+    await locate.click();
     await expectExpandedCentered(wall);
     await expect(wall.locator('.is-expanded')).toHaveAttribute('aria-label', 'Poster 0 · Artist');
+    await expect(locate).toHaveAttribute('data-grid-locate-seeking', 'no');
+    // The tools button under it keeps its menu, without the two entries the locate button replaced.
+    await wall.getByRole('button', { name: 'Lattice tools', exact: true }).click();
+    await expect(wall.getByRole('menu', { name: 'Lattice tools', exact: true })).toBeVisible();
+    await expect(wall.getByRole('menuitem', { name: 'Focus current song', exact: true })).toHaveCount(0);
+    await expect(wall.getByRole('menuitemcheckbox', { name: 'Auto-focus on track change', exact: true })).toHaveCount(0);
+    // While no song plays there is nothing to locate, and no button.
     await wall.getByRole('button', { name: 'Clear queue', exact: true }).click();
-    await toolsButton.click();
-    await expect(focusButton).toBeDisabled();
+    await expect(locate).toHaveCount(0);
+});
+
+test('the wall tool panel shares the six-cell layout and its home cell always goes home', async ({ mount, page }) => {
+    const wall = await mount('lattice');
+    await settle(page);
+    const root = wall.locator('[data-homes]');
+    await wall.getByRole('button', { name: 'Lattice tools', exact: true }).click();
+    const menu = wall.getByRole('menu', { name: 'Lattice tools', exact: true });
+    // 探针没有墙面工具宿主：洗牌、主题、播放器三格跳过，队列格在但禁用；去处是「主页」。定位不是一格：它是按钮上方的定位按钮
+    // （集合页的那一个），「切歌时自动聚焦」也不在面板里（开关在命令面板），所以没有「墙面」那一组。
+    expect(await menu.locator('[data-wall-tools-quick]').evaluateAll(nodes => nodes.map(node => (node as HTMLElement).dataset.wallToolsQuick)))
+        .toEqual(['queue', 'go-home']);
+    await expect(menu.locator('[data-wall-tools-quick="queue"]')).toBeDisabled();
+    await expect(menu.getByRole('slider', { name: 'Volume', exact: true })).toBeVisible();
+    await expect(menu.getByRole('separator', { name: 'Wall', exact: true })).toHaveCount(0);
+    await expect(menu.getByRole('menuitem', { name: 'Open queue command', exact: true })).toHaveCount(0);
+    const home = menu.getByRole('menuitem', { name: 'Go to Home', exact: true });
+    await expect(home).toHaveAttribute('data-wall-tools-quick', 'go-home');
+    await home.click();
+    await expect(root).toHaveAttribute('data-homes', '1');
+    await expect(root).toHaveAttribute('data-backs', '0');
+    await expect(menu).toHaveCount(0);
 });
 
 test('auto-focus toggle leaves browsing position alone until the next enabled track change', async ({ mount, page }) => {
     const wall = await mount('lattice');
     await settle(page);
     const field = wall.locator('.lattice-field');
-    const toolsButton = wall.getByRole('button', { name: 'Lattice tools', exact: true });
-    const autoFocusToggle = wall.getByRole('menuitemcheckbox', { name: 'Auto-focus on track change', exact: true });
+    // The setting is on at first. Its switch is a command of the palette; the probe has a button for it.
+    const autoFocusToggle = wall.getByRole('button', { name: 'Toggle auto-focus', exact: true });
 
-    await toolsButton.click();
-    await expect(autoFocusToggle).toBeChecked();
     await autoFocusToggle.click();
-    await expect(autoFocusToggle).not.toBeChecked();
     await field.dispatchEvent('wheel', { deltaX: 600, deltaY: 400 });
     const browsingX = await cameraX(wall);
 
@@ -411,7 +437,6 @@ test('auto-focus toggle leaves browsing position alone until the next enabled tr
     expect(await cameraX(wall)).toBeCloseTo(browsingX, 1);
     await expect(wall.locator('.lattice-poster.is-expanded')).toHaveAttribute('aria-label', 'Poster 0 · Artist');
 
-    await toolsButton.click();
     await autoFocusToggle.click();
     await wall.getByRole('button', { name: 'Next track', exact: true }).click();
     await expect(wall.locator('.lattice-poster.is-expanded')).toHaveAttribute('aria-label', 'Poster 2 · Artist');
@@ -427,8 +452,7 @@ test('publishes when the current playing card leaves and re-enters the viewport'
     await wall.locator('.lattice-field').dispatchEvent('wheel', { deltaX: 1200, deltaY: 900 });
     await expect(visibility).toHaveAttribute('data-current-song-poster-visible', 'false');
     await expect(wall.locator('.z-60')).toBeVisible();
-    await wall.getByRole('button', { name: 'Lattice tools', exact: true }).click();
-    await wall.getByRole('menuitem', { name: 'Focus current song', exact: true }).click();
+    await wall.locator('[data-grid-locate]').click();
     await expect(visibility).toHaveAttribute('data-current-song-poster-visible', 'true');
     await expect(wall.locator('.z-60')).toHaveCount(0);
 });
@@ -490,8 +514,7 @@ test('the player shortcut remains reachable on a narrow touch screen', async ({ 
     await page.setViewportSize({ width: 390, height: 844 });
     const wall = await mount('lattice');
     await settle(page);
-    await wall.getByRole('button', { name: 'Lattice tools', exact: true }).click();
-    await wall.getByRole('menuitem', { name: 'Focus current song', exact: true }).click();
+    await wall.locator('[data-grid-locate]').click();
     await expectExpandedCentered(wall);
     await expect(wall.locator('.lattice-secondary-action')).toBeVisible();
     const shortcutBox = (await wall.locator('.lattice-secondary-action').boundingBox())!;
@@ -564,4 +587,17 @@ test('pause, resume and duration updates re-render no poster', async ({ mount, p
     // ...and the update reached it through the wall, not around it.
     expect((await counts()).Lattice ?? 0).toBeGreaterThan(0);
     expect((await counts()).LatticePoster ?? 0).toBe(0);
+});
+
+// bravais 的集合叠页边（--lattice-poster-elevation 接进共享海报的阴影列表）与缝的叠色 / 熄灯只在 bravais 的样式里：
+// Lattice 的海报仍是四条阴影（三条透明的聚焦环位 + 抬升投影），没有向右下错开的页边。
+test('Lattice posters keep their own shadow list without bravais stack edges', async ({ mount, page }) => {
+    const wall = await mount('lattice');
+    await settle(page);
+    const shadows = await wall.locator('.lattice-poster:not(.is-expanded):not(.is-focused)').first().evaluate((node) => {
+        const text = getComputedStyle(node).boxShadow;
+        return text.split(/,(?![^(]*\))/).map(part => part.trim());
+    });
+    expect(shadows).toHaveLength(4);
+    expect(shadows.some(part => /\b3px 3px\b|\b6px 6px\b/.test(part))).toBe(false);
 });

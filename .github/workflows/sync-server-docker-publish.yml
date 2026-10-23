@@ -26,6 +26,8 @@ env:
 
 jobs:
   prepare:
+    # Upstream automatic releases belong to upstream; this fork retains explicit manual runs.
+    if: github.repository == 'chthollyphile/folia-major' || github.event_name == 'workflow_dispatch'
     name: Validate sync-server release
     runs-on: ubuntu-latest
     outputs:

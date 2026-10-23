@@ -20,19 +20,20 @@ import { useDesktopSettingsSearchNavigation } from './useDesktopSettingsSearchNa
 import { getVisualizerModeLabel } from '../components/visualizer/registry';
 import { getVisualizerBackgroundModeLabel } from '../components/visualizer/backgrounds/registry';
 import i18n from '../i18n/config';
+import { SettingsKitThemeContext, settingsTokens } from '../components/modal/settings/kit/kitTheme';
 
 // src/desktopLyrics/DesktopVisualSettings.tsx — one desktop settings surface, with the live original renderer behind it.
 export type DesktopVisualSection = 'common' | 'background' | 'visualizer' | 'subtitle';
 const SECTIONS: DesktopVisualSection[] = ['common', 'visualizer', 'subtitle'];
 const SLIDER_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End']);
-const LABELS = { common: 'options.previewCommonSettings', background: 'options.previewBackgroundSettings',
+const LABELS = { common: 'desktopVisual.commonTab', background: 'options.previewBackgroundSettings',
   visualizer: 'options.previewVisualizerSettings', subtitle: 'options.previewSubtitleSettings' } as const;
 type Props = { mode: VisualizerMode; onMode: (mode: VisualizerMode) => void; model: DesktopVisualSettingsModel;
   onClose: () => void; initialSection?: DesktopVisualSection; navigationSequence?: number; onSegmentation?: () => void; canSegment?: boolean; returnFocus?: HTMLElement | null;
   searchNavigation?: DesktopSettingsSearchRequest; onSearchNavigate: (entry: DesktopSettingsSearchEntry) => void; onClearSearchNavigation: () => void };
 
 export default function DesktopVisualSettings(props: Props) {
-  return <DesktopVisualLanguage><DesktopVisualSettingsSurface {...props}/></DesktopVisualLanguage>;
+  return <SettingsKitThemeContext.Provider value={{ isDaylight: false, theme: props.model.mergedTheme }}><DesktopVisualLanguage><DesktopVisualSettingsSurface {...props}/></DesktopVisualLanguage></SettingsKitThemeContext.Provider>;
 }
 
 function DesktopVisualSettingsSurface({ mode, onMode, model, onClose, initialSection = 'visualizer', navigationSequence, onSegmentation, canSegment, returnFocus,
@@ -71,6 +72,8 @@ function DesktopVisualSettingsSurface({ mode, onMode, model, onClose, initialSec
     if (event.defaultPrevented) return;
     const target = event.target instanceof Element ? event.target : null;
     const asset = target?.closest<HTMLElement>('.desktop-visual-asset-dialog');
+    // Shared sheets own their capture/bubble order and restore their own opener.
+    if (asset?.matches('[data-folia-sheet],.desktop-visual-sheet')) return;
     if (asset && event.key === 'Escape') {
       if (asset.querySelector('[role="menu"]')) return;
       event.preventDefault(); event.stopPropagation();
@@ -87,7 +90,7 @@ function DesktopVisualSettingsSurface({ mode, onMode, model, onClose, initialSec
     if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
     else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
   };
-  return <aside ref={panel} role="dialog" aria-modal="true" aria-label={title} data-desktop-visual-settings
+  return <aside ref={panel} style={settingsTokens(false, model.mergedTheme)} role="dialog" aria-modal="true" aria-label={title} data-desktop-visual-settings
     className={`control-panel desktop-visual-settings${backgroundOnly ? ' desktop-background-settings' : ''}`} onKeyDown={keyboard}
     onKeyDownCapture={event => { if (event.target instanceof HTMLInputElement && event.target.type === 'range' && SLIDER_KEYS.has(event.key)) model.beginSlider(); }}
     onKeyUpCapture={event => { if (event.target instanceof HTMLInputElement && event.target.type === 'range' && SLIDER_KEYS.has(event.key)) model.commitSlider(); }}

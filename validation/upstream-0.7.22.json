@@ -1,0 +1,33 @@
+{
+  "repository": "https://github.com/chthollyphile/folia-major",
+  "tag": "v0.7.22",
+  "commit": "1f6d0f468f5bc81b23a8b40ad7ca96ccd4b1ecbe",
+  "previousBaseline": "6fe68d89abb7031eb266d71fda01b36a0fa0573e",
+  "upstreamCommits": 957,
+  "desktopVersion": "0.5.0",
+  "checked": 504,
+  "different": [
+    "src/components/visualizer/GlowWord.tsx",
+    "src/components/visualizer/VisualizerHarmonyOverlay.tsx",
+    "src/components/visualizer/classic/Visualizer.tsx",
+    "src/components/visualizer/colorMix.ts",
+    "src/components/visualizer/diorama/DioramaFoldRow.tsx",
+    "src/components/visualizer/diorama/DioramaSettingsToggle.tsx",
+    "src/components/visualizer/fume/VisualizerFume.tsx",
+    "src/components/visualizer/fume/fumeBlockFrame.ts",
+    "src/components/visualizer/lumiere/color.ts",
+    "src/components/visualizer/lumiere/text/keywordColors.ts",
+    "src/components/visualizer/monet/AudioOverlay.tsx",
+    "src/components/visualizer/monet/VisualizerMonet.tsx",
+    "src/components/visualizer/pendolo/PendoloActiveLyricSweep.tsx",
+    "src/components/visualizer/pixi/pixiDisplayResources.ts",
+    "src/components/visualizer/registry.tsx",
+    "src/components/visualizer/tempera/createTemperaPixiRuntime.ts",
+    "src/components/visualizer/tempera/temperaPalette.ts",
+    "src/components/visualizer/tempera/temperaShapes.ts",
+    "src/components/visualizer/textMeasureCache.ts",
+    "src/components/visualizer/wordGlow.ts"
+  ],
+  "licenseUnchanged": true,
+  "note": "Intentional fork adaptations are listed in different; this is not a claim of an unmodified upstream renderer tree."
+}

@@ -1,4 +1,5 @@
 import type { Theme, VisualizerMode } from '../types';
+import { resolveSmartBeatSettings } from '../services/beatFx/smartBeatSettings';
 import { compressConfig, decompressConfig } from '../utils/appearanceCodec';
 import { hasVisualizerMode } from '../components/visualizer/registry';
 import { hasVisualizerBackgroundMode } from '../components/visualizer/backgrounds/registry';
@@ -15,6 +16,9 @@ type Options = { animationIntensity: Theme['animationIntensity']; backgroundEnab
   setAnimationIntensity: (value: Theme['animationIntensity']) => void; setBackgroundEnabled: (value: boolean) => void; setTranslated: (value: boolean) => void };
 const object = (value: unknown): value is Record<string, unknown> => Boolean(value && typeof value === 'object' && !Array.isArray(value));
 const has = (value: object, key: string) => Object.prototype.hasOwnProperty.call(value, key);
+// Frozen compatibility fields from before the tuning bundle; new styles travel only inside visualizerTunings.
+const legacyTuningKeys = new Set(['classicTuning', 'cadenzaTuning', 'partitaTuning', 'fumeTuning', 'claddaghTuning', 'cappellaTuning',
+  'tiltTuning', 'dioramaTuning', 'monetTuning', 'pendoloTuning', 'sonnetTuning', 'temperaTuning', 'lumiereTuning']);
 
 // Only plain values matching known setting shapes reach the original setters, which own clamping.
 function sanitize(value: unknown, current: unknown): unknown {
@@ -40,7 +44,8 @@ function configInput(text: string): string {
 export function exportDesktopVisualConfig(format: 'json' | 'code', options: Options, mode?: VisualizerMode): string {
   const v = useVisualizerSettingsStore.getState(), t = useTypographySettingsStore.getState(), theme = useThemeSettingsStore.getState();
   const typography = Object.fromEntries(Object.keys(typographySetters).filter(key => key !== 'lyricsCustomFont').map(key => [key, t[key as keyof typeof t]]));
-  const visualizer = Object.fromEntries(Object.keys(visualizerSetters).map(key => [key, v[key as keyof typeof v]]));
+  const visualizer = Object.fromEntries(Object.keys(visualizerSetters).filter(key => !key.endsWith('Tuning') || key.endsWith('BackgroundTuning') || legacyTuningKeys.has(key))
+    .map(key => [key, v[key as keyof typeof v]]));
   // Partial theme metadata is enough for the original codec; colour fields intentionally stay absent.
   const metadata = { name: 'Desktop typography', fontStyle: t.lyricsFontStyle, animationIntensity: options.animationIntensity };
   const config = { ...visualizer, ...typography, visualizerTunings: collectVisualizerTunings(v as unknown as Record<string, unknown>),
@@ -62,6 +67,7 @@ export function importDesktopVisualConfig(text: string, options: Options): Deskt
       const modeKey = key.endsWith('Tuning') ? key.slice(0, -6) : '';
       const raw = modeKey && has(tunings, modeKey) ? tunings[modeKey] : config[key];
       if (raw === undefined) continue;
+      if (key === 'smartBeat') { if (object(raw)) visualizer.smartBeat = resolveSmartBeatSettings(raw, v.smartBeat); continue; }
       if (key === 'visualizerBackgroundMode' && raw !== null && !hasVisualizerBackgroundMode(raw)) continue;
       if (key === 'urlBackgroundSelectedId' && raw !== null && typeof raw !== 'string') continue;
       const nullable = key === 'visualizerBackgroundMode' || key === 'urlBackgroundSelectedId';
@@ -72,7 +78,7 @@ export function importDesktopVisualConfig(text: string, options: Options): Deskt
       if (key === 'lyricsCustomFont' || !has(config, key)) continue;
       const raw = config[key];
       if ((key === 'lyricsFontStyle' || key === 'subtitleFontStyle') && !['sans', 'serif', 'mono'].includes(String(raw))) continue;
-      if (key === 'subtitleContentMode' && !['translation', 'romanization', 'none'].includes(String(raw))) continue;
+      if (key === 'subtitleContentMode' && !['translation', 'romanization', 'both', 'none'].includes(String(raw))) continue;
       if (key.includes('FontWeight') && raw !== null && (typeof raw !== 'number' || !Number.isFinite(raw))) continue;
       if (key === 'subtitleFontFamily' && raw !== null && typeof raw !== 'string') continue;
       if (key.endsWith('FallbackFamilies') && (!Array.isArray(raw) || !raw.every(item => typeof item === 'string'))) continue;

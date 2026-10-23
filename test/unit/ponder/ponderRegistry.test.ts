@@ -17,7 +17,7 @@ const referencedAnchors = (step: PonderStep): string[] => {
 
     switch (step.kind) {
         case 'caption':
-            return fromPoint(step.at);
+            return step.pointTo ? [step.pointTo.anchor] : [];
         case 'cursor':
             return [...fromPoint(step.to), ...fromPoint(step.from)];
         case 'drag':
@@ -151,6 +151,7 @@ describe('ponder registry', () => {
         expect(findPonderTarget('grid-view-page')?.scenes.length).toBeGreaterThanOrEqual(5);
         expect(findPonderTarget('local-grid-map-page')?.scenes.length).toBeGreaterThanOrEqual(3);
         expect(findPonderTarget('lattice-page')?.scenes.length).toBeGreaterThanOrEqual(5);
+        expect(findPonderTarget('bravais-wall')?.scenes.length).toBeGreaterThanOrEqual(6);
     });
 
     it('surfaceState 引用的结果层都由对应 surface 实现', () => {
@@ -160,8 +161,10 @@ describe('ponder registry', () => {
             'lattice-page': new Set(['wall-panned', 'poster-focused', 'poster-expanded', 'tools-open', 'lights-off', 'command-open']),
             'player-bar': new Set(['title-hovered', 'slots-shuffle', 'slots-volume', 'collapsed']),
             'player-page': new Set(['palette-open', 'palette-closed', 'execute-mode', 'panel-open']),
-            'side-panel': new Set(['cover-actions', 'cover-tab', 'source-tab', 'controls-tab', 'queue-tab', 'account-tab', 'controls-mode-list', 'fm-tab', 'source-tab-file-dialog']),
+            'side-panel': new Set(['cover-tab', 'source-tab', 'controls-tab', 'queue-tab', 'account-tab', 'controls-mode-list', 'fm-tab', 'source-tab-file-dialog']),
             'lattice-chrome': new Set(['slots-swapped', 'bottom-bar-shown']),
+            'bravais-seam-strip': new Set(['spine', 'strip-again', 'strip-more', 'hidden', 'list-panel']),
+            'bravais-seam-home': new Set(['home-local', 'account-open', 'base-again', 'menu-open', 'stage-on', 'filtering', 'search-open', 'tools-open']),
             'lyrics-animation-settings': new Set(['playground-open']),
             'theme-settings': new Set(['theme-park-open']),
             'grid-view-card-settings': new Set(['full-bleed-on']),
@@ -181,9 +184,16 @@ describe('ponder registry', () => {
             'replay-gain-settings': new Set(['panel-mirror']),
             'import-export-settings': new Set(['import-plan']),
             'audio-equalizer': new Set(['custom-written']),
-            'vis-playground': new Set(['hotspots-visible', 'section-background', 'section-visualizer', 'section-subtitle']),
+            'vis-playground': new Set(['hotspots-visible', 'section-background', 'section-common', 'section-subtitle']),
             'theme-park': new Set(['save-blocked']),
             'lyric-export': new Set(['running']),
+            'bravais-wall': new Set([
+                'wall-panned', 'wall-scrolled', 'tab-out', 'tab-seam', 'tab-in-0', 'tab-in-1', 'tab-in-2', 'artist-color',
+                'open-ring-0', 'open-ring-1', 'open-ring-2', 'open-ring-3', 'open-seam', 'back-seam', 'back-ring-0', 'back-ring-1', 'back-ring-2',
+                'focus-expanded', 'focus-queued', 'focus-playing', 'tools-open', 'look-windows', 'look-clear', 'look-solid', 'lattice-handoff',
+            ]),
+            'sign-in': new Set(['window-open', 'window-account']),
+            'lyric-match': new Set(['picked', 'local-file']),
             'lyric-style': new Set([
                 'preview-style-b', 'preview-monet', 'preview-monet-bare', 'preview-background-b', 'preview-background-b-style-b', 'preview-romanization',
                 'panel-style-b', 'panel-monet', 'panel-monet-off', 'panel-background', 'panel-subtitle',

@@ -25,16 +25,16 @@ export const DESKTOP_MODE_SEARCH_CATALOG: VisualCatalog[] = [
     dioramaShowParticles dioramaMoteCircumference dioramaMoteRadial dioramaEffectStrength dioramaCustomStrength`) },
   { mode: 'pendolo', labelKey: 'ui.visualizerPendolo', keys: options(`pendoloWheelCenterX pendoloArcRadius pendoloArcAngleDeg
     pendoloTickSnappiness pendoloActiveScale pendoloShowGearDecor pendoloShowCenterGradient pendoloShowCoverOnWatchFace pendoloEnableLineGlow`) },
-  { mode: 'monet', labelKey: 'ui.visualizerMonet', keys: options(`monetSettings lyricsStyleSettings monetFontScale monetKeywordColoring
+  { mode: 'monet', labelKey: 'ui.visualizerMonet', keys: options(`lyricsStyleSettings monetFontScale monetKeywordColoring
     cappellaAvatarSource monetPortraitSource monetPortraitStyle monetPortraitDragHanger monetUploadPortrait monetClearPortrait
     monetShowAudioVisualization monetAudioStyle monetShowDescription`) },
-  { mode: 'sonnet', labelKey: 'ui.visualizerSonnet', keys: options(`sonnetSettings sonnetQualitySection sonnetTextureResolution
+  { mode: 'sonnet', labelKey: 'ui.visualizerSonnet', keys: options(`sonnetQualitySection sonnetTextureResolution
     sonnetMotionSection sonnetCameraIntensity sonnetTypographyMotion sonnetOuterFrameMode sonnetMgDensity
     sonnetPostProcessSection sonnetPostProcessEnabled sonnetPostProcessGrain sonnetPostProcessContrast sonnetPostProcessRgbShift
     sonnetPostProcessVignette sonnetPostProcessHalftone sonnetPostProcessLensDistortion sonnetPostProcessLensDispersion
     sonnetDisplaySection sonnetShowBackgroundMg sonnetShowBackgroundDecor sonnetShowFixedGeo sonnetShowOnlyText
     sonnetShowGuide sonnetShowGiantDecorativeText sonnetEnableTransitions`) },
-  { mode: 'tempera', labelKey: 'ui.visualizerTempera', keys: options(`temperaSettings temperaImageSection temperaQualitySection
+  { mode: 'tempera', labelKey: 'ui.visualizerTempera', keys: options(`temperaImageSection temperaQualitySection
     temperaTextureResolution temperaMotionSection temperaCameraIntensity temperaGlyphMotion temperaGlyphSettleStretch
     temperaColorMode temperaPostProcessSection temperaPostProcessEnabled temperaPostProcessTextureCompression
     temperaPostProcessGrain temperaPostProcessContrast temperaPostProcessRgbShift temperaPostProcessVignette temperaPostProcessLensDistortion
@@ -43,11 +43,15 @@ export const DESKTOP_MODE_SEARCH_CATALOG: VisualCatalog[] = [
     temperaExportImages temperaImportImages temperaImportAppendImages temperaImportReplaceImages temperaLayerImageDepth
     temperaLayerImageFrequency temperaLayerAlignVerticalRandom temperaLayerAlignHorizontalRandom temperaLayerAlignFree
     temperaLayerImageScale temperaLayerImageOpacity temperaRemoveLayerImage temperaLayerImageSave`) },
-  { mode: 'lumiere', labelKey: 'ui.visualizerLumiere', keys: options(`lumiereSettings lumiereLightSection lumiereLightIntensity
+  { mode: 'lumiere', labelKey: 'ui.visualizerLumiere', keys: options(`lumiereLightSection lumiereLightIntensity
     lumiereAudioResponse lumiereBloom lumiereTextBloom lumiereAtmosphereSection lumiereDarkField lumiereFogDensity lumiereFogOctaves
     lumiereMoteAmount lumiereFrontBokeh lumiereLineArt lumiereOverlayFrame lumiereTextSection lumiereTextOnly lumiereUnlitOpacity
-    lumiereWindowNeighbors lumiereDecay lumiereEcho lumiereTrails lumiereSeamlessTransitions lumiereThemeSection lumiereThemeColorMix
+    lumiereWindowNeighbors lumiereDecay lumiereEcho lumiereTrails lumiereHideTrails lumiereSeamlessTransitions lumiereThemeSection lumiereThemeColorMix
     lumiereKeywordColors lumiereThemeIcons lumierePerformanceSection lumiereRenderQuality`) },
+  { mode: 'hanabi', labelKey: 'ui.visualizerHanabi', keys: options(`hanabiFireworksSection hanabiStageSection hanabiTextSection
+    hanabiDecorSection hanabiColorSection hanabiPerformanceSection hanabiSparkAmount hanabiGlow hanabiChorusBloom hanabiBloom
+    hanabiLaunches hanabiSky hanabiRiseSpeed hanabiSpin hanabiAmbient hanabiOverlayFrame hanabiTextOnly hanabiTextMotion
+    hanabiBlockOpacity hanabiCollage hanabiOrnamentAmount hanabiColorMode hanabiRenderQuality`) },
   { mode: 'still', labelKey: 'ui.visualizerStill', keys: [] },
 ];
 
@@ -56,8 +60,7 @@ export const DESKTOP_BACKGROUND_SEARCH_CATALOG: BackgroundCatalog[] = [
     ...options(`disableVisualizerVignette disableVisualizerGeometricBackground previewCoverBackgroundSettings previewCoverBackgroundOpacity`),
     'theme.addCoverColor',
   ] },
-  { background: 'monet', labelKey: 'options.visualizerBackgroundModeMonet', keys: options(`monetBackgroundSettings
-    monetGroupBackgroundSource monetBackgroundSource monetUploadBackground monetClearBackground monetGroupLayoutPosition
+  { background: 'monet', labelKey: 'options.visualizerBackgroundModeMonet', keys: options(`monetGroupBackgroundSource monetBackgroundSource monetUploadBackground monetClearBackground monetGroupLayoutPosition
     monetBackgroundLayout monetHalfPaneOffsetX monetGroupColorTintWash monetBackgroundOverlayOpacity monetBackgroundWash
     monetBackgroundWashColorMode monetBackgroundWashCustomColor monetGroupFiltersPostProcessing monetBackgroundBlur
     monetBackgroundGrayscale monetBackgroundSaturation monetBackgroundDriftEnabled monetBackgroundDriftStrength monetBackgroundStreaksEnabled`) },

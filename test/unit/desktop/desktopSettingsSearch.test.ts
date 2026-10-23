@@ -14,7 +14,7 @@ function translate(key: string): string {
 
 const PANEL_FILES = [
   'settingsPanels.tsx', 'monet/MonetSettingsPanel.tsx', 'pendolo/PendoloSettingsPanel.tsx',
-  'sonnet/SonnetSettingsPanel.tsx', 'tempera/TemperaSettingsPanel.tsx', 'lumiere/LumiereSettingsPanel.tsx',
+  'sonnet/SonnetSettingsPanel.tsx', 'tempera/TemperaSettingsPanel.tsx', 'lumiere/LumiereSettingsPanel.tsx', 'hanabi/HanabiSettingsPanel.tsx',
   'diorama/DioramaGeometrySettings.tsx', 'diorama/DioramaParticleAppearanceSettings.tsx', 'diorama/DioramaEffectSettings.tsx',
   'backgrounds/common/CommonBackgroundSettingsCard.tsx', 'backgrounds/monet/MonetBackgroundSettingsCard.tsx',
   'backgrounds/latent/LatentBackgroundSettingsCard.tsx', 'backgrounds/sora/SoraBackgroundSettingsCard.tsx',

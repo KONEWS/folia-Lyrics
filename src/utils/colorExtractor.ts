@@ -8,7 +8,11 @@ interface RGB {
     b: number;
 }
 
-const loadImagePixels = (imageUrl: string, signal?: AbortSignal): Promise<Uint8ClampedArray | null> => (
+/**
+ * 把图片缩到 50×50 读出像素（crossOrigin 匿名请求）。图片加载失败、没有 CORS 头、画布被污染（读像素抛
+ * SecurityError）时都返回 null。silent：失败时不打 warn（墙上一批头像取色时用，失败只是回退）。
+ */
+export const loadImagePixels = (imageUrl: string, { silent = false, signal }: { silent?: boolean; signal?: AbortSignal } = {}): Promise<Uint8ClampedArray | null> => (
     new Promise(resolve => {
         if (signal?.aborted) { resolve(null); return; }
         const img = new Image();
@@ -43,13 +47,14 @@ const loadImagePixels = (imageUrl: string, signal?: AbortSignal): Promise<Uint8C
             try {
                 ctx.drawImage(img, 0, 0, width, height);
                 finish(ctx.getImageData(0, 0, width, height).data);
-            } catch {
+            } catch (error) {
+                if (!silent) console.warn("Failed to read image pixels for color extraction", error);
                 finish(null);
             }
         };
 
         img.onerror = (e) => {
-            console.warn("Failed to load image for color extraction", e);
+            if (!silent) console.warn("Failed to load image for color extraction", e);
             finish(null);
         };
         signal?.addEventListener('abort', abort, { once: true });
@@ -123,7 +128,7 @@ const extractVibrantColorsFromPixels = (imageData: Uint8ClampedArray, count: num
 };
 
 export const extractColors = async (imageUrl: string, count: number = 5, signal?: AbortSignal): Promise<string[]> => {
-    const pixels = await loadImagePixels(imageUrl, signal);
+    const pixels = await loadImagePixels(imageUrl, { signal });
     return pixels && !signal?.aborted ? extractVibrantColorsFromPixels(pixels, count) : [];
 };
 
@@ -132,6 +137,6 @@ export const extractRepresentativeColors = async (
     count: number = 5,
     signal?: AbortSignal,
 ): Promise<string[]> => {
-    const pixels = await loadImagePixels(imageUrl, signal);
+    const pixels = await loadImagePixels(imageUrl, { signal });
     return pixels && !signal?.aborted ? extractRepresentativeColorsFromPixels(pixels, count) : [];
 };

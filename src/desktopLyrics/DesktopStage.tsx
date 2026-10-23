@@ -1,7 +1,9 @@
-import { memo, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import type { VisualizerMode } from '../types';
 import type { VisualizerSharedProps } from '../components/visualizer/definition';
 import VisualizerRenderer from '../components/visualizer/VisualizerRenderer';
+import { getVisualizerTuning } from '../components/visualizer/tuningRegistry';
+import { useVisualizerSettingsStore } from '../stores/useVisualizerSettingsStore';
 import { PlayerBottomBarLayoutContext } from '../components/floating-player/PlayerBottomBarLayoutContext';
 import VisualizerBoundary from './VisualizerBoundary';
 
@@ -26,9 +28,16 @@ const DesktopStage = memo(function DesktopStage({ onRecover, ready, fallback, ..
     return () => clearTimeout(timer);
   }, [ready]);
   const scene = ready ? props : committed.current;
+  const shownMode = scene?.mode ?? props.mode;
+  const onVisualizerTuningChange = useCallback((patch: object) => {
+    const adapter = getVisualizerTuning(shownMode);
+    const store = useVisualizerSettingsStore.getState() as unknown as Record<string, unknown>;
+    const save = adapter ? store[adapter.settingsSetterKey] : undefined;
+    if (typeof save === 'function') save(patch);
+  }, [shownMode]);
   if (!scene) return fallback;
   return <VisualizerBoundary key={scene.mode} mode={scene.mode} onRecover={onRecover}><PlayerBottomBarLayoutContext.Provider value={true}>
-    <StableRenderer {...scene} paused={ready ? scene.paused : true}/>
+    <StableRenderer {...scene} onVisualizerTuningChange={onVisualizerTuningChange} paused={ready ? scene.paused : true}/>
   </PlayerBottomBarLayoutContext.Provider></VisualizerBoundary>;
 });
 export default DesktopStage;

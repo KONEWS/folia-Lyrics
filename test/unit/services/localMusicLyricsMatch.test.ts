@@ -3,7 +3,7 @@ import type { LocalSong } from '@/types';
 import { matchLyrics } from '@/services/localMusicService';
 import { autoMatchBestLyric } from '@/utils/lyrics/autoMatchBestLyric';
 import { applyMatchedMetadata } from '@/services/localLibraryCatalogService';
-import { neteaseApi } from '@/services/netease';
+import { neteaseApi } from '@/services/onlineMusic/netease/netease';
 import { getLocalLibraryCatalogSnapshot } from '@/services/localLibraryEntityRepository';
 
 // test/unit/services/localMusicLyricsMatch.test.ts
@@ -19,7 +19,7 @@ vi.mock('@/services/localLibraryCatalogService', () => ({ applyMatchedMetadata: 
 vi.mock('@/services/localLibraryEntityRepository', () => ({
     getLocalLibraryCatalogSnapshot: vi.fn().mockResolvedValue({ entities: [], assignments: [] }),
 }));
-vi.mock('@/services/netease', () => ({
+vi.mock('@/services/onlineMusic/netease/netease', () => ({
     neteaseApi: {
         cloudSearch: vi.fn(),
         getLyric: vi.fn(),
@@ -58,6 +58,17 @@ describe('localMusicService lyric matching', () => {
         vi.mocked(getLocalLibraryCatalogSnapshot).mockResolvedValue({ entities: [], assignments: [] });
     });
 
+    it('never matches a song the user marked as instrumental', async () => {
+        lyricSettings.localLyricsPriority = 'online';
+        const marked = { ...song(), markedPureMusic: true, matchedIsPureMusic: true, hasManualLyricSelection: false };
+
+        await expect(matchLyrics(marked)).resolves.toBeNull();
+
+        expect(autoMatchBestLyric).not.toHaveBeenCalled();
+        expect(neteaseApi.cloudSearch).not.toHaveBeenCalled();
+        expect(applyMatchedMetadata).not.toHaveBeenCalled();
+    });
+
     it('passes the selected metadata identity into playback matching without replacing it', async () => {
         const lyrics = { lines: [], isWordByWord: true };
         vi.mocked(autoMatchBestLyric).mockResolvedValue({
@@ -85,6 +96,8 @@ describe('localMusicService lyric matching', () => {
         expect(neteaseApi.cloudSearch).not.toHaveBeenCalled();
         expect(applyMatchedMetadata).toHaveBeenCalledWith('local-song', {}, expect.objectContaining({
             lyricsOnly: true,
+            // 写回时在事务里按最新记录检查：匹配途中被标记为纯音乐就放弃。
+            skipIfMarkedPureMusic: true,
             songPatch: expect.objectContaining({
                 onlineMetadata: expect.objectContaining({ source: 'netease', songId: 987 }),
                 matchedLyricsSongId: 987,
