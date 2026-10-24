@@ -25,8 +25,8 @@ export function useDesktopSubtitleLayout(root: RefObject<HTMLElement | null>, fo
       if (playerBottomBarLiveOffset.get() !== offset) playerBottomBarLiveOffset.set(offset);
     };
     measure();
+    // Both elements are already observed: a separate window resize listener duplicated the same forced geometry reads.
     const observer = new ResizeObserver(measure); observer.observe(surface); observer.observe(bar);
-    window.addEventListener('resize', measure);
-    return () => { observer.disconnect(); window.removeEventListener('resize', measure); };
+    return () => observer.disconnect();
   }, [root, footer, visible]);
 }

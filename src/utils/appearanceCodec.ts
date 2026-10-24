@@ -536,6 +536,7 @@ export const compressConfig = (config: any): string => {
     if (config.disableVisualizerVignette !== undefined) minified.dvv = config.disableVisualizerVignette;
     if (config.staticMode !== undefined) minified.stm = config.staticMode;
     if (config.visualizerOpacity !== undefined) minified.vo = config.visualizerOpacity;
+    if (config.visualizerFrameRate !== undefined) minified.vfr = config.visualizerFrameRate;
     if (config.hidePlayerTranslationSubtitle !== undefined) minified.hpts = config.hidePlayerTranslationSubtitle;
     if (config.showSubtitleTranslation !== undefined) minified.sst = config.showSubtitleTranslation;
     if (config.subtitleContentMode !== undefined) minified.scm = config.subtitleContentMode;
@@ -691,6 +692,7 @@ export const decompressConfig = (str: string): any => {
         if (parsed.dvv !== undefined) decompressed.disableVisualizerVignette = parsed.dvv;
         if (parsed.stm !== undefined) decompressed.staticMode = parsed.stm;
         if (parsed.vo !== undefined) decompressed.visualizerOpacity = parsed.vo;
+        if (parsed.vfr !== undefined) decompressed.visualizerFrameRate = parsed.vfr;
         if (parsed.hpts !== undefined) decompressed.hidePlayerTranslationSubtitle = parsed.hpts;
         if (parsed.sst !== undefined) decompressed.showSubtitleTranslation = parsed.sst;
         if (parsed.scm !== undefined) decompressed.subtitleContentMode = parsed.scm;
@@ -756,7 +758,7 @@ export const decompressConfig = (str: string): any => {
         const validKeys = [
             'theme', 'visualizerMode', 'randomVisualizerModePerSong', 'randomVisualizerModes', 'visualizerBackgroundMode', 'backgroundOpacity', 'desktopBackgroundEnabled', 'desktopSettingsTransparency',
             'useCoverColorBg', 'disableVisualizerGeometricBackground', 'disableVisualizerVignette', 'staticMode',
-            'visualizerOpacity', 'hidePlayerTranslationSubtitle', 'showSubtitleTranslation', 'subtitleContentMode',
+            'visualizerOpacity', 'visualizerFrameRate', 'hidePlayerTranslationSubtitle', 'showSubtitleTranslation', 'subtitleContentMode',
             'subtitleOverlayBackground', 'subtitleUpcomingLyricsBlur', 'subtitleOverlayOpacity',
             'showHarmonySubtitle', 'harmonySubtitleBackground',
             'lyricsFontStyle', 'lyricsFontScale', 'lyricsFontWeight', 'lyricsFontFallbackFamilies', 'lyricsCustomFontFamily',

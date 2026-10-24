@@ -87,7 +87,7 @@ export function buildDesktopMainSearchEntries(): DesktopSettingsSearchEntry[] {
 }
 
 export const DESKTOP_COMMON_SEARCH_KEYS = [
-  'desktopVisual.settingsTransparency', 'ui.animationIntensity', 'options.fontFamily', 'desktopVisual.customFontFamily',
+  'desktopVisual.settingsTransparency', 'desktopVisual.frameRate', 'ui.animationIntensity', 'options.fontFamily', 'desktopVisual.customFontFamily',
   'options.fontFallbackFamilies', 'options.fontWeightAuto', 'options.fontWeight', 'options.fontSize',
   'options.visualizerOpacity', 'desktopVisual.staticMode', 'desktopVisual.segmentation',
   'desktopVisual.configTitle', 'desktopVisual.copyCode', 'options.copyJson', 'desktopVisual.exportJson',

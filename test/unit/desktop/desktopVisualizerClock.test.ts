@@ -102,7 +102,7 @@ describe('desktop clock audio work', () => {
     expect(mounted.runtime.currentTime.get()).toBe(4);
     mounted.cleanup?.();
   });
-  it('keeps 60 immutable spectrum snapshots and exact band values while scanning only 20 new FFT packets', () => {
+  it('keeps 30 immutable spectrum snapshots and exact band values while scanning only 20 new FFT packets', () => {
     const mounted = mount(true), pow = vi.spyOn(Math, 'pow');
     const snapshots: Uint8Array[] = [];
     const unsubscribe = mounted.runtime.audioBands.spectrum.on('change', bins => snapshots.push(bins));
@@ -112,8 +112,8 @@ describe('desktop clock audio work', () => {
       mounted.tick(now);
     }
     expect(pow).toHaveBeenCalledTimes(20 * 8);
-    expect(snapshots).toHaveLength(60);
-    expect(new Set(snapshots).size).toBe(60);
+    expect(snapshots).toHaveLength(30);
+    expect(new Set(snapshots).size).toBe(30);
     expect(mounted.runtime.audioBands.bass.get()).toBeCloseTo((128 / 255) ** 1.8 * 255, 12);
     expect(mounted.runtime.audioBands.lowMid.get()).toBeCloseTo((128 / 255) ** 2 * 255, 12);
     expect(mounted.runtime.audioBands.vocal.get()).toBeCloseTo((128 / 255) ** 1.5 * 255, 12);

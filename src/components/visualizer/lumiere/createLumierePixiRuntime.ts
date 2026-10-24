@@ -6,6 +6,7 @@ import { PixiSceneCache } from '../pixiSceneCache';
 import { loadPixi } from '../pixi/loadPixi';
 import { linkPixiPrograms } from '../pixi/pixiProgramLinks';
 import { makePixiContext } from '../pixi/pixiWebGLContext';
+import { observeSettledResize } from '../observeSettledResize';
 import { createLumiereAudioSampler, type LumiereAudioSampler } from './lumiereAudio';
 import { findLumiereParagraphIndexAtTime, type LumiereProgram } from './lumiereProgram';
 import {
@@ -85,7 +86,7 @@ export class LumierePixiRuntime {
     });
     private activeIndex = -1;
     private destroyed = false;
-    private resizeObserver: ResizeObserver | null = null;
+    private stopResize: (() => void) | null = null;
     private width = 0;
     private height = 0;
     private renderResolution = 1;
@@ -190,11 +191,12 @@ export class LumierePixiRuntime {
         this.options.host.appendChild(this.app.canvas);
         this.app.canvas.style.cssText = 'width:100%;height:100%;display:block';
         this.app.ticker.add(this.renderFrame);
-        this.resizeObserver = new ResizeObserver(() => {
-            if (this.destroyed || !this.resizeToHost(false)) return;
+        this.stopResize = observeSettledResize(this.options.host, () => {
+            if (this.destroyed || !this.resizeToHost(true)) return;
             if (this.options.paused) this.renderOnce();
         });
-        this.resizeObserver.observe(this.options.host);
+        // Warm-up can finish after a host resize; reconcile it before the first visible draw.
+        if (this.resizeToHost(true)) this.renderFrame();
         this.app.renderer.render(this.app.stage);
         if (!this.options.paused) this.app.start();
     }
@@ -210,6 +212,8 @@ export class LumierePixiRuntime {
         this.height = height;
         this.renderResolution = resolution;
         this.app.renderer.resize(width, height, resolution);
+        // Pixi autoDensity writes fixed CSS pixels; keep the existing surface stretched while the next drag is pending.
+        this.app.canvas.style.width = '100%'; this.app.canvas.style.height = '100%';
         this.refreshQuality();
         this.drawOverlay();
         if (immediate) this.rebuildDue = true;
@@ -477,8 +481,8 @@ export class LumierePixiRuntime {
         this.songSwap.settle(false);
         if (this.rebuildTimer !== null) clearTimeout(this.rebuildTimer);
         this.rebuildTimer = null;
-        this.resizeObserver?.disconnect();
-        this.resizeObserver = null;
+        this.stopResize?.();
+        this.stopResize = null;
         this.app.stop();
         this.app.ticker.remove(this.renderFrame);
         this.sceneCache.destroyAll();

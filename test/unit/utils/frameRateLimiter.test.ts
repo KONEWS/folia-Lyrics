@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cancelUncappedAnimationFrame, createFrameRateLimitedRaf, installGlobalVisualizerFrameRateLimiter, parseVisualizerFrameRate, requestUncappedAnimationFrame, setGlobalVisualizerFrameRate, shouldProcessFrameAtRate } from '../../../src/utils/frameRateLimiter';
+import { cancelUncappedAnimationFrame, restoreGlobalVisualizerFrameRateLimiter, createFrameRateLimitedRaf, installGlobalVisualizerFrameRateLimiter, parseVisualizerFrameRate, requestUncappedAnimationFrame, setGlobalVisualizerFrameRate, shouldProcessFrameAtRate } from '../../../src/utils/frameRateLimiter';
 
 // test/unit/utils/frameRateLimiter.test.ts
 
@@ -145,7 +145,7 @@ describe('frameRateLimiter', () => {
         nativeCallbacks[1](1016); expect(processed).toEqual(['first', 'next']);
     });
 
-    it('restores native requestAnimationFrame when disabled globally', () => {
+    it('keeps pending callback handles stable when uncapping globally', () => {
         const previousWindow = (globalThis as { window?: Window; }).window;
         const originalRequestAnimationFrame = () => 1;
         const originalCancelAnimationFrame = () => undefined;
@@ -163,8 +163,10 @@ describe('frameRateLimiter', () => {
             expect(globalThis.window.requestAnimationFrame).not.toBe(originalRequestAnimationFrame);
 
             setGlobalVisualizerFrameRate('off');
+            expect(globalThis.window.requestAnimationFrame).not.toBe(originalRequestAnimationFrame);
+            expect(globalThis.window.cancelAnimationFrame).not.toBe(originalCancelAnimationFrame);
+            restoreGlobalVisualizerFrameRateLimiter();
             expect(globalThis.window.requestAnimationFrame).toBe(originalRequestAnimationFrame);
-            expect(globalThis.window.cancelAnimationFrame).toBe(originalCancelAnimationFrame);
         } finally {
             Object.defineProperty(globalThis, 'window', {
                 configurable: true,
@@ -228,11 +230,53 @@ describe('frameRateLimiter', () => {
             expect(uncapped).toBe(12);
             expect(capped).toBe(6);
         } finally {
-            setGlobalVisualizerFrameRate('off');
+            restoreGlobalVisualizerFrameRateLimiter();
             Object.defineProperty(globalThis, 'window', {
                 configurable: true,
                 value: previousWindow,
             });
         }
     });
+});
+
+// Simulate physical refresh clocks independently from the target; fractional ratios must not silently reduce the chosen FPS.
+describe('frame budget phase and cancellation', () => {
+  function harness(rate: 60 | 90 | 120) {
+    let id = 0;
+    const native = new Map<number, FrameRequestCallback>();
+    const limiter = createFrameRateLimitedRaf(callback => { native.set(++id, callback); return id; }, handle => { native.delete(handle); }, rate);
+    const tick = (time: number) => { const callbacks = [...native.values()]; native.clear(); callbacks.forEach(callback => callback(time)); };
+    return { native, limiter, tick };
+  }
+  for (const display of [60, 75, 90, 120, 144, 165, 240]) for (const rate of [60, 90, 120] as const) {
+    it('maintains '+rate+' FPS budget on a '+display+' Hz display', () => {
+      const { limiter, tick } = harness(rate); let frames = 0;
+      const draw = () => { frames++; limiter.requestAnimationFrame(draw); };
+      limiter.requestAnimationFrame(draw);
+      for (let i = 0; i < display * 5; i++) tick(1000 + i * 1000 / display);
+      expect(Math.abs(frames - Math.min(rate, display) * 5)).toBeLessThanOrEqual(1);
+    });
+  }
+  it('cancels another callback in the same flush and cancels the last unused native request', () => {
+    const { limiter, tick, native } = harness(60); let second = 0; const called: string[] = [];
+    limiter.requestAnimationFrame(() => { called.push('first'); limiter.cancelAnimationFrame(second); });
+    second = limiter.requestAnimationFrame(() => called.push('cancelled')); tick(1000);
+    expect(called).toEqual(['first']);
+    const pending = limiter.requestAnimationFrame(() => called.push('late'));
+    expect(native.size).toBe(1); limiter.cancelAnimationFrame(pending); expect(native.size).toBe(0);
+  });
+  it('switches cap/off/cap without losing cancellation or stacking native requests', () => {
+    const { limiter, tick, native } = harness(60); const called: number[] = [];
+    const cancelled = limiter.requestAnimationFrame(() => called.push(-1));
+    limiter.setFrameRate('off'); limiter.cancelAnimationFrame(cancelled); expect(native.size).toBe(0);
+    const draw = (now: number) => { called.push(now); limiter.requestAnimationFrame(draw); };
+    limiter.requestAnimationFrame(draw); tick(1000); tick(1006); expect(called).toHaveLength(2);
+    limiter.setFrameRate(60); expect(native.size).toBe(1); tick(1012); tick(1018); expect(called).toHaveLength(3);
+  });
+  it('resumes from a long suspension with one current frame, without catch-up bursts', () => {
+    const { limiter, tick } = harness(60); const called: number[] = [];
+    const draw = (now: number) => { called.push(now); limiter.requestAnimationFrame(draw); };
+    limiter.requestAnimationFrame(draw); tick(1000); tick(1010); tick(6000);
+    expect(called).toEqual([1000, 6000]); tick(6007); expect(called).toHaveLength(2);
+  });
 });

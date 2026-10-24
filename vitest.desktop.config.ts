@@ -10,5 +10,5 @@ export default defineConfig({
   define: { __BUILD_KIND__: JSON.stringify('fork'), __BUILD_HOST__: JSON.stringify('') },
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
   test: { environment: 'node', include: ['test/desktopClock.test.ts', 'test/onlinePackets.test.ts', 'test/audioProgressSpectrum.test.ts', 'test/desktopCoverTheme.test.ts',
-    'test/unit/desktop/**/*.test.ts', 'test/unit/utils/colorExtractor.test.ts'] },
+    'test/unit/desktop/**/*.test.ts', 'test/unit/utils/frameRateLimiter.test.ts', 'test/unit/utils/colorExtractor.test.ts'] },
 });

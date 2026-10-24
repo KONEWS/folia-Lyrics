@@ -6,7 +6,7 @@ import type { ManualClock } from '../../../src/desktopLyrics/clock';
 import { clockNeedsFrames, createFrameDemand, type FrameDemand } from '../../../src/desktopLyrics/frameDemand';
 import type { Line } from '../../../src/types';
 
-// test/unit/desktop/desktopClockIdle.test.ts — the clock loop parks only when no renderer is mounted and nothing is changing, and every
+// test/unit/desktop/desktopClockIdle.test.ts — the clock loop parks after playback and sound settle, including paused lyrics, and every
 // host message that could change a published value wakes it. Without a wake signal it behaves exactly as before.
 // The idle budget advances by min(delta, IDLE_BUDGET_STEP_MS) per tick so a suspended RAF gap contributes only one capped step.
 const hooks = vi.hoisted(() => ({ effects: [] as (() => (() => void) | void)[] }));
@@ -74,10 +74,21 @@ describe('clock loop parking (no lyrics, nothing changing)', () => {
     expect([...m.runtime.audioBands.spectrum.get()].every(value => value === 0)).toBe(true);
   });
 
-  it('never parks while a renderer could be consuming frames (lyrics present), however idle the data is', () => {
-    const m = mount({ demand: createFrameDemand(), lines: [line] });
-    m.runFor(20000);
+  it('parks with paused lyrics after decay and preserves the final frame until a seek or resume', () => {
+    const demand = createFrameDemand(), m = mount({ demand, lines: [line], clock: { hasTimeline: true, position: 3, duration: 100 } });
+    m.runUntilParked();
+    expect(m.scheduled.size).toBe(0);
+    expect(m.runtime.currentTime.get()).toBe(3);
+    m.clock.current = { ...m.clock.current, position: 4 };
+    demand.request();
+    expect(m.runtime.currentTime.get()).toBe(4);
+    m.runUntilParked();
+    expect(m.scheduled.size).toBe(0);
+    m.clock.current = { ...m.clock.current, playing: true, received: m.now };
+    demand.request(); m.runFor(5000);
     expect(m.scheduled.size).toBe(1);
+    expect(m.runtime.currentTime.get()).toBeGreaterThan(4);
+    m.cleanup();
   });
 
   it('never parks while the player is playing, and parks 2.5 s after it pauses', () => {
@@ -128,6 +139,20 @@ describe('clock loop parking (no lyrics, nothing changing)', () => {
     const m = mount();
     m.runFor(30000);
     expect(m.scheduled.size).toBe(1);
+  });
+});
+
+describe('spectrum cadence', () => {
+  it('bounds spectrum notifications on a 144 Hz display while lyric time still advances every frame', () => {
+    const m = mount({ lines: [line], clock: { playing: true, hasTimeline: true, duration: 100, received: 1000 } });
+    const spectrumWrites = vi.spyOn(m.runtime.audioBands.spectrum, 'set');
+    const clockWrites = vi.spyOn(m.runtime.currentTime, 'set');
+    for (let i = 0; i < 144; i++) m.frameAt(1000 + i * 1000 / 144);
+    expect(spectrumWrites.mock.calls.length).toBeGreaterThanOrEqual(28);
+    expect(spectrumWrites.mock.calls.length).toBeLessThanOrEqual(31);
+    expect(clockWrites).toHaveBeenCalledTimes(144);
+    expect(m.runtime.currentTime.get()).toBeGreaterThan(0.99);
+    m.cleanup();
   });
 });
 

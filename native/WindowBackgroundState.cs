@@ -4,7 +4,20 @@ using Microsoft.Web.WebView2.Core;
 namespace FoliaLyrics;
 internal sealed partial class MainWindow
 {
-    private bool webHidden;
+    private bool webHidden, webMemoryLow;
+    private readonly System.Windows.Forms.Timer backgroundMemoryTimer = new() { Interval = 30_000 };
+    private void InitializeBackgroundMemory()
+    {
+        backgroundMemoryTimer.Tick += (_, _) => TrimBackgroundMemory();
+        FormClosed += (_, _) => backgroundMemoryTimer.Dispose();
+    }
+    // Keep short minimize/restore cycles warm; only a window left in the background pays the cache/page-in cost.
+    private void TrimBackgroundMemory()
+    {
+        backgroundMemoryTimer.Stop();
+        if (lifetime.IsCancellationRequested || IsDisposed || Disposing || !webHidden || web.IsDisposed || web.CoreWebView2 is null) return;
+        webMemoryLow = SetWebMemoryTarget(CoreWebView2MemoryUsageTargetLevel.Low);
+    }
     // WM_SIZE is the only place minimize and restore are reported: the WebView2 child window never receives them. Microsoft's
     // IsVisible guidance is to hide the WebView while the app window is minimized (a hidden page stops requestAnimationFrame and
     // throttles timers); the Low memory target is the documented companion for apps that keep running scripts. Messages posted by
@@ -30,8 +43,14 @@ internal sealed partial class MainWindow
         try
         {
             // Hide first and trim afterwards; on restore raise the memory target first so it is back while the page is shown again.
-            if (minimized) { web.Visible = false; SetWebMemoryTarget(CoreWebView2MemoryUsageTargetLevel.Low); }
-            else { SetWebMemoryTarget(CoreWebView2MemoryUsageTargetLevel.Normal); web.Visible = true; }
+            // Delay trimming for brief taskbar switches and preserve the nonzero viewport managed by WindowWebLayout.
+            if (minimized) { web.Visible = false; backgroundMemoryTimer.Start(); }
+            else
+            {
+                backgroundMemoryTimer.Stop();
+                if (webMemoryLow && SetWebMemoryTarget(CoreWebView2MemoryUsageTargetLevel.Normal)) webMemoryLow = false;
+                ApplyWebBounds(); web.Visible = true;
+            }
         }
         catch (Exception error)
         {
@@ -45,9 +64,9 @@ internal sealed partial class MainWindow
         if (!minimized) FocusLyricsIfActive();
     }
     // Best effort: a WebView2 runtime that predates the memory target must not break minimizing or restoring.
-    private void SetWebMemoryTarget(CoreWebView2MemoryUsageTargetLevel level)
+    private bool SetWebMemoryTarget(CoreWebView2MemoryUsageTargetLevel level)
     {
-        try { web.CoreWebView2.MemoryUsageTargetLevel = level; }
-        catch (Exception error) { DataFiles.Log(error); }
+        try { web.CoreWebView2.MemoryUsageTargetLevel = level; return true; }
+        catch (Exception error) { DataFiles.Log(error); return false; }
     }
 }

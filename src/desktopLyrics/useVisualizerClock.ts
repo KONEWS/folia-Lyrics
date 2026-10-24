@@ -8,13 +8,14 @@ import { DesktopClockValue } from './DesktopClockValue';
 import type { FrameDemand, FrameDemandReason } from './frameDemand';
 
 // src/desktopLyrics/useVisualizerClock.ts
-// With a FrameDemand, a loop that has nothing to publish parks itself after this long without any change. It has to outlast the progress
+// With a FrameDemand, a loop whose clock and audio are idle parks after this long without any change, including paused lyrics. It outlasts the progress
 // bars' fade to silence (about 1.7 s at their 180 ms decay) so the last frame they draw is already flat.
 export const IDLE_PARK_MS = 2500;
 // Each tick contributes at most this many ms to the idle budget, matching the decay cap in audioProgressSpectrum.ts so that the budget
 // grows no faster than decay can clear residual levels. A suspended gap (minimize, background tab) contributes only one capped step
 // on the resumed tick, preventing suspended time from counting toward the park threshold.
 export const IDLE_BUDGET_STEP_MS = 100;
+export const SPECTRUM_FRAME_MS = 1000 / 30;
 export function useVisualizerClock(lines: Line[], clock: RefObject<Clock>, input: RefObject<{ bins: Uint8Array; sampleRate: number; received: number }>, manual: ManualClock, offset: number, reactive: boolean, demand?: FrameDemand, lyricKey?: string, presentationReady = true) {
   const [currentTime] = useState(() => new DesktopClockValue(0));
   const playbackTime = useMotionValue(0);
@@ -25,7 +26,7 @@ export function useVisualizerClock(lines: Line[], clock: RefObject<Clock>, input
   const presentedKey = useRef(lyricKey); presentedKey.current = lyricKey;
   const ready = useRef(presentationReady); ready.current = presentationReady;
   useLayoutEffect(() => {
-    let frame = 0, lastTime = NaN, audioReceived = -1, audioSampleRate = 0, audioLive: boolean | null = null, hz = 48000 / 2048, prevTick = NaN, idleBudget = 0, woken = false;
+    let frame = 0, lastTime = NaN, audioReceived = -1, audioSampleRate = 0, audioLive: boolean | null = null, hz = 48000 / 2048, prevTick = NaN, lastSpectrumTick = NaN, idleBudget = 0, woken = false;
     const raw = new Uint8Array(1024);
     const energy = (min: number, max: number, exponent: number) => {
       const start = Math.floor(min / hz), end = Math.min(1023, Math.floor(max / hz)); let sum = 0;
@@ -53,17 +54,21 @@ export function useVisualizerClock(lines: Line[], clock: RefObject<Clock>, input
         audioLive = live; audioReceived = source.received; audioSampleRate = source.sampleRate; hz = source.sampleRate / 2048;
         if (live) raw.set(source.bins); else raw.fill(0);
       }
-      // Immutable spectrum snapshots keep every original animation frame; unchanged FFT bands need no rescanning.
-      spectrum.set(raw.slice());
+      // Immutable spectrum snapshots remain safe for renderers to retain; unchanged FFT bands need no rescanning.
+      // The source arrives at 20 Hz and the progress SVG paints at 30 Hz. Keep lyric time at display refresh rate, but bound spectrum copies/notifications.
+      if (Number.isNaN(lastSpectrumTick) || now - lastSpectrumTick >= SPECTRUM_FRAME_MS - 0.01) {
+        lastSpectrumTick = now; spectrum.set(raw.slice());
+      }
       if (audioChanged) {
         bass.set(energy(20, 150, 1.8)); lowMid.set(energy(150, 400, 2)); mid.set(energy(400, 1200, 2)); vocal.set(energy(1000, 3500, 1.5)); treble.set(energy(3500, 12000, 2));
         audioPower.set(Math.pow((energy(20, 150, 1) + energy(150, 400, 1)) / 510, 3) * 255);
       }
-      // Only without lyrics (no renderer is mounted to consume frames): park after IDLE_PARK_MS of accumulated idle budget.
+      // When playback and sound are idle, park after IDLE_PARK_MS of accumulated idle budget.
       // The budget advances by min(delta, IDLE_BUDGET_STEP_MS) per tick — matching the decay cap in audioProgressSpectrum.ts — so a
       // suspended RAF gap (minimize, background tab) contributes only one capped step on the resumed tick, never the full elapsed time.
       // Activity or a wake signal resets the budget to zero so decay has time to complete before the next park.
-      if (demand && lines.length === 0) {
+      // A paused renderer already owns its final frame; its own Motion/Pixi transition can finish without repeated identical clock/spectrum packets.
+      if (demand) {
         const advancing = manual.enabled ? manual.playing : clock.current.playing && clock.current.hasTimeline;
         if (woken || advancing || live || audioChanged || timeChanged) { idleBudget = 0; woken = false; }
         else { const delta = Number.isNaN(prevTick) ? 0 : now - prevTick; idleBudget += Math.min(delta, IDLE_BUDGET_STEP_MS); }

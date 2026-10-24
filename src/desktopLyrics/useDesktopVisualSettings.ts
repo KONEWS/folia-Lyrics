@@ -86,7 +86,7 @@ export function useDesktopVisualSettings(input: Options) {
     draftVisualizer.monetBackgroundTuning, draftVisualizer.nomandBackgroundTuning, draftVisualizer.latentBackgroundTuning, draftVisualizer.soraBackgroundTuning, draftVisualizer.visualizerBackgroundMode]);
   const backgroundActions = buildDesktopBackgroundActions(draftVisualizer, assets, edits.patchVisualizer);
   const panelProps = (mode: VisualizerMode) => buildDesktopModePanelProps(mode, draftVisualizer, edits.patchVisualizer, edits.beginSlider, edits.commitSlider);
-  const resetCommon = () => { edits.commitSlider(); applyTypographyPatch(commonDefaults); visualizer.handleSetVisualizerOpacity(1); useThemeSettingsStore.getState().handleToggleStaticMode(false); useDesktopPanelSettingsStore.getState().setSettingsTransparency(DEFAULT_SETTINGS_TRANSPARENCY); localStorage.removeItem(INTENSITY_KEY); setIntensityOverride(null); };
+  const resetCommon = () => { edits.commitSlider(); applyTypographyPatch(commonDefaults); visualizer.handleSetVisualizerOpacity(1); visualizer.handleSetVisualizerFrameRate(60); useThemeSettingsStore.getState().handleToggleStaticMode(false); useDesktopPanelSettingsStore.getState().setSettingsTransparency(DEFAULT_SETTINGS_TRANSPARENCY); localStorage.removeItem(INTENSITY_KEY); setIntensityOverride(null); };
   const resetSubtitle = () => { edits.commitSlider(); applyTypographyPatch(subtitleDefaults); input.onTranslated(true); };
   const resetMode = (mode: VisualizerMode) => { edits.commitSlider(); resetDesktopMode(mode); };
   const codecOptions = { animationIntensity, backgroundEnabled, translated: input.translated, setAnimationIntensity, setBackgroundEnabled, setTranslated: input.onTranslated };

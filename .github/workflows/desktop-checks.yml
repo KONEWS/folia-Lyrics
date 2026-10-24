@@ -108,6 +108,11 @@ jobs:
         env:
           FOLIA_UI_OUTPUT: test-results/desktop-pause-ci
 
+      - name: Run desktop frame budget and canvas resize regression
+        run: node test/verify-desktop-frame-budget.mjs
+        env:
+          FOLIA_UI_OUTPUT: test-results/desktop-frame-budget-ci
+
       - name: Run desktop visualizer recovery regression
         run: node test/verify-desktop-recovery.mjs
         env:
@@ -221,6 +226,9 @@ jobs:
       # Minimize/restore transitions of the real WindowBackgroundState.cs against stand-ins; no window, WebView or audio device.
       - name: Run window background state checks
         run: dotnet run --project test/window-background-smoke/WindowBackgroundSmoke.csproj -c Release
+
+      - name: Run window viewport coalescing checks
+        run: dotnet run --project test/window-layout-smoke/WindowLayoutSmoke.csproj -c Release
 
       # The measurement tool runs on both PowerShell editions Windows ships; the checks use a simulated process world and window.
       - name: Check the background cost measurement tool (Windows PowerShell 5.1)

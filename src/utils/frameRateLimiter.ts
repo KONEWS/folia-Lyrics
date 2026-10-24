@@ -88,7 +88,12 @@ export const createFrameRateLimitedRaf = (
             return;
         }
 
-        lastProcessedTimestamp = timestamp;
+        // Carry the display/target phase forward. Resetting to each actual tick turns a 60 FPS cap into 48 FPS on 144 Hz screens.
+        if (frameRate === 'off' || lastProcessedTimestamp === 0) lastProcessedTimestamp = timestamp;
+        else {
+            const interval = 1000 / frameRate;
+            lastProcessedTimestamp += Math.max(1, Math.floor((timestamp - lastProcessedTimestamp + FRAME_INTERVAL_TOLERANCE_MS) / interval)) * interval;
+        }
         const frameHandles = Array.from(callbacks.keys());
 
         for (const handle of frameHandles) {
@@ -122,6 +127,7 @@ export const createFrameRateLimitedRaf = (
             }
         },
         setFrameRate: (nextFrameRate) => {
+            if (frameRate === nextFrameRate) return;
             frameRate = nextFrameRate;
             lastProcessedTimestamp = 0;
 
@@ -142,17 +148,9 @@ export const setGlobalVisualizerFrameRate = (frameRate: VisualizerFrameRate) => 
         return;
     }
 
-    if (frameRate === 'off') {
-        restoreGlobalVisualizerFrameRateLimiter();
-        return;
-    }
-
-    if (!installedLimiter) {
-        installGlobalVisualizerFrameRateLimiter(frameRate);
-        return;
-    }
-
-    installedLimiter.setFrameRate(frameRate);
+    // Keep the queue/handle namespace while switching to uncapped mode so pending animations remain cancellable.
+    if (installedLimiter) installedLimiter.setFrameRate(frameRate);
+    else if (frameRate !== 'off') installGlobalVisualizerFrameRateLimiter(frameRate);
 };
 
 // Asks for the display's next frame, past the cap. For work that has to land in the same frame as
@@ -192,7 +190,7 @@ export const installGlobalVisualizerFrameRateLimiter = (overrideFrameRate?: Visu
     const initialFrameRate = overrideFrameRate
         ?? parseVisualizerFrameRate(window.localStorage.getItem(VISUALIZER_FRAME_RATE_STORAGE_KEY));
     if (initialFrameRate === 'off') {
-        restoreGlobalVisualizerFrameRateLimiter();
+        installedLimiter?.setFrameRate('off');
         return;
     }
 

@@ -5607,6 +5607,9 @@ export default {
   },
   "desktopVisual": {
     "commonTab": "通用",
+    "frameRate": "动画帧率上限",
+    "frameRateDisplay": "跟随屏幕",
+    "frameRateHint": "默认 60 FPS；高刷屏可选择 90 或 120 FPS，更高帧率会增加占用。",
     "backgroundTitle": "背景设置",
     "backgroundClose": "关闭背景设置",
     "backgroundStatus": "背景设置 · {{state}}",

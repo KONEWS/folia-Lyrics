@@ -18,6 +18,7 @@ internal sealed partial class MainWindow
             acrylic = WindowAcrylic.Apply(Handle, !clickThrough && WindowAcrylic.TransparencyEnabled());
         }
         BackColor = acrylic || transparentBackground ? Color.Black : DesktopBackground;
+        web.BackColor = BackColor;
         SendAppearance(); Invalidate();
     }
     private void SendAppearance() => Send("appearance", new { acrylic, transparent = transparentBackground,

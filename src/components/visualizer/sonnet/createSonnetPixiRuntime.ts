@@ -18,6 +18,7 @@ import { PixiSceneCache } from '../pixiSceneCache';
 import { loadPixi } from '../pixi/loadPixi';
 import { linkPixiPrograms } from '../pixi/pixiProgramLinks';
 import { makePixiContext } from '../pixi/pixiWebGLContext';
+import { observeSettledResize } from '../observeSettledResize';
 import { sonnetDebugState } from './sonnetDebug';
 import { createSonnetBeatFxReader } from './sonnetBeatFx';
 import { readSonnetModulation, type SonnetShotFrameContext, updateSonnetShot } from './sonnetShotFrame';
@@ -124,7 +125,7 @@ export class SonnetPixiRuntime {
         detachAbort: () => void;
     } | null = null;
     private swapCover: import('pixi.js').Graphics | null = null;
-    private resizeObserver: ResizeObserver | null = null;
+    private stopResize: (() => void) | null = null;
     private lastWidth = 0;
     private lastHeight = 0;
 
@@ -205,11 +206,12 @@ export class SonnetPixiRuntime {
         this.options.host.appendChild(this.app.canvas);
         this.app.canvas.style.cssText = 'width:100%;height:100%;display:block';
         this.app.ticker.add(this.renderFrame);
-        this.resizeObserver = new ResizeObserver(() => {
+        this.stopResize = observeSettledResize(this.options.host, () => {
             if (this.destroyed || !this.resizeToHost()) return;
             if (this.options.paused) this.renderOnce();
         });
-        this.resizeObserver.observe(this.options.host);
+        // Warm-up can finish after a host resize; reconcile it before the first visible draw.
+        if (this.resizeToHost()) this.renderFrame();
         this.app.renderer.render(this.app.stage);
         if (!this.options.paused) this.app.start();
     }
@@ -229,6 +231,8 @@ export class SonnetPixiRuntime {
             height,
             snapResolutionToTexturePool(width, height, this.options.tuning.textureResolution),
         );
+        // Pixi autoDensity writes fixed CSS pixels; keep the existing surface stretched while the next drag is pending.
+        this.app.canvas.style.width = '100%'; this.app.canvas.style.height = '100%';
         // Staged against the old viewport, so its layout no longer fits.
         if (this.songSwap?.staged) {
             this.destroyScene(this.songSwap.staged.scene);
@@ -710,8 +714,8 @@ export class SonnetPixiRuntime {
         // Release whoever is awaiting the handover before tearing the app down, otherwise that
         // promise never settles and the caller's drain loop stays parked on it.
         this.settleSongSwap();
-        this.resizeObserver?.disconnect();
-        this.resizeObserver = null;
+        this.stopResize?.();
+        this.stopResize = null;
         this.app.stop();
         this.app.ticker.remove(this.renderFrame);
         this.clearScenes();

@@ -6,11 +6,12 @@ namespace FoliaLyrics;
 internal sealed partial class MainWindow : Form
 {
     private readonly Preferences preferences;
+    private readonly Control web = new();
     private readonly object? dispatcher = new();
     private readonly bool ready = true;
     private readonly AudioSpectrum audio = new();
     private bool fullscreen = false, clickThrough = false;
-    public MainWindow(Preferences preferences) => this.preferences = preferences;
+    public MainWindow(Preferences preferences) { this.preferences = preferences; InitializeWebLayout(); }
     public void CaptionCommand(string action) => WindowCommand(JsonSerializer.SerializeToElement(new { action }));
     public IReadOnlyList<bool> CaptureRequests => audio.Requests;
     public void RefreshAudioCapture() => UpdateAudioCapture(checkDevice: true);

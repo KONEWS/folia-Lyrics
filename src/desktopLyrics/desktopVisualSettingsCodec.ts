@@ -1,6 +1,7 @@
 import type { Theme, VisualizerMode } from '../types';
 import { resolveSmartBeatSettings } from '../services/beatFx/smartBeatSettings';
 import { compressConfig, decompressConfig } from '../utils/appearanceCodec';
+import { isVisualizerFrameRate } from '../utils/frameRateLimiter';
 import { hasVisualizerMode } from '../components/visualizer/registry';
 import { hasVisualizerBackgroundMode } from '../components/visualizer/backgrounds/registry';
 import { collectVisualizerTunings } from '../components/visualizer/tuningRegistry';
@@ -68,6 +69,7 @@ export function importDesktopVisualConfig(text: string, options: Options): Deskt
       const raw = modeKey && has(tunings, modeKey) ? tunings[modeKey] : config[key];
       if (raw === undefined) continue;
       if (key === 'smartBeat') { if (object(raw)) visualizer.smartBeat = resolveSmartBeatSettings(raw, v.smartBeat); continue; }
+      if (key === 'visualizerFrameRate') { if (isVisualizerFrameRate(raw)) visualizer.visualizerFrameRate = raw; continue; }
       if (key === 'visualizerBackgroundMode' && raw !== null && !hasVisualizerBackgroundMode(raw)) continue;
       if (key === 'urlBackgroundSelectedId' && raw !== null && typeof raw !== 'string') continue;
       const nullable = key === 'visualizerBackgroundMode' || key === 'urlBackgroundSelectedId';

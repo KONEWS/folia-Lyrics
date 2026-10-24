@@ -5607,6 +5607,9 @@ export default {
   },
   "desktopVisual": {
     "commonTab": "Common",
+    "frameRate": "Animation frame rate limit",
+    "frameRateDisplay": "Match display",
+    "frameRateHint": "Defaults to 60 FPS. Select 90 or 120 FPS for a high refresh rate display; higher limits use more resources.",
     "backgroundTitle": "Background settings",
     "backgroundClose": "Close background settings",
     "backgroundStatus": "Background settings · {{state}}",

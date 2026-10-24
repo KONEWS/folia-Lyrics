@@ -1,4 +1,5 @@
-import type { VisualizerMode } from '../types';
+import type { VisualizerMode, VisualizerFrameRate } from '../types';
+import { VISUALIZER_FRAME_RATE_OPTIONS } from '../utils/frameRateLimiter';
 import DesktopSelect from './DesktopSelect';
 import DesktopVisualFont from './DesktopVisualFont';
 import { useVisualTranslation, VisualCard, VisualRange, VisualToggle } from './DesktopVisualControls';
@@ -17,6 +18,11 @@ export default function DesktopVisualCommon({ model, mode, onSegmentation, canSe
     <VisualCard title={t('desktopVisual.commonTab')}>
       <button type="button" className="desktop-visual-reset" onClick={model.resetCommon}>{t('ui.default')}</button>
       <DesktopSettingsTransparency/>
+      <label className="desktop-visual-field"><span>{t('desktopVisual.frameRate')}</span><DesktopSelect
+        value={String(model.visualizer.visualizerFrameRate)} label={t('desktopVisual.frameRate')}
+        onChange={value => model.visualizer.handleSetVisualizerFrameRate(value === 'off' ? 'off' : Number(value) as VisualizerFrameRate)}
+        options={[...VISUALIZER_FRAME_RATE_OPTIONS.map(value => ({ value: String(value), label: String(value) + ' FPS' })), { value: 'off', label: t('desktopVisual.frameRateDisplay') }]}/></label>
+      <p className="desktop-visual-hint">{t('desktopVisual.frameRateHint')}</p>
       <label className="desktop-visual-field"><span>{t('ui.animationIntensity')}</span><DesktopSelect
         value={model.animationIntensity} label={t('ui.animationIntensity')} onChange={value => model.setAnimationIntensity(value as 'calm' | 'normal' | 'chaotic')}
         options={['calm', 'normal', 'chaotic'].map(value => ({ value, label: t(`animation.${value}`) }))}/></label>

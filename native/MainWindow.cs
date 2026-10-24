@@ -9,7 +9,7 @@ internal sealed partial class MainWindow : Form
     // Match the desktop theme while WebView starts or the system disables transparent materials.
     private static readonly Color DesktopBackground = Color.FromArgb(11, 13, 23);
     private readonly UiDispatcher dispatcher;
-    private readonly WebView2 web = new() { Dock = DockStyle.Fill, DefaultBackgroundColor = Color.Transparent };
+    private readonly WebView2 web = new() { DefaultBackgroundColor = Color.Transparent, BackColor = DesktopBackground };
     private readonly Preferences preferences = DataFiles.Load("preferences.json", new Preferences());
     private readonly Task<LyricLibrary> libraryLoad = Task.Run(() => new LyricLibrary());
     private LyricLibrary library = null!; private readonly MediaMonitor media = new(); private readonly AudioSpectrum audio = new();
@@ -35,7 +35,7 @@ internal sealed partial class MainWindow : Form
         Text = "Folia 桌面歌词"; ClientSize = new Size(1200, 760); MinimumSize = new Size(680, 450); FormBorderStyle = FormBorderStyle.None;
         StartPosition = FormStartPosition.CenterScreen; BackColor = DesktopBackground;
         Icon = Icon.ExtractAssociatedIcon(Environment.ProcessPath!) ?? SystemIcons.Application;
-        Controls.Add(web); TopMost = preferences.Topmost;
+        Controls.Add(web); InitializeWebLayout(); InitializeBackgroundMemory(); TopMost = preferences.Topmost;
         InitializeLaunchForeground();
         InitializeTray();
         InitializeWindowPlacement();

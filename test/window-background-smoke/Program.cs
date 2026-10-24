@@ -22,7 +22,7 @@ MainWindow Running()
     window.PageReady(); window.Take();
     return window;
 }
-const string Hide = "web.Visible=false", Trim = "memory=Low", Untrim = "memory=Normal", Show = "web.Visible=true", Focus = "focus", TimerOn = "timer=on", TimerOff = "timer=off";
+const string Hide = "web.Visible=false", Trim = "memory=Low", Untrim = "memory=Normal", Show = "web.Visible=true", Focus = "focus", TimerOn = "timer=on", TimerOff = "timer=off", Bounds = "bounds";
 
 // Minimize before the page or the WebView core exist.
 {
@@ -31,16 +31,16 @@ const string Hide = "web.Visible=false", Trim = "memory=Low", Untrim = "memory=N
     Sequence(window, "minimize before the WebView core exists changes nothing", []);
     Check(!window.WebWasHidden && window.Web.Visible && !window.Timer.Enabled, "a hide request without a core is not recorded and the control stays visible");
     window.AttachCore(); window.PageReady();
-    Sequence(window, "the page becoming ready while still minimized hides it now", Hide, Trim);
+    Sequence(window, "the page becoming ready while still minimized hides it now", Hide);
     Check(window.WebWasHidden && !window.Timer.Enabled, "the spectrum timer stays off while minimized, even with sound response on");
     window.SizeMessage(0);
-    Sequence(window, "restoring starts the timer, untrims, shows and refocuses in that order", TimerOn, Untrim, Show, Focus);
+    Sequence(window, "restoring starts the timer, applies bounds, shows and refocuses in that order", TimerOn, Bounds, Show, Focus);
 }
 // The core exists but the page has not said ready yet.
 {
     var window = new MainWindow();
     window.SizeMessage(1);
-    Sequence(window, "minimize after the core exists but before ready hides without starting a timer", Hide, Trim);
+    Sequence(window, "minimize after the core exists but before ready hides without starting a timer", Hide);
     window.PageReady();
     Sequence(window, "ready while already hidden does not hide, trim or start anything again", []);
     window.PageReady(); window.PageReady();
@@ -48,7 +48,7 @@ const string Hide = "web.Visible=false", Trim = "memory=Low", Untrim = "memory=N
     window.SoundResponse(false); window.SoundResponse(true);
     Sequence(window, "toggling sound response while hidden never starts the timer", []);
     window.SizeMessage(0);
-    Sequence(window, "restore after ready while hidden shows the page and starts the timer", TimerOn, Untrim, Show, Focus);
+    Sequence(window, "restore after ready while hidden shows the page and starts the timer", TimerOn, Bounds, Show, Focus);
 }
 // Sound response on and off around restore.
 {
@@ -56,11 +56,11 @@ const string Hide = "web.Visible=false", Trim = "memory=Low", Untrim = "memory=N
     window.PageReady();
     Sequence(window, "ready on a visible window with sound response on starts the timer", TimerOn);
     window.SizeMessage(1);
-    Sequence(window, "minimize stops the timer, hides, then trims", TimerOff, Hide, Trim);
+    Sequence(window, "minimize stops the timer and hides without immediate memory eviction", TimerOff, Hide);
     window.SoundResponse(false);
     Sequence(window, "switching sound response off while minimized changes nothing", []);
     window.SizeMessage(0);
-    Sequence(window, "restore with sound response off shows the page without starting the timer", Untrim, Show, Focus);
+    Sequence(window, "restore with sound response off shows the page without starting the timer", Bounds, Show, Focus);
     Check(!window.Timer.Enabled && window.Web.Visible, "after that restore the timer is off and the page is visible");
     window.SoundResponse(true);
     Sequence(window, "switching sound response on while visible starts the timer", TimerOn);
@@ -73,19 +73,19 @@ const string Hide = "web.Visible=false", Trim = "memory=Low", Untrim = "memory=N
 {
     var window = Running();
     for (var i = 0; i < 5; i++) window.SizeMessage(1);
-    Sequence(window, "five consecutive minimize messages act once", TimerOff, Hide, Trim);
+    Sequence(window, "five consecutive minimize messages act once", TimerOff, Hide);
     for (var i = 0; i < 5; i++) window.SizeMessage(0);
-    Sequence(window, "five consecutive restore messages act once", TimerOn, Untrim, Show, Focus);
+    Sequence(window, "five consecutive restore messages act once", TimerOn, Bounds, Show, Focus);
     foreach (var type in new long[] { 3, 4, 5, 99, -1, long.MaxValue }) window.SizeMessage(type);
     Sequence(window, "SIZE_MAXSHOW, SIZE_MAXHIDE and unknown size types are ignored while visible", []);
     window.SizeMessage(1); window.Take();
     foreach (var type in new long[] { 3, 4, 99, -1 }) window.SizeMessage(type);
     Sequence(window, "the same ignored size types do not restore a hidden window", []);
     window.SizeMessage(2);
-    Sequence(window, "SIZE_MAXIMIZED restores a hidden window like SIZE_RESTORED", TimerOn, Untrim, Show, Focus);
+    Sequence(window, "SIZE_MAXIMIZED restores a hidden window like SIZE_RESTORED", TimerOn, Bounds, Show, Focus);
     for (var cycle = 0; cycle < 100; cycle++) { window.SizeMessage(1); window.SizeMessage(0); }
     var events = window.Take();
-    Check(events.Count == 700 && new[] { Hide, Show, Trim, Untrim, TimerOn, TimerOff, Focus }.All(name => events.Count(e => e == name) == 100), "100 minimize/restore cycles perform each call exactly 100 times (no redundant or missing calls)");
+    Check(events.Count == 600 && new[] { Hide, Show, Bounds, TimerOn, TimerOff, Focus }.All(name => events.Count(e => e == name) == 100), "100 minimize/restore cycles perform each call exactly 100 times (no redundant or missing calls)");
     Check(window.Web.Visible && window.Timer.Enabled && !window.WebWasHidden, "after 100 cycles the page is visible, the timer is on and no hide is pending");
     window.PageReady();
     Sequence(window, "a reload while visible re-applies state without any call", []);
@@ -116,10 +116,11 @@ const string Hide = "web.Visible=false", Trim = "memory=Low", Untrim = "memory=N
     window.Web.CoreWebView2.ThrowOnMemoryTarget = true; DataFiles.Logged.Clear();
     window.SizeMessage(1);
     Sequence(window, "a runtime without the memory target still minimizes (timer off, hidden)", TimerOff, Hide);
+    window.TrimAfterDelay();
     Check(DataFiles.Logged.Count == 1, "the unsupported memory target is logged once");
     window.SizeMessage(0);
-    Sequence(window, "and still restores (timer on, shown, focused)", TimerOn, Show, Focus);
-    Check(DataFiles.Logged.Count == 2 && window.Web.Visible, "the second failure is logged and the page ends visible");
+    Sequence(window, "and still restores (timer on, shown, focused)", TimerOn, Bounds, Show, Focus);
+    Check(DataFiles.Logged.Count == 1 && window.Web.Visible, "a failed trim is not needlessly undone on restore and the page ends visible");
 }
 {
     var window = Running(); DataFiles.Logged.Clear();
@@ -129,19 +130,41 @@ const string Hide = "web.Visible=false", Trim = "memory=Low", Untrim = "memory=N
     Check(DataFiles.Logged.Count == 1 && window.WebWasHidden, "the failure is logged and the intent to be hidden is kept");
     window.Web.ThrowOnVisible = false;
     window.SizeMessage(0);
-    Sequence(window, "the next restore still shows the page", TimerOn, Untrim, Show, Focus);
+    Sequence(window, "the next restore still shows the page", TimerOn, Bounds, Show, Focus);
     Check(window.Web.Visible && !window.WebWasHidden, "the page is visible again after the earlier failure");
 }
 {
     var window = Running(); window.SizeMessage(1); window.Take(); DataFiles.Logged.Clear();
     window.Web.ThrowOnVisible = true;
     window.SizeMessage(0);
-    Sequence(window, "a controller that rejects showing is logged and the page is not refocused", TimerOn, Untrim);
+    Sequence(window, "a controller that rejects showing is logged and the page is not refocused", TimerOn, Bounds);
     Check(DataFiles.Logged.Count == 1 && window.WebWasHidden, "a failed restore stays marked hidden so it will be retried");
     window.Web.ThrowOnVisible = false;
     window.SizeMessage(2);
-    Sequence(window, "the next size change retries and shows the page (the timer is already on)", Untrim, Show, Focus);
+    Sequence(window, "the next size change retries and shows the page (the timer is already on)", Bounds, Show, Focus);
     Check(window.Web.Visible && !window.WebWasHidden, "after the retry the page is visible and nothing is pending");
+}
+// Delayed trim is one-shot, cancelled by a quick restore and harmless after shutdown/disposal.
+{
+    var quick = Running(); quick.SizeMessage(1); quick.Take();
+    Check(quick.TrimPending, "minimizing schedules memory reduction without evicting the warm page immediately");
+    quick.SizeMessage(0); quick.Take(); quick.TrimAfterDelay();
+    Sequence(quick, "restore cancels delayed trim", []);
+    Check(!quick.TrimPending, "quick restore leaves no pending trim");
+    var slow = Running(); slow.SizeMessage(1); slow.Take(); slow.TrimAfterDelay();
+    Sequence(slow, "a long minimize reduces memory once", Trim);
+    slow.TrimAfterDelay(); Sequence(slow, "the trim timer is one-shot", []);
+    slow.SizeMessage(0); Sequence(slow, "a trimmed page raises its memory target before showing", TimerOn, Untrim, Bounds, Show, Focus);
+    var closed = Running(); closed.SizeMessage(1); closed.Take(); closed.Shutdown(); closed.TrimAfterDelay();
+    Sequence(closed, "delayed callbacks cannot trim after shutdown", []);
+    var disposed = Running(); disposed.SizeMessage(1); disposed.Take(); disposed.Web.IsDisposed = true; disposed.TrimAfterDelay();
+    Sequence(disposed, "delayed callbacks cannot touch a disposed control", []);
+    var failed = Running(); failed.SizeMessage(1); failed.TrimAfterDelay(); failed.Take(); failed.Web.ThrowOnVisible = true;
+    failed.SizeMessage(0); Sequence(failed, "a failed show restores memory and bounds first", TimerOn, Untrim, Bounds);
+    failed.Web.ThrowOnVisible = false; failed.SizeMessage(0);
+    Sequence(failed, "retry does not repeat memory restoration", Bounds, Show, Focus);
+    var closedTimer = Running(); closedTimer.SizeMessage(1); closedTimer.Take(); closedTimer.Close(); closedTimer.TrimAfterDelay();
+    Sequence(closedTimer, "closing disposes the trim timer", []);
 }
 // The WM_SIZE size-type mapping and the timer decision table.
 Check(WindowBackgroundPolicy.MinimizedFrom(1) == true && WindowBackgroundPolicy.MinimizedFrom(0) == false && WindowBackgroundPolicy.MinimizedFrom(2) == false

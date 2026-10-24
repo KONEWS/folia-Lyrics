@@ -39,6 +39,23 @@ afterEach(() => {
 });
 
 describe('desktop appearance codec', () => {
+  it.each(['json', 'code'] as const)('roundtrips all supported frame budgets through %s without accepting malformed values', format => {
+    for (const value of [60, 90, 120, 'off'] as const) {
+      useVisualizerSettingsStore.getState().handleSetVisualizerFrameRate(value);
+      const exported = exportDesktopVisualConfig(format, makeOptions());
+      expect(decompressConfig(exported).visualizerFrameRate).toBe(value);
+      useVisualizerSettingsStore.setState({ visualizerFrameRate: value === 'off' ? 60 : 'off' });
+      expect(importDesktopVisualConfig(exported, makeOptions()).ok).toBe(true);
+      expect(useVisualizerSettingsStore.getState().visualizerFrameRate).toBe(value);
+      expect(storage.getItem('visualizer_frame_rate')).toBe(String(value));
+    }
+    for (const value of [null, 'bad', '60', -1, 1, 30, 240]) {
+      importDesktopVisualConfig(encode(format, { visualizerFrameRate: value }), makeOptions());
+      expect(useVisualizerSettingsStore.getState().visualizerFrameRate).toBe('off');
+    }
+    importDesktopVisualConfig(encode(format, { lyricsFontStyle: 'sans' }), makeOptions());
+    expect(useVisualizerSettingsStore.getState().visualizerFrameRate).toBe('off');
+  });
   it.each(['json', 'code'] as const)('roundtrips settings transparency through %s, clamps finite values and preserves missing or invalid values', format => {
     const store = useDesktopPanelSettingsStore.getState();
     store.setSettingsTransparency(32);

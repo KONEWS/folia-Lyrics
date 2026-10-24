@@ -19,6 +19,7 @@ import { PixiSongSwap } from '../pixiSongSwap';
 import { loadPixi } from '../pixi/loadPixi';
 import { linkPixiPrograms } from '../pixi/pixiProgramLinks';
 import { makePixiContext } from '../pixi/pixiWebGLContext';
+import { observeSettledResize } from '../observeSettledResize';
 import { setTemperaTransitionBlur } from './temperaSceneFilters';
 import { destroyTemperaGradientFills } from './temperaShapes';
 import { TemperaImageTextures } from './temperaImageTextures';
@@ -111,7 +112,7 @@ export class TemperaPixiRuntime {
     });
     private activeParagraphIndex = -1;
     private destroyed = false;
-    private resizeObserver: ResizeObserver | null = null;
+    private stopResize: (() => void) | null = null;
     private lastWidth = 0;
     private lastHeight = 0;
     /**
@@ -216,11 +217,12 @@ export class TemperaPixiRuntime {
         this.options.host.appendChild(this.app.canvas);
         this.app.canvas.style.cssText = 'width:100%;height:100%;display:block';
         this.app.ticker.add(this.renderFrame);
-        this.resizeObserver = new ResizeObserver(() => {
+        this.stopResize = observeSettledResize(this.options.host, () => {
             if (this.destroyed || !this.resizeToHost()) return;
             if (this.options.paused) this.renderOnce();
         });
-        this.resizeObserver.observe(this.options.host);
+        // Warm-up can finish after a host resize; reconcile it before the first visible draw.
+        if (this.resizeToHost()) this.renderFrame();
         this.app.renderer.render(this.app.stage);
         if (!this.options.paused) this.app.start();
     }
@@ -247,6 +249,8 @@ export class TemperaPixiRuntime {
         // its resolution on one call, and the scenes are dropped below anyway.
         this.renderResolution = this.resolveRenderResolution(this.options.tuning);
         this.app.renderer.resize(width, height, this.renderResolution);
+        // Pixi autoDensity writes fixed CSS pixels; keep the existing surface stretched while the next drag is pending.
+        this.app.canvas.style.width = '100%'; this.app.canvas.style.height = '100%';
         clearDestroyedPixiFilterInputs(this.app.renderer);
         // Staged against the old viewport, so its layout no longer fits.
         this.songSwap.dropStaged();
@@ -416,8 +420,8 @@ export class TemperaPixiRuntime {
         }
         // The size the renderer was last fitted to. Reading the host here instead would force a
         // synchronous layout every frame, and the ResizeObserver refits both together anyway.
-        const width = this.lastWidth || Math.max(this.options.host.clientWidth, 320);
-        const height = this.lastHeight || Math.max(this.options.host.clientHeight, 240);
+        const width = this.lastWidth;
+        const height = this.lastHeight;
         const finalParagraph = this.options.program.paragraphs.at(-1);
         const creditsFrame = resolveTemperaCreditsFrame(
             time,
@@ -667,8 +671,8 @@ export class TemperaPixiRuntime {
         // Release whoever is awaiting the handover before tearing the app down, otherwise that
         // promise never settles and the caller's drain loop stays parked on it.
         this.songSwap.settle(false);
-        this.resizeObserver?.disconnect();
-        this.resizeObserver = null;
+        this.stopResize?.();
+        this.stopResize = null;
         this.app.stop();
         this.app.ticker.remove(this.renderFrame);
         this.sceneCache.destroyAll();

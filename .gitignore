@@ -123,6 +123,9 @@ test/window-close-smoke/bin/
 test/window-close-smoke/obj/
 test/window-background-smoke/bin/
 test/window-background-smoke/obj/
+
+test/window-layout-smoke/bin/
+test/window-layout-smoke/obj/
 test/tray-menu-smoke/bin/
 test/tray-menu-smoke/obj/
 test/tray-menu-preview/bin/

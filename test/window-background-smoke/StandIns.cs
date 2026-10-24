@@ -4,6 +4,16 @@ namespace System.Windows.Forms
 {
     // Same member names as the WinForms enum; this project does not reference WinForms.
     internal enum FormWindowState { Normal = 0, Minimized = 1, Maximized = 2 }
+    internal sealed class Timer : IDisposable
+    {
+        public int Interval { get; set; }
+        public bool Enabled { get; private set; }
+        public event EventHandler? Tick;
+        public void Start() => Enabled = true;
+        public void Stop() => Enabled = false;
+        public void Fire() { if (Enabled) Tick?.Invoke(this, EventArgs.Empty); }
+        public void Dispose() => Enabled = false;
+    }
 }
 namespace Microsoft.Web.WebView2.Core
 {
@@ -70,8 +80,15 @@ namespace FoliaLyrics
         public bool Disposing { get; set; }
         public FormWindowState WindowState { get; set; } = FormWindowState.Normal;
 
+        public event EventHandler? FormClosed;
+        private void ApplyWebBounds() => Events.Add("bounds");
+        public void TrimAfterDelay() => backgroundMemoryTimer.Fire();
+        public bool TrimPending => backgroundMemoryTimer.Enabled;
+        public void Close() => FormClosed?.Invoke(this, EventArgs.Empty);
+
         public MainWindow(bool coreAvailable = true)
         {
+            InitializeBackgroundMemory();
             audioTimer = new FakeTimer(Events);
             web = new FakeWeb(Events);
             if (coreAvailable) web.CoreWebView2 = new FakeCore(Events);

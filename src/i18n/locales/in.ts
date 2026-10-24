@@ -1,7 +1,12 @@
 
 
 export default {
-  "desktopVisual": { "commonTab": "Umum" },
+  "desktopVisual": {
+    "commonTab": "Umum",
+    "frameRate": "Batas frame rate animasi",
+    "frameRateDisplay": "Ikuti layar",
+    "frameRateHint": "Bawaan 60 FPS. Pilih 90 atau 120 FPS untuk layar dengan refresh rate tinggi; batas yang lebih tinggi memakai lebih banyak sumber daya."
+  },
   "libraryBravais": {
     "suiteName": "Dinding Bravais",
     "homeTitle": "Pustaka",

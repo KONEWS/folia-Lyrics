@@ -7,6 +7,7 @@
   <ItemGroup>
     <Compile Include="../../native/Preferences.cs" Link="Preferences.cs"/>
     <Compile Include="../../native/WindowFrame.cs" Link="WindowFrame.cs"/>
+    <Compile Include="../../native/WindowWebLayout.cs" Link="WindowWebLayout.cs"/>
     <Compile Include="../../native/WindowAudio.cs" Link="WindowAudio.cs"/>
     <Compile Include="../../native/WindowBackgroundPolicy.cs" Link="WindowBackgroundPolicy.cs"/>
   </ItemGroup>

@@ -76,7 +76,7 @@ internal sealed partial class MainWindow
     protected override void OnResize(EventArgs e)
     {
         base.OnResize(e);
-        if (dispatcher is not null) { UpdateAudioCapture(); SendWindowState(); }
+        if (dispatcher is not null) { RequestWebLayout(); UpdateAudioCapture(); SendWindowState(); }
     }
     private bool windowStateSent, sentMaximized, sentFullscreen, sentClickThrough;
     // Dragging a window edge raises resize notifications dozens of times a second; the page only needs the three flags when one of

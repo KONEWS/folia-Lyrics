@@ -5,7 +5,7 @@ import { useVisualizerSettingsStore } from '../stores/useVisualizerSettingsStore
 
 // src/desktopLyrics/desktopVisualFields.ts — one allowed field-to-original-setter table for desktop edits and imports.
 export const visualizerSetters = {
-  backgroundOpacity: 'handleSetBackgroundOpacity', visualizerOpacity: 'handleSetVisualizerOpacity',
+  backgroundOpacity: 'handleSetBackgroundOpacity', visualizerOpacity: 'handleSetVisualizerOpacity', visualizerFrameRate: 'handleSetVisualizerFrameRate',
   disableVisualizerVignette: 'handleToggleDisableVisualizerVignette', disableVisualizerGeometricBackground: 'handleToggleDisableVisualizerGeometricBackground',
   visualizerBackgroundMode: 'handleSetVisualizerBackgroundMode', urlBackgroundList: 'handleSetUrlBackgroundList', urlBackgroundSelectedId: 'handleSetUrlBackgroundSelectedId',
   classicTuning: 'handleSetClassicTuning', cadenzaTuning: 'handleSetCadenzaTuning', partitaTuning: 'handleSetPartitaTuning',
