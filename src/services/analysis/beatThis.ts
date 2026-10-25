@@ -2,6 +2,7 @@ import { runBeatThisGpu, type PercussiveEnergyFrames } from './beatThisGpu';
 import type { Urgency } from './scheduler';
 
 import { modelCanRun, noteModelFailed } from './modelAvailability';
+import { hasAnalysisGpuWeights } from './analysisModelHost';
 import { fft } from '../automix/signalAnalysis';
 import { YIELD_BUDGET_MS, yieldToUi } from '../automix/uiYield';
 
@@ -462,7 +463,9 @@ export const gridFromBeats = (
  */
 export const canRunBeatThis = (): boolean => {
     if (typeof window === 'undefined') return false;
-    return typeof window.electron?.runBeatThis === 'function' && modelCanRun('beat_this');
+    const cpu = typeof window.electron?.runBeatThis === 'function';
+    const gpu = hasAnalysisGpuWeights('beat_this') && typeof navigator !== 'undefined' && 'gpu' in navigator;
+    return (cpu || gpu) && modelCanRun('beat_this');
 };
 
 /**

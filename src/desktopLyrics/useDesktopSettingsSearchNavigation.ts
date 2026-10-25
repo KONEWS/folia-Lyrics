@@ -8,7 +8,7 @@ import { revealDesktopSettingsControl } from './useDesktopSettingsNavigation';
 const controls = 'input:not([type=hidden]):not([type=file]),button,select,textarea,[role=combobox],summary';
 const labels = '[aria-label],[title],[placeholder],label,span,strong,div,button,summary,h3,h4,p';
 const available = (element: HTMLElement) => !element.matches('input[type=file],input[type=hidden]')
-  && !element.closest('[hidden],.hidden,[aria-hidden=true]');
+  && !element.closest('[hidden],.hidden,[aria-hidden=true],[inert]');
 const firstControl = (root: HTMLElement) => Array.from(root.querySelectorAll<HTMLElement>(controls))
   .find(element => available(element) && !element.matches(':disabled'));
 function findLabel(root: HTMLElement, label: string): HTMLElement | undefined {
@@ -17,12 +17,16 @@ function findLabel(root: HTMLElement, label: string): HTMLElement | undefined {
   return items.find(element => normalizeSearchText(element.getAttribute('aria-label') ?? '') === normalized)
     ?? items.find(element => normalizeSearchText(element.getAttribute('title') ?? '') === normalized)
     ?? items.find(element => normalizeSearchText(element.getAttribute('placeholder') ?? '') === normalized)
+    ?? items.find(element => element.id && normalizeSearchText(element.textContent ?? '') === normalized)
     ?? items.find(element => normalizeSearchText(element.textContent ?? '') === normalized)
     ?? items.find(element => normalizeSearchText(element.textContent ?? '').startsWith(`${normalized} `));
 }
 // Shared original panels often put a translated span next to the input instead of an HTML label.
 function controlFor(label: HTMLElement, root: HTMLElement) {
   if (label.matches(controls) && !label.matches(':disabled')) return label;
+  const named = label.id ? Array.from(root.querySelectorAll<HTMLElement>(controls)).find(element =>
+    element.getAttribute('aria-labelledby')?.split(/\s+/).includes(label.id) && available(element) && !element.matches(':disabled')) : undefined;
+  if (named) return named;
   for (let parent: HTMLElement | null = label; parent && parent !== root; parent = parent.parentElement) {
     const input = firstControl(parent);
     if (input) return input;
@@ -39,6 +43,8 @@ function controlFor(label: HTMLElement, root: HTMLElement) {
 function contextRoot(root: HTMLElement, context?: string) {
   if (!context) return root;
   const heading = findLabel(root, context);
+  const effect = heading?.closest<HTMLElement>('[data-beat-effect]');
+  if (effect) return effect;
   const fieldset = heading?.closest<HTMLElement>('fieldset');
   if (fieldset) return fieldset;
   const group = heading?.parentElement;
@@ -64,7 +70,9 @@ export function useDesktopSettingsSearchNavigation(panel: RefObject<HTMLElement 
       const prerequisite = prerequisiteLabel ? findPrerequisite(prerequisiteLabel) : undefined;
       // Original panels mount nested controls only after a disclosure opens. This does not toggle the effect itself.
       const disclosureArea = entry.context ? area : prerequisiteLabel ? contextRoot(root, prerequisiteLabel) : undefined;
-      const disclosure = !label ? disclosureArea?.querySelector<HTMLElement>('button[aria-expanded=false]') : undefined;
+      // Only an explicit option fieldset is a foldable settings group; comboboxes and note buttons are not prerequisites.
+      const disclosure = !label && disclosureArea?.matches('fieldset')
+        ? disclosureArea.querySelector<HTMLElement>('button[aria-expanded=false]:not([role=combobox])') : undefined;
       if (disclosure && !expanded.has(disclosure)) { expanded.add(disclosure); disclosure.click(); return false; }
       const found = label ?? prerequisite;
       if (!found) return false;

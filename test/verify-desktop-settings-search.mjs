@@ -31,6 +31,10 @@ try {
     localStorage.setItem('folia.desktop.backgroundEnabled.v1', 'true');
     localStorage.setItem('visualizer_background_mode', 'common');
     localStorage.setItem('subtitle_font_inherits_lyrics', 'true');
+    localStorage.setItem('visualizer_smart_beat', JSON.stringify({ mode: 'cached', effects: {
+      'hanabi.beatBursts': { on: true, strength: 0.6 }, 'hanabi.beatPulse': { on: true, strength: 1.4 },
+      'sonnet.lensTear': { on: false, strength: 1 },
+    } }));
     localStorage.setItem('tempera_tuning', JSON.stringify({ postProcessEnabled: false }));
     localStorage.setItem('sonnet_tuning', JSON.stringify({ postProcessEnabled: false }));
     localStorage.setItem('latent_background_tuning', JSON.stringify({ ditheringSpeed: 0.3, meshSpeed: 1.7 }));
@@ -58,6 +62,7 @@ try {
     storage: Object.fromEntries(Object.entries(localStorage).sort(([a], [b]) => a.localeCompare(b))),
     preferences: window.__foliaMockPreferences(), commands: window.__foliaCommands.filter(command => command.type !== 'ready'),
   })) });
+  await page.waitForFunction(() => window.__foliaReadVisualizerProps?.()?.currentTime.get() === 10);
   const baseline = await state();
   assert.equal(baseline.visual.mode, 'classic'); assert.equal(baseline.visual.background.mode, 'common');
   assert(baseline.visual.lines.length > 0 && Object.keys(baseline.storage).length >= 7);
@@ -68,7 +73,7 @@ try {
   };
   const index = await page.evaluate(async () => (await import('/src/desktopLyrics/desktopSettingsSearchIndex.ts')).buildDesktopSettingsSearchIndex());
   const entries = new Map(index.map(entry => [entry.key, entry]));
-  assert.equal(new Set(index.filter(entry => entry.mode).map(entry => entry.mode)).size, 14);
+  assert.equal(new Set(index.filter(entry => entry.mode).map(entry => entry.mode)).size, 15);
   assert.equal(new Set(index.filter(entry => entry.background).map(entry => entry.background)).size, 6);
   const open = async () => {
     if (!await search().count()) { await page.locator('[data-settings-trigger]').click(); await search().waitFor(); }
@@ -83,13 +88,20 @@ try {
   // Verify the actual focused target against its owning scroll viewport, not merely a rendered label.
   const landing = async (key, expected = {}) => {
     const entry = await choose(key);
+    await visualFrame(page);
     await page.waitForFunction(() => document.activeElement?.classList.contains('desktop-settings-search-target'));
+    if (expected.hint) await page.waitForFunction(({ label, hint }) => {
+      const text = document.querySelector('.desktop-settings-search-hint')?.textContent ?? '';
+      return text.includes(label) && text.includes(hint);
+    }, { label: entry.label, hint: expected.hint });
     const sample = await page.evaluate(() => {
       const active = document.activeElement, content = active.closest('.desktop-settings-scroll,.desktop-visual-content');
       const label = active.closest('label'), parent = label?.parentElement ?? active.parentElement;
-      return { tag: active.tagName, type: active.getAttribute('type'), role: active.getAttribute('role'), aria: active.getAttribute('aria-label'), title: active.getAttribute('title'),
+      const named = element => element?.getAttribute('aria-label') || element?.getAttribute('aria-labelledby')?.split(/\s+/).map(id => document.getElementById(id)?.textContent ?? '').join(' ');
+      return { tag: active.tagName, type: active.getAttribute('type'), role: active.getAttribute('role'), aria: named(active), title: active.getAttribute('title'),
         text: active.textContent?.trim(), row: label?.textContent?.trim() || parent?.textContent?.trim(), controlGroup: parent?.parentElement?.textContent?.trim(), group: label?.parentElement?.firstElementChild?.textContent?.trim(),
-        fieldsetLegend: active.closest('fieldset')?.querySelector('legend')?.textContent?.trim(), sectionHeading: active.closest('section')?.querySelector('h3')?.textContent?.trim(),
+        fieldsetLegend: named(active.closest('fieldset')) || active.closest('fieldset')?.querySelector('legend')?.textContent?.trim(), sectionHeading: active.closest('section')?.querySelector('h3')?.textContent?.trim(),
+        anchorHeading: active.closest('[data-settings-anchor]')?.querySelector('h3')?.textContent?.trim(), effect: active.closest('[data-beat-effect]')?.getAttribute('data-beat-effect'),
         ownerMode: active.closest('[data-visualizer-settings]')?.dataset.visualizerSettings ?? null,
         ownerBackground: active.closest('[data-background-settings]')?.dataset.backgroundSettings ?? null,
         section: active.closest('[data-visual-section]')?.dataset.visualSection ?? 'main', value: active.value ?? null,
@@ -101,7 +113,8 @@ try {
     if (expected.mode) assert.equal(sample.ownerMode, expected.mode, `${key}: original mode parameter panel`);
     if (expected.background) assert.equal(sample.ownerBackground, expected.background, `${key}: original background parameter panel`);
     if (expected.type) assert.equal(sample.type, expected.type, `${key}: control type`);
-    if (expected.group) assert.equal(sample.group, expected.group, `${key}: distinguish identical labels in different groups`);
+    if (expected.group) assert.equal(sample.group ?? sample.anchorHeading, expected.group, `${key}: distinguish identical labels in different groups`);
+    if (expected.effect) assert.equal(sample.effect, expected.effect, `${key}: exact beat effect`);
     if (expected.legend) assert.equal(sample.fieldsetLegend, expected.legend, `${key}: effect-scoped control stays in its own group`);
     if (expected.sectionHeading) assert.equal(sample.sectionHeading, entry.label, `${key}: parameter section opens its own controls`);
     if (expected.text) assert([sample.text, sample.row, sample.controlGroup, sample.title].some(value => value?.includes(expected.text)), `${key}: exact control label`);
@@ -148,12 +161,29 @@ try {
     ['subtitle.options.fontFamily', { aria: '字幕继承歌词字体', hint: '字幕继承歌词字体' }],
     ['subtitle.options.fontWeight', { aria: '字幕继承歌词字体', hint: '字幕继承歌词字体' }],
     ['subtitle.options.subtitleFontScale', { type: 'range' }],
+    ['common.options.chooseSystemFont', { text: '选择自定义字体' }],
+    ['common.options.uploadCustomFont', { text: '选择自定义字体', hint: '选择自定义字体' }],
+    ['subtitle.options.chooseSystemFont', { aria: '字幕继承歌词字体', hint: '字幕继承歌词字体' }],
+    ['subtitle.options.hidePlayerTranslationSubtitle', { aria: '隐藏底部字幕层' }],
+    ['visualizer.desktopVisual.previewTitle', { text: '样式预览' }],
+    ['visualizer.options.randomPool', { aria: '每首歌随机歌词动画', hint: '每首歌随机歌词动画' }],
+    ['visualizer.options.randomVisualizerReroll', { aria: '每首歌随机歌词动画', hint: '每首歌随机歌词动画' }],
+    ['background.options.videoLayerUrl', { aria: '在歌词后方显示视频', hint: '在歌词后方显示视频' }],
+    ['background.options.videoLayerClearFile', { aria: '在歌词后方显示视频', hint: '在歌词后方显示视频' }],
+    ['common.options.smartBeatCached', { text: '只用已分析' }],
+    ['common.desktopVisual.selectBeatAudio', { text: '选择本曲音频并分析' }],
   ]) await attempt(key, () => landing(key, expected));
+  await attempt('beat-effect-strength-context', async () => {
+    const bursts = await landing('visualizer.hanabi.beat.hanabi.beatBursts.strength', { type: 'range', effect: 'hanabi.beatBursts' });
+    const pulse = await landing('visualizer.hanabi.beat.hanabi.beatPulse.strength', { type: 'range', effect: 'hanabi.beatPulse' });
+    assert.equal(Number(bursts.value), 0.6); assert.equal(Number(pulse.value), 1.4);
+    await landing('visualizer.sonnet.beat.sonnet.lensTear.strength', { effect: 'sonnet.lensTear', aria: '推镜裂光', hint: '推镜裂光' });
+  });
   const modes = [
     ['classic', 'classicWordRotation'], ['cadenza'], ['partita', 'partitaGuideLines'], ['fume', 'fumeCameraSpeed'],
     ['claddagh', 'claddaghRadiusScale'], ['cappella', 'cappellaAvatarSource'], ['tilt', 'tiltSplitProbability'],
     ['diorama', 'dioramaCameraSpeed'], ['pendolo', 'pendoloWheelCenterX'], ['monet', 'monetFontScale'],
-    ['sonnet', 'sonnetTextureResolution'], ['tempera', 'temperaTextureResolution'], ['lumiere', 'lumiereLightIntensity'], ['still'],
+    ['sonnet', 'sonnetTextureResolution'], ['tempera', 'temperaTextureResolution'], ['lumiere', 'lumiereLightIntensity'], ['hanabi', 'hanabiSparkAmount'], ['still'],
   ];
   for (const [mode, parameter] of modes) await attempt(`mode-${mode}`, async () => {
     const key = parameter ? `visualizer.${mode}.options.${parameter}` : `visualizer.${mode}`;
@@ -192,11 +222,11 @@ try {
     ['tempera', 'temperaLayerImageScale', 'temperaImageSection'],
   ]) await attempt(`hidden-${mode}-${parameter}`, async () => {
     const fallbackLabel = entries.get(`visualizer.${mode}.options.${fallback}`).label;
-    await landing(`visualizer.${mode}.options.${parameter}`, { mode, hint: fallbackLabel, text: fallbackLabel });
+    await landing(`visualizer.${mode}.options.${parameter}`, { mode, hint: fallbackLabel, ...(parameter === 'temperaLayerImageScale' ? {} : { text: fallbackLabel }) });
     assert.equal(await page.locator('.desktop-visual-asset-dialog').count(), 0, 'search only reveals the image settings opener');
   });
   for (const [background, parameter, expected] of [
-    ['common', 'previewCoverBackgroundOpacity', { type: 'range' }], ['monet', 'monetBackgroundBlur', { type: 'range' }],
+    ['common', 'previewCoverBackgroundOpacity', { hint: '添加封面色彩' }], ['monet', 'monetBackgroundBlur', { type: 'range' }],
     ['nomand', 'nomandBackgroundFlutedGlassBlur', { hint: '纹理玻璃' }],
     ['latent', 'latentDitheringSize', { type: 'range' }], ['url', 'urlBackgroundAdd', { text: '添加' }], ['sora', 'soraBlank', { text: '空白' }],
   ]) await attempt(`background-${background}`, async () => {

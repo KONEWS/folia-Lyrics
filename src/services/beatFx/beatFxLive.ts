@@ -229,10 +229,6 @@ export const getBeatFxRotationSign = (): number => state.rotationSign;
  * playing; `context` is the AudioContext it is routed through, used for output latency.
  */
 export const tickBeatFx = (audioElement: HTMLMediaElement | null, context: BaseAudioContext | null | undefined) => {
-    const now = performance.now();
-    const dtSec = lastStepAt === null ? 0 : Math.min(0.1, (now - lastStepAt) / 1000);
-    lastStepAt = now;
-
     let heardTime: number | null = null;
     if (audioElement && !audioElement.paused && !audioElement.ended) {
         const live = context as (BaseAudioContext & { outputLatency?: number; baseLatency?: number }) | null | undefined;
@@ -241,6 +237,15 @@ export const tickBeatFx = (audioElement: HTMLMediaElement | null, context: BaseA
         heardTime = audioElement.currentTime - latency;
         if (debug) debug.latencyMs = latency * 1000;
     }
+    tickBeatFxAt(heardTime);
+};
+
+/** Advance the same clock from a host's already audible time, without an HTML audio deck. */
+export const tickBeatFxAt = (heardTime: number | null) => {
+    if (heardTime !== null && !Number.isFinite(heardTime)) heardTime = null;
+    const now = performance.now();
+    const dtSec = lastStepAt === null ? 0 : Math.min(0.1, (now - lastStepAt) / 1000);
+    lastStepAt = now;
     hearing = heardTime !== null;
     heardAt = heardTime;
 

@@ -28,6 +28,10 @@ type QueryLocalFontsWindow = Window & {
 };
 
 type FontPickerProps = {
+    /** A native host can enumerate fonts without the browser's Local Font Access permission. */
+    loadFonts?: () => Promise<LocalFontDataLike[]>;
+    /** A surrounding Sheet already owns the title, overlay and keyboard focus. */
+    embedded?: boolean;
     /** The font chosen for what the picker is opened for, if one is. */
     family: string | null;
     /** That font's name as the user sees it. */
@@ -40,6 +44,8 @@ type FontPickerProps = {
     /** Back to the built-in font. */
     onClear: () => void;
     onUpload?: (file: File) => Promise<{ ok: boolean; error?: string; }>;
+    /** Desktop hosts can offer uploads alongside their native system font list. */
+    uploadAlongsideFonts?: boolean;
     onClose: () => void;
 };
 
@@ -144,10 +150,11 @@ const FontRow = ({ index, style, ariaAttributes, fonts, family, fontStyle, onCho
 };
 
 export const FontPicker: React.FC<FontPickerProps> = ({
-    family, label, fallbackFamilies, onFallbackFamiliesChange, fontStyle, onChoose, onClear, onUpload, onClose,
+    family, label, fallbackFamilies, onFallbackFamiliesChange, fontStyle, onChoose, onClear, onUpload, uploadAlongsideFonts = false, onClose,
+    loadFonts, embedded = false,
 }) => {
     const { t } = useTranslation();
-    const [fonts, setFonts] = useState<LocalFontEntry[]>(knownFonts ?? []);
+    const [fonts, setFonts] = useState<LocalFontEntry[]>(loadFonts ? [] : knownFonts ?? []);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [query, setQuery] = useState('');
@@ -157,15 +164,15 @@ export const FontPicker: React.FC<FontPickerProps> = ({
     const listRef = useListRef(null);
     const uploadInputRef = useRef<HTMLInputElement>(null);
 
-    const canReadFonts = typeof window !== 'undefined' && Boolean((window as QueryLocalFontsWindow).queryLocalFonts);
+    const canReadFonts = Boolean(loadFonts) || (typeof window !== 'undefined' && Boolean((window as QueryLocalFontsWindow).queryLocalFonts));
     const uploadsInstead = !canReadFonts && isMobileBrowser() && Boolean(onUpload);
 
     // The installed fonts are read when the picker first opens.
     useEffect(() => {
-        if (knownFonts || uploadsInstead) {
+        if ((!loadFonts && knownFonts) || uploadsInstead) {
             return undefined;
         }
-        const read = (window as QueryLocalFontsWindow).queryLocalFonts;
+        const read = loadFonts ?? (window as QueryLocalFontsWindow).queryLocalFonts;
         if (!read) {
             setError(t('options.systemFontUnsupported'));
             return undefined;
@@ -174,7 +181,7 @@ export const FontPicker: React.FC<FontPickerProps> = ({
         setIsLoading(true);
         read.call(window).then((found) => {
             const next = dedupeLocalFonts(found);
-            if (next.length > 0) {
+            if (!loadFonts && next.length > 0) {
                 knownFonts = next;
             }
             if (!stopped) {
@@ -194,8 +201,7 @@ export const FontPicker: React.FC<FontPickerProps> = ({
         return () => {
             stopped = true;
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [loadFonts, uploadsInstead, t]);
 
     const shownFonts = useMemo(() => {
         const wanted = query.trim().toLocaleLowerCase();
@@ -249,13 +255,13 @@ export const FontPicker: React.FC<FontPickerProps> = ({
 
     return (
         // Over everything in the window, the sample's own button too.
-        <div className="absolute inset-0 z-50 grid place-items-center bg-[color-mix(in_srgb,var(--st-win)_72%,transparent)] p-4 backdrop-blur-sm sm:p-6">
+        <div className={embedded ? 'flex min-h-0 flex-1' : 'absolute inset-0 z-50 grid place-items-center bg-[color-mix(in_srgb,var(--st-win)_72%,transparent)] p-4 backdrop-blur-sm sm:p-6'}>
             <div
-                role="dialog"
-                aria-label={title}
-                className="flex h-full max-h-[640px] w-full max-w-[560px] flex-col overflow-hidden rounded-2xl bg-[var(--st-win)] shadow-[0_24px_60px_rgba(0,0,0,0.35),0_0_0_1px_var(--st-line2)]"
+                role={embedded ? undefined : 'dialog'}
+                aria-label={embedded ? undefined : title}
+                className={embedded ? 'flex min-h-0 w-full flex-1 flex-col' : 'flex h-full max-h-[640px] w-full max-w-[560px] flex-col overflow-hidden rounded-2xl bg-[var(--st-win)] shadow-[0_24px_60px_rgba(0,0,0,0.35),0_0_0_1px_var(--st-line2)]'}
             >
-                <div className="flex items-start gap-3 px-5 pb-3 pt-4">
+                {!embedded && <div className="flex items-start gap-3 px-5 pb-3 pt-4">
                     <div className="min-w-0 flex-1">
                         <h3 className="text-[15px] font-semibold leading-6">{title}</h3>
                         <p className="text-xs leading-[18px] text-[color:var(--st-t3)]">
@@ -263,9 +269,9 @@ export const FontPicker: React.FC<FontPickerProps> = ({
                         </p>
                     </div>
                     <Button variant="quiet" icon={X} tip={t('ui.close')} onClick={onClose} />
-                </div>
+                </div>}
 
-                <div className="flex min-h-0 flex-1 flex-col gap-3 px-5 pb-5">
+                <div className={`flex min-h-0 flex-1 flex-col gap-3 ${embedded ? '' : 'px-5 pb-5'}`}>
                     {!uploadsInstead && (
                         <label className={`${FIELD_CLASS} flex w-full shrink-0 items-center gap-2 px-2.5`}>
                             <Search size={14} className="shrink-0 text-[color:var(--st-t3)]" />
@@ -341,6 +347,15 @@ export const FontPicker: React.FC<FontPickerProps> = ({
                                     style={{ height: listHeight, width: '100%' }}
                                 />
                             )}
+                        </div>
+                    )}
+                    {uploadAlongsideFonts && onUpload && !uploadsInstead && (
+                        <div className="flex shrink-0 items-center gap-2">
+                            <input ref={uploadInputRef} type="file" accept={FONT_FILE_TYPES} className="hidden" onChange={handleUploadFile} />
+                            <Button icon={isUploading ? undefined : Upload} disabled={isUploading} onClick={() => uploadInputRef.current?.click()}>
+                                {isUploading && <Loader2 size={14} className="animate-spin" />}
+                                {t(isUploading ? 'options.uploadingCustomFont' : 'options.uploadCustomFont')}
+                            </Button>
                         </div>
                     )}
                 </div>

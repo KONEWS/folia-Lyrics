@@ -2,7 +2,7 @@
 
 让你喜欢的播放器，配上一个好看的桌面歌词窗口。
 
-folia-Lyrics 基于 [Folia](https://github.com/chthollyphile/folia-major) 的歌词渲染器，保留了原版的 13 种动态歌词样式，包括绘光 Lumiere。你照常用椒盐音乐、网易云音乐、QQ 音乐、foobar2000 或浏览器听歌，它通过 Windows 媒体会话读取歌曲和播放进度，把歌词放在独立窗口里。
+folia-Lyrics 基于 [Folia](https://github.com/chthollyphile/folia-major) 的歌词渲染器，当前源码保留了原版的 14 种动态歌词样式，包括花火 Hanabi，另有静止样式。你照常用椒盐音乐、网易云音乐、QQ 音乐、foobar2000 或浏览器听歌，它通过 Windows 媒体会话读取歌曲和播放进度，把歌词放在独立窗口里。
 
 **它本身不播放音乐。** 暂停、继续和切歌会交给当前绑定的播放器执行；播放器能否被识别、进度是否准确，取决于它向 Windows 提供的媒体会话信息。
 
@@ -29,6 +29,8 @@ folia-Lyrics 基于 [Folia](https://github.com/chthollyphile/folia-major) 的歌
 
 当前版本是 [0.5.0](https://github.com/KONEWS/folia-Lyrics/releases/tag/desktop-v0.5.0)。从 Releases 下载 `FoliaLyrics-0.5.0-win-x64.zip`，解压后运行 `FoliaLyrics.exe`，再打开播放器播放一首歌。也可以先确认添加发现的音乐软件，再点击首页图标启动播放器。运行界面需要 Microsoft Edge WebView2 Runtime，发布包自带 .NET 运行时。
 
+最新功能可下载 [2026-10-25 预览版](https://github.com/KONEWS/folia-Lyrics/releases/tag/desktop-v0.5.0-preview.20261025)：包含上游 v0.7.22 的 14 种动态样式，以及随机样式、示例预览、本机字体、视频背景和本地音频智能动感。提供独立 EXE、完整便携 ZIP 和 SHA-256 校验文件；运行前请退出旧版。
+
 窗口没显示歌词时，先确认选中了正在播放的播放器，再尝试重新匹配或加载本地歌词。某些播放器没有公开媒体会话，或没有提供完整进度，这种情况下自动同步会受到限制。
 
 ### 常用操作
@@ -47,6 +49,8 @@ folia-Lyrics 基于 [Folia](https://github.com/chthollyphile/folia-major) 的歌
 输入框、设置面板和下拉菜单保留各自的键盘与滚动操作。开启鼠标穿透后，也可以双击托盘图标恢复交互。设置里可以选择让关闭按钮将程序最小化到任务栏；托盘“退出”和 Alt+F4 仍会退出程序。
 
 ## 从源码构建
+
+2026-10-25 预览版补齐了随机歌词样式与候选池、快捷参数、带示例歌词的样式预览、本机字体选择、视频背景和智能动感。视频保持静音并跟随播放进度；透明窗口中暂不显示视频。智能动感需要先选择与当前播放版本相同的完整音频，使用随构建附带的上游模型进行本地 WebGPU 分析；分析结果保存在本机，可在“只用已分析”模式复用。首次构建会下载并校验约 133 MB 的模型文件，发布包已经包含模型。
 
 准备 Node.js 24+ 和 .NET SDK 10，然后在完整源码目录运行：
 
@@ -100,6 +104,6 @@ dotnet run --project test/transport-smoke/TransportSmoke.csproj
 
 这是从 [chthollyphile/folia-major](https://github.com/chthollyphile/folia-major) 派生的独立项目。感谢上游提供歌词渲染器和视觉效果；这个分支主要加入 Windows 桌面宿主、外部播放器连接、在线歌词匹配，以及围绕桌面使用的界面和操作。
 
-当前桌面宿主版本为 **0.5.0**，上游源码基线为 **v0.7.11**（`6fe68d89abb7031eb266d71fda01b36a0fa0573e`）。两套版本号独立，本项目不是上游官方发行版。
+当前桌面宿主版本为 **0.5.0**，上游源码基线为 **v0.7.22**（`1f6d0f468f5bc81b23a8b40ad7ca96ccd4b1ecbe`）。两套版本号独立，本项目不是上游官方发行版。
 
 项目继续使用 [AGPL-3.0](LICENSE) 许可证。第三方许可证见 [licenses/](licenses/)，在线资源来源见 [ONLINE-SOURCES.md](ONLINE-SOURCES.md)。使用在线歌词、封面和音乐资源时，请遵守对应服务条款与版权要求。

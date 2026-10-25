@@ -93,6 +93,7 @@ export function desktopVisualSearchCondition(labelKey: string, mode?: Visualizer
     if (/dioramaMote/.test(labelKey)) return { contextKey: 'options.dioramaShowParticles', fallbackKey: 'options.dioramaShowParticles' };
     if (labelKey === 'options.dioramaSoulActiveEffect') return { contextKey: 'options.dioramaSoulEffect', fallbackKey: 'options.dioramaSoulEffect' };
   }
+  if (background === 'common' && labelKey === 'options.previewCoverBackgroundOpacity') return { fallbackKey: 'theme.addCoverColor' };
   if (background === 'monet' && labelKey === 'options.monetBackgroundWashCustomColor') return { fallbackKey: 'options.monetBackgroundWashColorMode' };
   if (background === 'monet' && labelKey === 'options.monetHalfPaneOffsetX') return { fallbackKey: 'options.monetBackgroundLayout' };
   if (background === 'monet' && labelKey === 'options.monetBackgroundDriftStrength') return { fallbackKey: 'options.monetBackgroundDriftEnabled' };

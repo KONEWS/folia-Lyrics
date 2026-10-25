@@ -49,6 +49,7 @@
 // a lost device or a failed run only drops this worker, and the next track tries a fresh one.
 
 import { createScheduler, watchFrames, type UnitRequest } from './scheduler';
+import { hasAnalysisGpuWeights, readAnalysisGpuWeights } from './analysisModelHost';
 
 const IDLE_MS = 120_000;
 /**
@@ -265,14 +266,11 @@ const spawn = (): Worker | null => {
 };
 
 const start = async (model: GpuModel): Promise<boolean> => {
-    const fetchWeights = model === 'htdemucs'
-        ? window.electron?.getHtdemucsGpuWeights
-        : window.electron?.getBeatThisGpuWeights && (() => window.electron!.getBeatThisGpuWeights!(model));
-    if (typeof fetchWeights !== 'function') return false;
+    if (!hasAnalysisGpuWeights(model)) return false;
     // Not there only in a checkout without the models (both ship in the installer); asked again on the next track.
     makeRoom(model);
     const started = performance.now();
-    const found = await fetchWeights();
+    const found = await readAnalysisGpuWeights(model);
     if (!found || !spawn()) return false;
 
     const reply = await ask({ kind: 'load', model, weights: found.weights, manifest: found.manifest }, [found.weights.buffer]);

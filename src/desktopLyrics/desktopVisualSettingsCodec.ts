@@ -10,6 +10,7 @@ import { useTypographySettingsStore } from '../stores/useTypographySettingsStore
 import { useThemeSettingsStore } from '../stores/useThemeSettingsStore';
 import { useDesktopPanelSettingsStore } from '../stores/useDesktopPanelSettingsStore';
 import { applyTypographyPatch, applyVisualizerPatch, typographySetters, visualizerSetters, type DesktopTypographyPatch, type DesktopVisualizerPatch } from './desktopVisualFields';
+import { setStoredString } from '../stores/storagePrimitives';
 
 // src/desktopLyrics/desktopVisualSettingsCodec.ts — original shortcode/JSON format with a desktop field whitelist; never import song colours or asset URLs.
 export type DesktopVisualImportResult = { ok: boolean; error?: string; mode?: VisualizerMode };
@@ -104,6 +105,11 @@ export function importDesktopVisualConfig(text: string, options: Options): Deskt
     if (typeof config.desktopSettingsTransparency === 'number' && Number.isFinite(config.desktopSettingsTransparency)) useDesktopPanelSettingsStore.getState().setSettingsTransparency(config.desktopSettingsTransparency);
     if (typeof config.useCoverColorBg === 'boolean') useThemeSettingsStore.getState().handleToggleCoverColorBg(config.useCoverColorBg);
     if (typeof config.staticMode === 'boolean') useThemeSettingsStore.getState().handleToggleStaticMode(config.staticMode);
-    return { ok: true, ...(hasVisualizerMode(String(config.visualizerMode)) ? { mode: config.visualizerMode as VisualizerMode } : {}) };
+    const mode = hasVisualizerMode(String(config.visualizerMode)) ? config.visualizerMode as VisualizerMode : undefined;
+    if (mode) {
+      useVisualizerSettingsStore.getState().handleSetVisualizerMode(mode, { notify: false, preserveRandom: true });
+      setStoredString('folia.desktop.mode.v1', mode);
+    }
+    return { ok: true, ...(mode ? { mode } : {}) };
   } catch (error) { return { ok: false, error: error instanceof Error ? error.message : String(error) }; }
 }

@@ -3,8 +3,9 @@ import { normalizeSearchText, splitWords } from '../components/command-palette/s
 import type { DesktopSettingsSearchEntry } from '../types/desktopSettingsSearch';
 import { buildDesktopMainSearchEntries, DESKTOP_COMMON_SEARCH_KEYS, DESKTOP_SUBTITLE_SEARCH_KEYS } from './desktopSettingsSearchMain';
 import { DESKTOP_BACKGROUND_SEARCH_CATALOG, DESKTOP_MODE_SEARCH_CATALOG, desktopVisualSearchCondition } from './desktopSettingsSearchVisual';
+import { buildDesktopFeatureSearchEntries, DESKTOP_QUICK_CONTROL_ALIASES } from './visualFeatures/desktopSettingsSearchFeatures';
 
-// src/desktopLyrics/desktopSettingsSearchIndex.ts — pure desktop search, independent of active panels and renderer imports.
+// src/desktopLyrics/desktopSettingsSearchIndex.ts — search destinations available before any settings panel is opened.
 const SECTION_WORDS = {
   main: ['设置', '主设置', '歌词设置', 'main', 'settings'],
   common: ['通用', '字体', '歌词样式', 'common', 'typography'],
@@ -27,11 +28,12 @@ export function buildDesktopSettingsSearchIndex(): DesktopSettingsSearchEntry[] 
   const backgroundNames = new Map(DESKTOP_BACKGROUND_SEARCH_CATALOG.map(catalog => [catalog.background, labelFor(catalog.labelKey)]));
   for (const section of ['common', 'subtitle'] as const) {
     for (const labelKey of section === 'common' ? DESKTOP_COMMON_SEARCH_KEYS : DESKTOP_SUBTITLE_SEARCH_KEYS) {
-      const font = /fontFamily|fontFallback|fontWeight|customFontFamily/.test(labelKey);
+      const font = /fontFamily|fontFallback|fontWeight|customFontFamily|chooseSystemFont/.test(labelKey);
       const fallback = labelKey === 'options.fontWeight' ? labelFor('options.fontWeightAuto')
         : section === 'subtitle' && font ? labelFor('options.subtitleFontInheritsLyrics') : undefined;
       const fallbacks = section === 'subtitle' && labelKey === 'options.fontWeight' ? [labelFor('options.subtitleFontInheritsLyrics')] : undefined;
-      entries.push({ key: `${section}.${labelKey}`, label: labelFor(labelKey), section, keywords: [labelKey], fallback, fallbacks,
+      const aliases = labelKey === 'options.chooseSystemFont' ? ['系统字体', '字体列表', '搜索字体', 'system fonts', 'font picker'] : [];
+      entries.push({ key: `${section}.${labelKey}`, label: labelFor(labelKey), section, keywords: [labelKey, ...aliases], fallback, fallbacks,
         breadcrumb: `歌词样式设置 · ${section === 'common' ? '通用' : '字幕'}` });
     }
   }
@@ -39,7 +41,7 @@ export function buildDesktopSettingsSearchIndex(): DesktopSettingsSearchEntry[] 
     { key: 'background.type', label: labelFor('options.visualizerBackgroundMode'), section: 'background', keywords: ['背景类型', '背景模式'] });
   for (const catalog of DESKTOP_MODE_SEARCH_CATALOG) {
     const modeLabel = labelFor(catalog.labelKey);
-    const keywords = [modeLabel, catalog.mode, ...catalog.keys.filter(key => key.endsWith('Settings')).map(labelFor), ...SECTION_WORDS.visualizer];
+    const keywords = [modeLabel, catalog.mode, ...catalog.keys.filter(key => key.endsWith('Settings')).map(labelFor), ...SECTION_WORDS.visualizer, ...DESKTOP_QUICK_CONTROL_ALIASES];
     entries.push({ key: `visualizer.${catalog.mode}`, label: modeLabel, section: 'visualizer', mode: catalog.mode, keywords });
     for (const labelKey of catalog.keys) {
       const condition = desktopVisualSearchCondition(labelKey, catalog.mode);
@@ -49,7 +51,7 @@ export function buildDesktopSettingsSearchIndex(): DesktopSettingsSearchEntry[] 
   }
   for (const catalog of DESKTOP_BACKGROUND_SEARCH_CATALOG) {
     const backgroundLabel = labelFor(catalog.labelKey);
-    const keywords = [backgroundLabel, `${backgroundLabel}背景`, catalog.background, ...catalog.keys.filter(key => key.endsWith('Settings')).map(labelFor), ...SECTION_WORDS.background];
+    const keywords = [backgroundLabel, `${backgroundLabel}背景`, catalog.background, ...catalog.keys.filter(key => key.endsWith('Settings')).map(labelFor), ...SECTION_WORDS.background, ...DESKTOP_QUICK_CONTROL_ALIASES];
     entries.push({ key: `background.${catalog.background}`, label: backgroundLabel, section: 'background', background: catalog.background, keywords });
     for (const labelKey of catalog.keys) {
       const condition = desktopVisualSearchCondition(labelKey, undefined, catalog.background);
@@ -66,6 +68,7 @@ export function buildDesktopSettingsSearchIndex(): DesktopSettingsSearchEntry[] 
       fallback: labelFor(labelKey === 'dioramaCustomStrength' ? 'options.dioramaEffectStrength' : `options.diorama${effect}Effect`),
       fallbacks: labelKey === 'dioramaCustomStrength' ? [labelFor(`options.diorama${effect}Effect`)] : undefined,
       keywords: ['diorama', labelFor(`options.diorama${effect}Effect`)] });
+  entries.push(...buildDesktopFeatureSearchEntries(labelFor));
   // The generic strength rows are replaced by effect-scoped destinations above.
   const scoped = entries.filter(entry => !['visualizer.diorama.options.dioramaEffectStrength', 'visualizer.diorama.options.dioramaCustomStrength'].includes(entry.key));
   return scoped.map(entry => ({ ...entry,

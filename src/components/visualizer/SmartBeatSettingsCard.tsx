@@ -16,9 +16,11 @@ const SMART_BEAT_GROUP: SettingsGroupDef = { id: 'vis-smart-beat', titleKey: 'op
 
 type SmartBeatSettingsCardProps = {
     t: (key: string) => string;
+    /** Hosts with external playback describe their own audio-source workflow. */
+    descriptionKeyPrefix?: string;
 };
 
-const SmartBeatSettingsCard: React.FC<SmartBeatSettingsCardProps> = ({ t }) => {
+const SmartBeatSettingsCard: React.FC<SmartBeatSettingsCardProps> = ({ t, descriptionKeyPrefix = 'options.smartBeatDesc_' }) => {
     const smartBeat = useVisualizerSettingsStore(state => state.smartBeat);
     const setSmartBeat = useVisualizerSettingsStore(state => state.handleSetSmartBeat);
     const availability = useSmartBeatAvailability(smartBeat.mode);
@@ -26,7 +28,7 @@ const SmartBeatSettingsCard: React.FC<SmartBeatSettingsCardProps> = ({ t }) => {
 
     return (
         <Group def={SMART_BEAT_GROUP}>
-            <Row label={t('options.smartBeatMode')} note={t(`options.smartBeatDesc_${smartBeat.mode}`)}>
+            <Row label={t('options.smartBeatMode')} note={t(`${descriptionKeyPrefix}${smartBeat.mode}`)}>
                 <Segmented<SmartBeatMode>
                     value={smartBeat.mode}
                     options={[

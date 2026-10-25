@@ -33,7 +33,7 @@ export async function verifyDesktopMonetAudio(page, output, samples) {
     assert(await page.evaluate(() => { const props = window.__foliaReadResolvedVisualizerProps('monet');
       return props.isPreviewMode === false && props.audioPower === window.__foliaMonetAudioPower
         && props.audioBands === window.__foliaMonetAudioBands && props.audioBands.spectrum === window.__foliaMonetSpectrum; }));
-    assert.equal(await page.locator('audio,video').count(), 0, 'enabled upstream VideoLayer preferences cannot mount media in the desktop host');
+    assert.equal(await page.locator('audio,video').count(), 0, 'the invalid data: video seeded by this fixture cannot mount media; valid muted video is covered separately');
     const { image: lowImage, ...lowMetrics } = low, { image: highImage, ...highMetrics } = high;
     await writeFile(`${output}/visual-monet-audio-low.png`, Buffer.from(lowImage, 'base64'));
     await writeFile(`${output}/visual-monet-audio-high.png`, Buffer.from(highImage, 'base64'));
@@ -44,5 +44,5 @@ export async function verifyDesktopMonetAudio(page, output, samples) {
       window.__foliaEmit('spectrum', { bins: btoa(String.fromCharCode(...new Uint8Array(1024))), sampleRate: 48000 }); });
     await visualFrame(page);
   }
-  return ['original Monet uses live-mode stable spectrum MotionValues and its real 2D canvas rises on FFT input; upstream video preferences introduce no second media clock'];
+  return ['original Monet uses live-mode stable spectrum MotionValues and its real 2D canvas rises on FFT input; invalid legacy video sources stay unmounted'];
 }

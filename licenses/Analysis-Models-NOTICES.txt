@@ -1,0 +1,61 @@
+Folia bundled analysis models — sources and export notes
+Verified against the upstream sources on 2026-10-25.
+
+The model identities below come from shared/modelManifest.json. The accompanying
+LICENSE files are unmodified copies downloaded from the pinned upstream revisions.
+They retain their original copyright and permission notices.
+
+Beat This!
+
+Bundled file: beat_this-wgsl.bin
+SHA-256: 6365ae5ba2e42922772da01fbfd0bde8dd20b7362a679018e78a5f251fe8a967
+Original model: CPJKU's Beat This! final0 checkpoint.
+Project: https://github.com/CPJKU/beat_this
+License copy: Beat-This-LICENSE.txt (MIT)
+Exact source:
+https://raw.githubusercontent.com/CPJKU/beat_this/b95c8ab0c58c2d9fcfd40508ae8dffbc05ac4f5c/LICENSE
+
+The upstream README explicitly licenses both the code and published model weights
+under MIT. Its licensing section also notes that some training material carries
+copyright or limited Creative Commons terms, whose relevance depends on the use:
+https://github.com/CPJKU/beat_this/blob/b95c8ab0c58c2d9fcfd40508ae8dffbc05ac4f5c/README.md#license
+
+Folia's build/beat_this_wgsl/export_weights.py --f16 folds normalization constants,
+rearranges tensors, stores matrix weights as fp16, and packs the tensors and their
+manifest into one file. These are export transformations of the original weights.
+
+HTDemucs
+
+Bundled file: htdemucs-wgsl.bin
+SHA-256: 27d5331a74a4e23b18172b3d59d0378e698fd79bc0d0fed3316da77e3a37d8d1
+Original model: Meta's four-stem Hybrid Transformer Demucs (htdemucs).
+Project: https://github.com/facebookresearch/demucs
+License copy: Demucs-LICENSE.txt (MIT)
+Exact source:
+https://raw.githubusercontent.com/facebookresearch/demucs/e976d93ecc3865e5757426930257e200846a520a/LICENSE
+
+The manifest records the transformed ONNX upstream as
+https://huggingface.co/itamiArika/htdemucs-int8-memory
+Its model card and LICENSE identify the derivation from StemSplitio/htdemucs-onnx
+(revision d54ed9eb60e258ea82131c6ee14578628816456a), then Meta Demucs. The model
+card licenses its conversion and quantization products under MIT.
+License copy: htdemucs-itamiArika-LICENSE.txt
+Exact source:
+https://huggingface.co/itamiArika/htdemucs-int8-memory/raw/86db1d28b1bdec60a082f4e745c490298847307c/LICENSE
+
+StemSplit's model card declares MIT and credits its ONNX export, verification and
+packaging. The corresponding export-tool license is also included to retain its
+copyright notice; the Hugging Face model repository has no separate LICENSE file.
+Model card:
+https://huggingface.co/StemSplitio/htdemucs-onnx/blob/d54ed9eb60e258ea82131c6ee14578628816456a/README.md
+License copy: StemSplit-demucs-onnx-LICENSE.txt (MIT)
+Exact source:
+https://raw.githubusercontent.com/StemSplit/demucs-onnx/85db5c80aba33f0f2bdf88034a4be6539feec85b/LICENSE
+
+Folia's build/htdemucs_wgsl/export_weights.py --f16 reads the project's earlier
+htdemucs.onnx intermediate (108644650 bytes, SHA-256
+099b5be76c1f6922124d07f850250f39d1f33f254a0b8cc90f4ec0dfd0912329). It preserves
+the graph's fp16/fp32 tensor storage, transposes Linear weights, splits transposed
+convolutions into phases, and packs weights, embeddings, windows and a manifest.
+The shipped packed file is identified by its own hash above, rather than by an
+unversioned Hugging Face filename. Export scripts are included in the source tree.

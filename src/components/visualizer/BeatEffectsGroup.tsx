@@ -49,7 +49,7 @@ const BeatEffectsGroup: React.FC<BeatEffectsGroupProps> = ({ t, effects, onSlide
                 const setting = resolveBeatEffectSetting(smartBeat, effect.id);
                 const missingModel = effect.source === 'drums' && !drumsPresent && smartBeatMayAnalyse(smartBeat);
                 return (
-                    <React.Fragment key={effect.id}>
+                    <div key={effect.id} data-beat-effect={effect.id} className="contents [&:first-child>.st-row:first-child]:before:hidden">
                         <ToggleRow
                             label={t(effect.nameKey)}
                             note={t(effect.descKey)}
@@ -71,7 +71,7 @@ const BeatEffectsGroup: React.FC<BeatEffectsGroupProps> = ({ t, effects, onSlide
                                 {...drag}
                             />
                         )}
-                    </React.Fragment>
+                    </div>
                 );
             })}
         </Group>

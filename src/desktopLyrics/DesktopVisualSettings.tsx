@@ -21,6 +21,9 @@ import { getVisualizerModeLabel } from '../components/visualizer/registry';
 import { getVisualizerBackgroundModeLabel } from '../components/visualizer/backgrounds/registry';
 import i18n from '../i18n/config';
 import { SettingsKitThemeContext, settingsTokens } from '../components/modal/settings/kit/kitTheme';
+import DesktopStylePreview from './visualFeatures/DesktopStylePreview';
+import DesktopVideoSettings from './visualFeatures/video/DesktopVideoSettings';
+import { DesktopBeatEffects, DesktopBeatSettings } from './visualFeatures/beat/DesktopBeatSettings';
 
 // src/desktopLyrics/DesktopVisualSettings.tsx — one desktop settings surface, with the live original renderer behind it.
 export type DesktopVisualSection = 'common' | 'background' | 'visualizer' | 'subtitle';
@@ -44,6 +47,7 @@ function DesktopVisualSettingsSurface({ mode, onMode, model, onClose, initialSec
   const content = useRef<HTMLDivElement>(null);
   const closeButton = useRef<HTMLButtonElement>(null);
   const [section, setSection] = useState(initialSection);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const backgroundOnly = initialSection === 'background';
   const title = t(backgroundOnly ? 'desktopVisual.backgroundTitle' : 'desktopVisual.title');
   const searchHint = useDesktopSettingsSearchNavigation(content, searchNavigation, section);
@@ -110,14 +114,21 @@ function DesktopVisualSettingsSurface({ mode, onMode, model, onClose, initialSec
         }}>{t(LABELS[value])}</button>)}
     </div> : null}
     <div ref={content} role={backgroundOnly ? 'region' : 'tabpanel'} id={`${id}-content`} aria-labelledby={backgroundOnly ? `${id}-heading` : `${id}-${section}`} data-visual-section={section} className={`desktop-visual-content${backgroundOnly ? ' desktop-settings-scroll' : ''}`}>
+      {section === 'visualizer' ? <button type="button" className="desktop-visual-reset" onClick={() => setPreviewOpen(true)}>{t('desktopVisual.previewTitle')}</button> : null}
       {editingName ? <div className="desktop-search-editing"><span>{i18n.t('desktopLyrics.settingsSearch.editing', { lng: 'zh-CN', name: editingName })}</span>
         <button type="button" onClick={onClearSearchNavigation}>{t('desktopLyrics.settingsSearch.current')}</button></div> : null}
       {section === 'common' ? <DesktopVisualCommon model={model} mode={mode} onSegmentation={onSegmentation} canSegment={canSegment}/> : section === 'background' ? <DesktopVisualBackground model={model} mode={mode}
         editingBackground={searchNavigation?.entry.background} onSelection={onClearSearchNavigation}/>
         : section === 'subtitle' ? <DesktopVisualSubtitle model={model}/> : <DesktopVisualModes model={model} mode={mode} editingMode={searchNavigation?.entry.mode}
           onMode={next => { onClearSearchNavigation(); onMode(next); }}/>}
+      {section === 'common' ? <DesktopBeatSettings/> : null}
+      {section === 'visualizer' ? <DesktopBeatEffects mode={searchNavigation?.entry.mode ?? mode} onOpenSmartBeat={() => {
+        model.commitSlider(); onClearSearchNavigation(); setSection('common'); document.getElementById(`${id}-common`)?.focus({ preventScroll: true });
+      }}/> : null}
+      {section === 'background' ? <DesktopVideoSettings transparent={model.transparent}/> : null}
       <DesktopVisualConfigActions model={model} mode={mode} onMode={onMode}/>
     </div>
+    {previewOpen ? <DesktopStylePreview model={model} mode={mode} onMode={onMode} onClose={() => setPreviewOpen(false)}/> : null}
     <DesktopVisualFeedback/>
   </aside>;
 }

@@ -8,6 +8,9 @@ import { desktopModeLabel } from './desktopModes';
 export default class VisualizerBoundary extends Component<{ children: ReactNode; mode: VisualizerMode; onRecover: () => void }, { failed: boolean }> {
   state = { failed: false };
   static getDerivedStateFromError() { return { failed: true }; }
+  componentDidUpdate(previous: Readonly<{ children: ReactNode; mode: VisualizerMode; onRecover: () => void }>) {
+    if (this.state.failed && previous.mode !== this.props.mode) this.setState({ failed: false });
+  }
   componentDidCatch(error: unknown, info: ErrorInfo) {
     console.error('[DesktopVisualizer]', this.props.mode, error, info.componentStack);
     const message = error instanceof Error ? error.message : String(error), stack = error instanceof Error ? error.stack : undefined;

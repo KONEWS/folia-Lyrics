@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 import zhCN from '../../../src/i18n/locales/zh-CN';
 import { buildDesktopSettingsSearchIndex, searchDesktopSettings } from '../../../src/desktopLyrics/desktopSettingsSearchIndex';
 import { BUILTIN_VISUALIZER_BACKGROUND_MODES, BUILTIN_VISUALIZER_MODES } from '../../../src/types/visualizerModes';
+import { VISUALIZER_REGISTRY } from '../../../src/components/visualizer/registry';
+import { offeredBeatEffects } from '../../../src/services/beatFx/beatEffects';
 
 // test/unit/desktop/desktopSettingsSearch.test.ts — search quality and coverage across panels that are not mounted together.
 const index = buildDesktopSettingsSearchIndex();
@@ -105,5 +107,28 @@ describe('desktop settings search', () => {
     }
     expect(keys.size).toBeGreaterThan(100);
     expect([...new Set(missing)]).toEqual([]);
+  });
+
+  it('finds desktop additions and lands on prerequisites without applying hidden settings', () => {
+    expect(searchDesktopSettings(index, '系统字体')[0].key).toBe('common.options.chooseSystemFont');
+    expect(searchDesktopSettings(index, '字幕 system fonts')[0]).toMatchObject({ section: 'subtitle', fallback: translate('options.subtitleFontInheritsLyrics') });
+    expect(searchDesktopSettings(index, '上传字体')[0]).toMatchObject({ section: 'common', fallback: translate('options.chooseSystemFont') });
+    expect(searchDesktopSettings(index, '示例歌词')[0].key).toBe('visualizer.desktopVisual.previewTitle');
+    expect(searchDesktopSettings(index, '随机候选')[0]).toMatchObject({ key: 'visualizer.options.randomPool', fallback: translate('commandPalette.commands.visualizer-toggle-random-per-song.title') });
+    expect(searchDesktopSettings(index, '重抽')[0].key).toBe('visualizer.options.randomVisualizerReroll');
+    expect(searchDesktopSettings(index, '云阶 快捷参数').some(entry => entry.mode === 'partita')).toBe(true);
+    expect(searchDesktopSettings(index, '莫奈背景 quick controls').some(entry => entry.background === 'monet')).toBe(true);
+    expect(index.find(entry => entry.key === 'subtitle.options.hidePlayerTranslationSubtitle')?.label).toBe(translate('options.hidePlayerTranslationSubtitle'));
+    expect(searchDesktopSettings(index, '视频背景 URL')[0]).toMatchObject({ key: 'background.options.videoLayerUrl', fallback: translate('options.videoLayerEnabled') });
+    expect(index.find(entry => entry.key === 'background.options.videoLayerClearFile')).toMatchObject({ fallback: translate('options.videoLayerPickFile'), fallbacks: [translate('options.videoLayerEnabled')] });
+    expect(searchDesktopSettings(index, '智能动感 选择音频')[0].key).toBe('common.desktopVisual.selectBeatAudio');
+  });
+
+  it('scopes repeated beat strengths to their offered effect and leaves retired effects out', () => {
+    const strengths = index.filter(entry => entry.key.includes('.beat.') && entry.key.endsWith('.strength'));
+    expect(strengths.map(entry => entry.context).sort()).toEqual(VISUALIZER_REGISTRY.flatMap(entry => offeredBeatEffects(entry.beatEffects).map(effect => translate(effect.nameKey))).sort());
+    expect(searchDesktopSettings(index, '随拍推镜 强度')).toEqual([expect.objectContaining({ mode: 'hanabi', context: translate('options.beatEffect_hanabiBeatPulse'), fallback: translate('options.beatEffect_hanabiBeatPulse') })]);
+    expect(searchDesktopSettings(index, '齿轮随拍')).toEqual([]);
+    expect(searchDesktopSettings(index, '潮汐脉动')).toEqual([]);
   });
 });

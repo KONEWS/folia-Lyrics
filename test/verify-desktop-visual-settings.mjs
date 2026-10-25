@@ -44,6 +44,7 @@ export async function verifyDesktopVisualSettings(page, song, output) {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.evaluate(() => {
       localStorage.setItem('folia.desktop.mode.v1', 'classic'); localStorage.removeItem('folia.desktop.backgroundEnabled.v1');
+      // Restored non-HTTP media must remain rejected; the real supported video flow has its own verification.
       localStorage.setItem('video_layer_enabled', 'true'); localStorage.setItem('video_layer_url', 'data:video/mp4;base64,AAAA');
       sessionStorage.setItem('folia.test.mockPreferences', JSON.stringify({ autoImmersive: false, audioReactive: false, transparentBackground: false }));
     });
@@ -55,7 +56,7 @@ export async function verifyDesktopVisualSettings(page, song, output) {
     await desktopSelect(page, '歌词样式').focus(); await page.keyboard.press('ArrowDown');
     const menu = page.locator('.desktop-top-menu'); await menu.waitFor();
     assert.equal(await menu.getAttribute('role'), 'group');
-    assert.equal(await menu.getByRole('listbox', { name: '歌词样式', exact: true }).getByRole('option').count(), 14);
+    assert.equal(await menu.getByRole('listbox', { name: '歌词样式', exact: true }).getByRole('option').count(), 15);
     assert.equal(await menu.getByRole('option').filter({ hasText: '静止' }).count(), 0);
     const footer = menu.getByRole('button', { name: '更多设置', exact: false });
     assert.equal(await footer.getAttribute('role'), null); assert.equal(await footer.count(), 1);
@@ -67,7 +68,7 @@ export async function verifyDesktopVisualSettings(page, song, output) {
     assert.deepEqual(await visualDialog(page).getByRole('tab').allTextContents(), ['通用', '歌词动画', '字幕']);
     assert.equal(await visualDialog(page).getByRole('tab', { name: '背景', exact: true }).count(), 0);
     await page.screenshot({ path: `${output}/visual-settings-original-panel.png` });
-    checks.push('the real more-settings footer is outside the 14-option listbox, supports Tab/Shift+Tab and opens common, lyric-animation and subtitle tabs without duplicating background settings or changing the current style');
+    checks.push('the real more-settings footer is outside the 15-option listbox (14 styles and random), supports Tab/Shift+Tab and opens common, lyric-animation and subtitle tabs without duplicating background settings or changing the current style');
 
     stage = 'registry-cards';
     const panel = await setTab('visualizer'), grid = panel.locator('[data-visual-mode-grid]');
@@ -97,7 +98,7 @@ export async function verifyDesktopVisualSettings(page, song, output) {
     assert.equal(await desktopSelect(page, '歌词样式').getAttribute('data-value'), 'still');
     await closeVisualSettings(page);
     const stillMenu = await openDesktopMenu(page, '歌词样式');
-    assert.equal(await stillMenu.getByRole('option').count(), 14); assert.equal(await stillMenu.locator('[data-value="still"]').count(), 0);
+    assert.equal(await stillMenu.getByRole('option').count(), 15); assert.equal(await stillMenu.locator('[data-value="still"]').count(), 0);
     await page.keyboard.press('Escape'); await stillMenu.waitFor({ state: 'detached' });
     await setTab('visualizer');
     await panel.locator('[data-visual-mode="classic"]').click(); await waitVisual(page, { mode: 'classic' });
@@ -115,8 +116,11 @@ export async function verifyDesktopVisualSettings(page, song, output) {
     checks.push('the common Default action resets the original static-mode switch and typography/opacity rather than leaving reduced-motion settings enabled');
     await selectDesktopOption(page, '动画强度', { value: 'chaotic' }); await waitVisual(page, { 'theme.animationIntensity': 'chaotic' });
     await selectDesktopOption(page, '字体', { value: 'serif' }); await waitVisual(page, { 'theme.fontStyle': 'serif' });
-    await common.getByRole('textbox', { name: '自定义字体名称', exact: true }).fill('Microsoft YaHei');
-    await common.getByRole('textbox', { name: '自定义字体名称', exact: true }).press('Enter');
+    await common.getByRole('button', { name: '选择自定义字体', exact: true }).click();
+    const fontPicker = page.getByRole('dialog', { name: '选择自定义字体', exact: true });
+    await fontPicker.getByRole('textbox', { name: '搜索字体', exact: true }).fill('yahei');
+    await fontPicker.getByRole('button', { name: 'Microsoft YaHei Microsoft YaHei', exact: true }).click();
+    await fontPicker.waitFor({ state: 'detached' });
     await waitVisual(page, { 'theme.fontFamily': 'Microsoft YaHei' });
     const scale = common.getByRole('slider', { name: '字号', exact: true }), beforeScale = await readVisual(page);
     const scaleStorageBefore = await page.evaluate(() => localStorage.getItem('lyrics_font_scale'));
@@ -225,11 +229,11 @@ export async function verifyDesktopVisualSettings(page, song, output) {
     await importText(JSON.stringify({ ...clearFonts, visualizerMode: 'still' })); await waitVisual(page, { mode: 'still' });
     await closeVisualSettings(page);
     const staticMenu = await openDesktopMenu(page, '歌词样式');
-    assert.equal(await staticMenu.getByRole('option').count(), 14); assert.equal(await staticMenu.locator('[data-value="still"]').count(), 0);
+    assert.equal(await staticMenu.getByRole('option').count(), 15); assert.equal(await staticMenu.locator('[data-value="still"]').count(), 0);
     await page.keyboard.press('Escape'); await staticMenu.waitFor({ state: 'detached' });
     await openVisualSettings(page, 'common');
     await importText(json); await waitVisual(page, { mode: 'classic', 'theme.fontFamily': 'Microsoft YaHei' }); await closeVisualSettings(page);
-    checks.push('false background, null system-font families and empty fallback stacks clear old values in JSON and shortcode; importing still preserves the separate static mode and 14 dynamic topbar options');
+    checks.push('false background, null system-font families and empty fallback stacks clear old values in JSON and shortcode; importing still preserves the separate static mode and the 14 dynamic styles plus random topbar option');
 
     stage = 'compact-dialog';
     await page.setViewportSize({ width: 450, height: 300 });

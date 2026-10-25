@@ -36,8 +36,8 @@ const DesktopStage = memo(function DesktopStage({ onRecover, ready, fallback, ..
     if (typeof save === 'function') save(patch);
   }, [shownMode]);
   if (!scene) return fallback;
-  return <VisualizerBoundary key={scene.mode} mode={scene.mode} onRecover={onRecover}><PlayerBottomBarLayoutContext.Provider value={true}>
-    <StableRenderer {...scene} onVisualizerTuningChange={onVisualizerTuningChange} paused={ready ? scene.paused : true}/>
+  return <VisualizerBoundary mode={scene.mode} onRecover={onRecover}><PlayerBottomBarLayoutContext.Provider value={true}>
+    <StableRenderer {...scene} animateStyleSwitch onVisualizerTuningChange={onVisualizerTuningChange} paused={ready ? scene.paused : true}/>
   </PlayerBottomBarLayoutContext.Provider></VisualizerBoundary>;
 });
 export default DesktopStage;

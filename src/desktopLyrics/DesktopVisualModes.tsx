@@ -2,6 +2,7 @@ import type { VisualizerMode } from '../types';
 import { getVisualizerRegistryEntry, getVisualizerModeLabel, VISUALIZER_REGISTRY } from '../components/visualizer/registry';
 import { useVisualTranslation, VisualCard } from './DesktopVisualControls';
 import type { DesktopVisualSettingsModel } from './useDesktopVisualSettings';
+import DesktopRandomControls from './visualFeatures/DesktopRandomControls';
 
 // src/desktopLyrics/DesktopVisualModes.tsx — exposes the upstream mode registry and its own tuning panels.
 export default function DesktopVisualModes({ model, mode, onMode, editingMode = mode }: {
@@ -12,6 +13,7 @@ export default function DesktopVisualModes({ model, mode, onMode, editingMode = 
   const panelProps = model.panelProps(editingMode);
   const dynamicModes = VISUALIZER_REGISTRY.filter(item => item.mode !== 'still');
   return <>
+    <VisualCard><DesktopRandomControls showPool/></VisualCard>
     <VisualCard title={t('options.previewVisualizerSettings')}>
       <div className="desktop-visual-mode-grid" data-visual-mode-grid>
         {dynamicModes.map(item => <button key={item.mode} type="button" data-visual-mode={item.mode}

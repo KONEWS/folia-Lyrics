@@ -19,6 +19,8 @@
 // A leaf on purpose - it imports nothing from the app. beatThis.ts and stems.ts both read it, and
 // stems.ts already imports beatThis.ts, so anything shared between them has to sit below both.
 
+import { getAnalysisModelHost } from './analysisModelHost';
+
 /** htdemucs_gpu: htdemucs' WebGPU export, the drum stem of 智能动感模式 (electron/analysis/modelPaths.cjs). */
 export type AutomixModelName = 'beat_this' | 'htdemucs' | 'htdemucs_gpu';
 
@@ -74,17 +76,16 @@ export const modelCanRun = (name: AutomixModelName): boolean => present[name];
  * answer in place rather than downgrading a working build on one bad round trip.
  */
 export const refreshModelAvailability = async (): Promise<AutomixModelsPresent> => {
-    const ask = typeof window !== 'undefined' ? window.electron?.getAutomixModelsPresent : undefined;
-    if (typeof ask !== 'function') return present;
+    const host = getAnalysisModelHost();
 
-    let answer: { beat_this: boolean; htdemucs: boolean; htdemucs_gpu?: boolean } | null = null;
+    let answer: Partial<AutomixModelsPresent> | null = null;
     try {
-        answer = await ask();
+        answer = await host.getPresent();
     } catch (error) {
         console.warn('[Analysis] could not check which models are installed', error);
         return present;
     }
-    if (!answer) return present;
+    if (!answer || host !== getAnalysisModelHost()) return present;
 
     const next: AutomixModelsPresent = {
         beat_this: answer.beat_this === true,

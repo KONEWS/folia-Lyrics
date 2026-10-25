@@ -5,6 +5,7 @@ import DesktopVisualFont from './DesktopVisualFont';
 import { useVisualTranslation, VisualCard, VisualRange, VisualToggle } from './DesktopVisualControls';
 import type { DesktopVisualSettingsModel } from './useDesktopVisualSettings';
 import DesktopSettingsTransparency from './DesktopSettingsTransparency';
+import { getVisualizerRegistryEntry } from '../components/visualizer/registry';
 
 // src/desktopLyrics/DesktopVisualCommon.tsx — global typography and motion controls for the original renderer.
 export default function DesktopVisualCommon({ model, mode, onSegmentation, canSegment = false }: {
@@ -13,7 +14,8 @@ export default function DesktopVisualCommon({ model, mode, onSegmentation, canSe
   const t = useVisualTranslation();
   const settings = model.typography;
   const patch = model.patchTypography;
-  const autoSize = ['sonnet', 'tempera', 'lumiere'].includes(mode);
+  const autoSizeNotice = getVisualizerRegistryEntry(mode).ownFontSizeNoticeKey;
+  const autoSize = Boolean(autoSizeNotice);
   return <>
     <VisualCard title={t('desktopVisual.commonTab')}>
       <button type="button" className="desktop-visual-reset" onClick={model.resetCommon}>{t('ui.default')}</button>
@@ -30,12 +32,13 @@ export default function DesktopVisualCommon({ model, mode, onSegmentation, canSe
         fallback={settings.lyricsFontFallbackFamilies} weight={settings.lyricsFontWeight}
         onStyle={lyricsFontStyle => patch({ lyricsFontStyle, lyricsCustomFont: null })}
         onFamily={family => patch({ lyricsCustomFont: family ? { source: 'system', family, label: family } : null })}
+        onUpload={settings.handleUploadLyricsCustomFont}
         onFallback={lyricsFontFallbackFamilies => patch({ lyricsFontFallbackFamilies })} onWeight={lyricsFontWeight => patch({ lyricsFontWeight })}
         beginSlider={model.beginSlider} commitSlider={model.commitSlider}/>
       <fieldset disabled={autoSize} className="desktop-visual-size"><VisualRange label={t('options.fontSize')}
         value={settings.lyricsFontScale} min={0.85} max={1.4} display={`${Math.round(settings.lyricsFontScale * 100)}%`}
         onChange={lyricsFontScale => patch({ lyricsFontScale })} beginSlider={model.beginSlider} commitSlider={model.commitSlider}/></fieldset>
-      {autoSize ? <p className="desktop-visual-hint">{t(`options.${mode}FontSizeAutoNotice`)}</p> : null}
+      {autoSizeNotice ? <p className="desktop-visual-hint">{t(autoSizeNotice)}</p> : null}
       <VisualRange label={t('options.visualizerOpacity')} value={model.visualizer.visualizerOpacity} min={0.2} max={1}
         display={`${Math.round(model.visualizer.visualizerOpacity * 100)}%`} onChange={visualizerOpacity => model.patchVisualizer({ visualizerOpacity })}
         beginSlider={model.beginSlider} commitSlider={model.commitSlider}/>

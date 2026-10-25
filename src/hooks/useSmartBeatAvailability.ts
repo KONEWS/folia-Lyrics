@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { probeBeatThisGpu } from '../services/analysis/beatThisGpu';
 import type { SmartBeatMode } from '../types';
+import { hasAnalysisGpuWeights } from '../services/analysis/analysisModelHost';
 
 // src/hooks/useSmartBeatAvailability.ts
 // Whether beat FX (智能动感模式, in every mode and background that draws them) can do anything on this
@@ -14,7 +15,7 @@ import type { SmartBeatMode } from '../types';
 
 export type SmartBeatAvailability = 'ready' | 'desktopOnly' | 'noGpu';
 
-const hasBeatThisBridge = () => typeof window !== 'undefined' && typeof window.electron?.getBeatThisGpuWeights === 'function';
+const hasBeatThisBridge = () => hasAnalysisGpuWeights('beat_this');
 
 /**
  * The GPU is probed only under `on`. Off, nothing is probed (no adapter request) and the answer is

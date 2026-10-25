@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType><TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms><EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4258.31"/>
+    <Compile Include="../../native/WindowVideoLayer.cs" Link="WindowVideoLayer.cs"/>
+    <Compile Include="../../native/VideoLayerFileStore.cs" Link="VideoLayerFileStore.cs"/>
+    <Compile Include="../../native/VideoLayerReadStream.cs" Link="VideoLayerReadStream.cs"/>
+    <Compile Include="../../native/AtomicJsonFile.cs" Link="AtomicJsonFile.cs"/>
+  </ItemGroup>
+  <Target Name="RemoveUnusedWpfWebView" BeforeTargets="ResolveAssemblyReferences"><ItemGroup>
+    <Reference Remove="@(Reference)" Condition="$([System.String]::Copy('%(Reference.Identity)').EndsWith('Microsoft.Web.WebView2.Wpf.dll'))"/>
+  </ItemGroup></Target>
+</Project>

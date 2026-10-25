@@ -17,6 +17,8 @@ export type OnlineState = { key: string; busy: boolean; message: string; candida
 export const EMPTY_ONLINE: OnlineState = { key: '', busy: false, message: '播放歌曲后自动匹配在线歌词', candidates: [], errors: [], selectedKey: '' };
 export type LibrarySummary = { folders: string[]; count: number };
 export type Message = { type: 'windowState'; data: { maximized: boolean; fullscreen: boolean; clickThrough?: boolean } } | { type: 'session'; data: Session } | { type: 'clock'; data: Clock } | { type: 'lyrics'; data: LyricPacket }
+  | { type: 'systemFonts'; data: { requestId: string; families: string[]; error?: string } }
+  | { type: 'videoLayerFile'; data: { status: 'none' | 'ready' | 'missing'; name: string | null; source: string | null; error?: string; picked?: boolean } }
   | { type: 'inspectLyrics'; data: { requestId: string; packet: LyricPacket } }
   | { type: 'preferences'; data: Preferences } | { type: 'library'; data: LibrarySummary }
   | { type: 'online'; data: OnlineState }

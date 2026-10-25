@@ -123,6 +123,10 @@ test/window-close-smoke/bin/
 test/window-close-smoke/obj/
 test/window-background-smoke/bin/
 test/window-background-smoke/obj/
+test/video-layer-smoke/bin/
+test/video-layer-smoke/obj/
+test/video-layer-webview/bin/
+test/video-layer-webview/obj/
 
 test/window-layout-smoke/bin/
 test/window-layout-smoke/obj/

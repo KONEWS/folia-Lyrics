@@ -13,6 +13,7 @@ import { applyTypographyPatch, type DesktopTypographyPatch, type DesktopVisualiz
 import { buildDesktopBackgroundActions, buildDesktopModePanelProps, resetDesktopMode } from './desktopVisualSettingsPanels';
 import { exportDesktopVisualConfig, importDesktopVisualConfig } from './desktopVisualSettingsCodec';
 import { DEFAULT_SETTINGS_TRANSPARENCY, useDesktopPanelSettingsStore } from '../stores/useDesktopPanelSettingsStore';
+import { desktopSubtitleVisibility } from './visualFeatures/desktopSubtitleVisibility';
 
 // src/desktopLyrics/useDesktopVisualSettings.ts — original visual settings feed the desktop renderer without App playback state.
 type Options = { baseTheme: Theme; cover: string; transparent: boolean; translated: boolean; onTranslated: (value: boolean) => void };
@@ -62,8 +63,7 @@ export function useDesktopVisualSettings(input: Options) {
     subtitleOverlayOpacity: typography.subtitleOverlayOpacity, subtitleOverlayBackground: typography.subtitleOverlayBackground,
     subtitleUpcomingLyricsBlur: typography.subtitleUpcomingLyricsBlur, showHarmonySubtitle: typography.showHarmonySubtitle,
     harmonySubtitleBackground: typography.harmonySubtitleBackground,
-    showSubtitleTranslation: input.translated, hideTranslationSubtitle: typography.hidePlayerTranslationSubtitle || !input.translated,
-    subtitleContentMode: input.translated ? typography.subtitleContentMode === 'none' ? 'translation' as const : typography.subtitleContentMode : 'none' as const,
+    ...desktopSubtitleVisibility(typography, input.translated),
     cappellaCustomEmojiImages: assets.cappellaCustomEmojiImages, cappellaCustomAvatarImages: assets.cappellaCustomAvatarImages, monetPortraitImage: assets.monetPortraitImage,
   }), [themes.visualizerSubtitleTheme, tunings, background, staticMode, visualizer.visualizerOpacity, typography.lyricsFontScale,
     typography.subtitleFontScale, typography.subtitleOverlayOpacity, typography.subtitleOverlayBackground, typography.subtitleUpcomingLyricsBlur,
@@ -94,7 +94,7 @@ export function useDesktopVisualSettings(input: Options) {
   const importConfig = async (text: string) => { edits.commitSlider(); return importDesktopVisualConfig(text, codecOptions); };
   return { mergedTheme: themes.visualizerTheme, subtitleTheme: themes.visualizerSubtitleTheme, rendererProps,
     visualizer: draftVisualizer, typography: draftTypography, assets, animationIntensity, setAnimationIntensity,
-    backgroundEnabled, setBackgroundEnabled, backgroundSuppressed: backgroundEnabled && input.transparent,
+    backgroundEnabled, setBackgroundEnabled, transparent: input.transparent, backgroundSuppressed: backgroundEnabled && input.transparent,
     staticMode, setStaticMode: useThemeSettingsStore.getState().handleToggleStaticMode, useCoverColorBg,
     translated: input.translated, setTranslated: input.onTranslated, patchTypography, patchVisualizer: edits.patchVisualizer,
     backgroundConfig, backgroundActions, panelProps, beginSlider: edits.beginSlider, commitSlider: edits.commitSlider,

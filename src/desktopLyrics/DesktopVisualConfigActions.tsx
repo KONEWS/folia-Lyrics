@@ -6,7 +6,7 @@ import { useVisualTranslation } from './DesktopVisualControls';
 import type { DesktopVisualSettingsModel } from './useDesktopVisualSettings';
 
 // src/desktopLyrics/DesktopVisualConfigActions.tsx — portable visual configuration actions for this host.
-export default function DesktopVisualConfigActions({ model, mode, onMode }: {
+export default function DesktopVisualConfigActions({ model, mode }: {
   model: DesktopVisualSettingsModel; mode: VisualizerMode; onMode: (mode: VisualizerMode) => void;
 }) {
   const t = useVisualTranslation();
@@ -31,13 +31,12 @@ export default function DesktopVisualConfigActions({ model, mode, onMode }: {
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
     setFeedback(t('desktopVisual.exported'));
   };
-  // Import applies validated renderer settings first, then updates the root-owned mode once.
+  // The codec applies the shared mode together with its random setting; treating it as a manual choice would disable random.
   const apply = async (input: string) => {
     if (busy || !input.trim()) return;
     setBusy(true); setFeedback('');
     try {
       const result = await model.importConfig(input);
-      if (result.ok && result.mode) onMode(result.mode);
       setFeedback(result.ok ? t('desktopVisual.imported') : result.error || t('desktopVisual.importFailed'));
     } catch { setFeedback(t('desktopVisual.importFailed')); }
     finally { setBusy(false); }

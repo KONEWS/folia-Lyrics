@@ -10,6 +10,7 @@ export default function DesktopVisualSubtitle({ model }: { model: DesktopVisualS
   const settings = model.typography;
   const patch = model.patchTypography;
   const toggles = [
+    ['hidePlayerTranslationSubtitle', 'options.hidePlayerTranslationSubtitle'],
     ['subtitleOverlayBackground', 'options.subtitleOverlayBackground'],
     ['subtitleUpcomingLyricsBlur', 'options.subtitleUpcomingLyricsBlur'],
     ['subtitleFontInheritsLyrics', 'options.subtitleFontInheritsLyrics'],

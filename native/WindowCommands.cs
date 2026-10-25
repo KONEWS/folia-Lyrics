@@ -8,6 +8,8 @@ internal sealed partial class MainWindow
     private bool fullscreen, clickThrough; private Rectangle restoreBounds; private FormWindowState restoreState;
     private async Task Command(JsonElement cmd)
     {
+        if (cmd.Text("type") == "querySystemFonts") { await HandleSystemFontsCommand(cmd); return; }
+        if (await HandleVideoLayerCommand(cmd)) return;
         switch (cmd.GetProperty("type").GetString())
         {
             case "ready": NormalizeMusicApps(); ready = true; UpdateAudioCapture(); FocusLyricsIfActive(); windowStateSent = false; SendWindowState(); presentedSong = null; SendAppearance(); Send("preferences", preferences); Send("library", library.Summary());

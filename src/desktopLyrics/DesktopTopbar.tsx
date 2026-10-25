@@ -1,9 +1,13 @@
-import { Eye, EyeOff, Languages, Maximize2, Minimize2, Music2, Pin, RefreshCw, Settings2, Sparkles, Wallpaper } from 'lucide-react';
+import { Eye, EyeOff, Languages, Maximize2, Minimize2, Music2, Pin, RefreshCw, Settings2, Shuffle, Sparkles, Wallpaper } from 'lucide-react';
 import type { Theme, VisualizerMode } from '../types';
 import i18n from '../i18n/config';
 import { VisualizerModeGlyph } from '../components/visualizer/modeGlyphs';
 import { MODES, desktopModeLabel } from './desktopModes';
 import DesktopSelect from './DesktopSelect';
+import { RANDOM_VISUALIZER_CHOICE } from '../components/visualizer/random/lyricStyleChoices';
+import { useVisualizerSettingsStore } from '../stores/useVisualizerSettingsStore';
+import type { DesktopVisualSettingsModel } from './useDesktopVisualSettings';
+import DesktopVisualQuickControls from './visualFeatures/DesktopVisualQuickControls';
 
 // src/desktopLyrics/DesktopTopbar.tsx — song details and everyday lyric controls in a lightweight toolbar.
 type Props = {
@@ -14,6 +18,7 @@ type Props = {
   onVisualSettings: () => void; animationIntensity: Theme['animationIntensity']; onAnimationIntensity: (value: Theme['animationIntensity']) => void;
   onBackgroundSettings: () => void; backgroundPanel: boolean; backgroundEnabled: boolean; backgroundSuppressed: boolean;
   canRefreshTheme: boolean; refreshingTheme: boolean; refreshThemeUnavailableReason: string | null; onRefreshTheme: () => Promise<boolean>;
+  visualModel?: DesktopVisualSettingsModel;
 };
 const text = (key: string) => i18n.t(`desktopLyrics.topbar.${key}`, { lng: 'zh-CN' });
 const styleOptions = MODES.map(entry => ({ value: entry.mode, label: desktopModeLabel(entry.mode),
@@ -26,6 +31,8 @@ const refreshHintKeys: Record<string, string> = {
 };
 
 export default function DesktopTopbar(p: Props) {
+  const random = useVisualizerSettingsStore(state => state.randomVisualizerModePerSong);
+  const choices = [{ value: RANDOM_VISUALIZER_CHOICE, label: i18n.t('ui.visualizerRandom', { lng: 'zh-CN' }), icon: <Shuffle size={16}/> }, ...styleOptions];
   const connection = text(p.manual ? 'manual' : p.connected ? p.playing ? 'following' : 'connected' : 'waitingConnection');
   const refreshHint = p.refreshingTheme ? text('refreshingTheme')
     : text(refreshHintKeys[p.refreshThemeUnavailableReason || ''] || 'refreshThemeHint');
@@ -41,9 +48,10 @@ export default function DesktopTopbar(p: Props) {
     </div>
     <span className={`connection-pill ${p.playing ? 'playing' : ''}`} title={connection}><i/>{connection}</span>
     <div className="topbar-mode-picker" title={text('style')}>
-      <DesktopSelect label={text('style')} value={p.mode} options={styleOptions} placeholder={p.mode === 'still' ? desktopModeLabel('still') : undefined} topbar
+      <DesktopSelect label={text('style')} value={random ? RANDOM_VISUALIZER_CHOICE : p.mode} options={choices} placeholder={p.mode === 'still' ? desktopModeLabel('still') : undefined} topbar
         menuAction={{ label: visualText('moreSettings'), onAction: p.onVisualSettings }}
         triggerPrefix={<Sparkles size={15}/>} onChange={value => {
+        if (value === RANDOM_VISUALIZER_CHOICE) { useVisualizerSettingsStore.getState().handleToggleRandomVisualizerModePerSong(true, { notify: false }); return; }
         const entry = MODES.find(item => item.mode === value);
         if (entry) p.onMode(entry.mode);
       }}/>
@@ -52,6 +60,7 @@ export default function DesktopTopbar(p: Props) {
       title={i18n.t('desktopVisual.intensityHint', { lng: 'zh-CN', state: intensityLabel })}
       onClick={() => p.onAnimationIntensity(nextIntensity)}>{intensityLabel}</button>
     <div className="topbar-actions">
+      {p.visualModel && <DesktopVisualQuickControls mode={p.mode} model={p.visualModel} onVisualSettings={p.onVisualSettings} onBackgroundSettings={p.onBackgroundSettings}/>}
       <button type="button" data-background-settings-trigger className={`icon-button background-settings-button ${p.backgroundPanel ? 'selected' : ''}`}
         aria-label={visualText('backgroundTitle')} aria-expanded={p.backgroundPanel}
         title={i18n.t('desktopVisual.backgroundStatus', { lng: 'zh-CN', state: visualText(p.backgroundSuppressed ? 'backgroundTransparentPriority' : p.backgroundEnabled ? 'enabled' : 'disabled') })}

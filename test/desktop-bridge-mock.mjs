@@ -35,6 +35,9 @@ export async function installDesktopBridgeMock(page) {
       postMessage: m => {
         window.__foliaCommands.push(m);
         if (m.type === 'ready') window.__foliaReadyAt ??= performance.now();
+        if (m.type === 'querySystemFonts') queueMicrotask(() => window.__foliaEmit('systemFonts', {
+          requestId: m.value.requestId, families: ['Arial', 'Microsoft YaHei', 'Segoe UI', 'SimSun'],
+        }));
         if (m.type === 'ready') queueMicrotask(() => {
           const readyPreferences = { ...prefs };
           if (sessionStorage.getItem('folia.test.legacyClosePreference') === 'true') delete readyPreferences.closeToTaskbar;

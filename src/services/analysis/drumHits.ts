@@ -7,6 +7,7 @@ import { drumStemSegments, separateDrumStem, startDrumStem, type DrumStemProgres
 import { dropStemDrums, setStemDrumsKeptListener } from './stemRange';
 import { HTDEMUCS_GPU_SEGMENT } from './beatThisGpu';
 import { modelCanRun } from './modelAvailability';
+import { hasAnalysisGpuWeights } from './analysisModelHost';
 import { decodeAtRate } from './trackAudio';
 import { decodeTrackAtRate } from './trackBytes';
 
@@ -120,7 +121,7 @@ const quantile = (values: number[], q: number): number => {
 /** Whether the GPU drum stem can run here: htdemucs_gpu installed and a WebGPU to run it on. */
 export const canRunDrumStem = (): boolean =>
     typeof window !== 'undefined'
-    && typeof window.electron?.getHtdemucsGpuWeights === 'function'
+    && hasAnalysisGpuWeights('htdemucs')
     && typeof navigator !== 'undefined' && 'gpu' in navigator
     && modelCanRun('htdemucs_gpu');
 

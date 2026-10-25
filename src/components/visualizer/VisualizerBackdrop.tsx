@@ -1,9 +1,10 @@
-import React, { createContext, useMemo, useState } from 'react';
+import React, { createContext, useContext, useMemo, useState } from 'react';
 import type { MotionValue } from 'framer-motion';
 import type { AudioBands, Theme } from '../../types';
 import type { VisualizerRegistryEntry, VisualizerSharedProps } from './definition';
 import VisualizerBackgroundRenderer from './backgrounds/VisualizerBackgroundRenderer';
 import VideoLayer from './videoLayer/VideoLayer';
+import { VideoLayerPlaybackContext } from './videoLayer/videoLayerPlayback';
 import VisualizerBackgroundTransition from './styleTransition/VisualizerBackgroundTransition';
 import type { LayerTransition } from './styleTransition/layerTransition';
 import { getSizedCoverUrl } from '../../utils/coverUrl';
@@ -67,6 +68,7 @@ export const VisualizerBackdropLayers: React.FC<VisualizerBackdropLayersProps> =
 }) => {
     const staticMode = sharedProps?.staticMode ?? false;
     const paused = sharedProps?.paused ?? false;
+    const videoPlayback = useContext(VideoLayerPlaybackContext);
 
     return (
         <>
@@ -92,7 +94,8 @@ export const VisualizerBackdropLayers: React.FC<VisualizerBackdropLayersProps> =
 
             {/* The built-in video layer follows the same rule as stage layers and stays out of the OBS
                 sources, which cannot open the main window's local file handle. */}
-            {!sharedProps?.isPreviewMode && !staticMode && isMainAppSurface && <VideoLayer paused={paused} />}
+            {!sharedProps?.isPreviewMode && !staticMode && (isMainAppSurface || videoPlayback !== null)
+                && !videoPlayback?.suppressed && <VideoLayer paused={paused} />}
         </>
     );
 };

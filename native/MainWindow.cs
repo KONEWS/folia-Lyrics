@@ -63,6 +63,7 @@ internal sealed partial class MainWindow : Form
             if (IsDisposed || Disposing || lifetime.IsCancellationRequested) return;
             library = await libraryLoad; var core = await browser;
             core.SetVirtualHostNameToFolderMapping("folia.local", await assets, CoreWebView2HostResourceAccessKind.DenyCors);
+            InitializeVideoLayer(core);
             core.Settings.AreDevToolsEnabled = false; core.Settings.AreDefaultContextMenusEnabled = false;
             core.Settings.IsStatusBarEnabled = false; core.Settings.AreBrowserAcceleratorKeysEnabled = false;
             core.PermissionRequested += (_, e) => e.State = CoreWebView2PermissionState.Deny;
