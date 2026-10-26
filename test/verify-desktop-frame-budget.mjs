@@ -33,16 +33,18 @@ const song={key:'fps-fixture',title:'帧率与缩放验证',artist:'模拟播放
 const packet={key:song.key,title:song.title,artist:song.artist,cover:'',source:'fixture',embedded:false,format:'lrc',content:'[00:01.000]窗口性能验证\n[00:33.000]持续播放保持同步\n[01:20.000]缩放后继续显示'};
 const emit=async page=>page.evaluate(({song,packet})=>{window.__foliaEmit('session',song);window.__foliaEmit('lyrics',packet);},{song,packet});
 // Each sample gets an independent browser context and the production desktop bridge fixture.
-async function fixture(url) {
+async function fixture(url, { mode = 'classic', controlledClock = false } = {}) {
   const context=await browser.newContext({viewport:{width:1280,height:800}}),page=await context.newPage();
   page.on('pageerror',error=>errors.push(String(error)));
   page.on('console',message=>{if(message.type()==='error')errors.push(message.text());});
   await installDesktopBridgeMock(page);
-  await page.addInitScript(()=>{
+  // Install before loading Motion/Pixi so a controlled resize never mixes native and virtual timer IDs.
+  if (controlledClock) await page.clock.install();
+  await page.addInitScript(mode=>{
     window.__physicalRaf=requestAnimationFrame.bind(window);window.__physicalCancel=cancelAnimationFrame.bind(window);
-    localStorage.setItem('folia.desktop.mode.v1','classic');
+    localStorage.setItem('folia.desktop.mode.v1',mode);
     sessionStorage.setItem('folia.test.mockPreferences',JSON.stringify({autoImmersive:false,audioReactive:false,coverTheme:false}));
-  });
+  },mode);
   await page.goto(url,{waitUntil:'networkidle'});await page.locator('.waiting-screen h1').waitFor();
   await emit(page);await page.locator('.waiting-screen').waitFor({state:'detached'});await page.waitForTimeout(800);
   return {context,page};
@@ -86,32 +88,42 @@ try {
   await page.waitForFunction(()=>Number(document.querySelector('[role=progressbar]')?.getAttribute('aria-valuenow'))>=52);
   checks.push('pause/idle, synchronous seek and resume still follow host time');
   for(const mode of ['lumiere','sonnet','tempera']) {
-    await selectDesktopOption(page,'歌词样式',{value:mode});
-    await page.locator('.desktop-stage canvas').waitFor({timeout:60000});await page.waitForTimeout(1000);
-    await page.evaluate(()=>{
+    const {page:resizePage,context:resizeContext}=await fixture(currentUrl,{mode,controlledClock:true});
+    await resizePage.locator('.desktop-stage canvas').waitFor({timeout:60000});await resizePage.waitForTimeout(1000);
+    await resizePage.clock.pauseAt(await resizePage.evaluate(()=>Date.now()+100));
+    await resizePage.evaluate(()=>{
       const canvas=document.querySelector('.desktop-stage canvas');window.__canvasProbe=canvas;window.__canvasResizes=[];
       window.__canvasObserver=new MutationObserver(records=>{for(const record of records)if(record.attributeName==='width')window.__canvasResizes.push({width:canvas.width,height:canvas.height,at:performance.now()});});
       window.__canvasObserver.observe(canvas,{attributes:true,attributeFilter:['width','height']});
     });
     for(let step=0;step<24;step++) {
-      await page.setViewportSize({width:1000+step*10,height:620+step*5});
-      const fit=await page.locator('.desktop-stage canvas').evaluate(canvas=>{
-        const rect=canvas.getBoundingClientRect(),host=canvas.parentElement.getBoundingClientRect();
-        return Math.abs(rect.width-host.width)<1 && Math.abs(rect.height-host.height)<1;
-      });
+      await resizePage.setViewportSize({width:1000+step*10,height:620+step*5});
+      // Wait for real layout/ResizeObserver delivery while virtual time stays paused. A slow GPU or
+      // Playwright round trip must not turn this continuous drag into 24 separate settled resizes.
+      const fit=await resizePage.evaluate(()=>new Promise(done=>{
+        const canvas=document.querySelector('.desktop-stage canvas'),host=canvas.parentElement;
+        const observer=new ResizeObserver(()=>{
+          observer.disconnect();
+          const rect=canvas.getBoundingClientRect(),bounds=host.getBoundingClientRect();
+          done(Math.abs(rect.width-bounds.width)<1 && Math.abs(rect.height-bounds.height)<1);
+        });
+        observer.observe(host);
+      }));
       assert(fit,mode+' canvas fills its host throughout the drag');
+      await resizePage.clock.runFor(16);
+      assert.equal(await resizePage.evaluate(()=>window.__canvasResizes.length),0,mode+' defers backing allocation throughout the drag');
     }
-    await page.waitForTimeout(450);
-    const result=await page.evaluate(()=>{
+    await resizePage.clock.runFor(150);
+    const result=await resizePage.evaluate(()=>{
       const canvas=document.querySelector('.desktop-stage canvas'),rect=canvas.getBoundingClientRect();
       window.__canvasObserver.disconnect();
       return {sameCanvas:canvas===window.__canvasProbe,allocations:window.__canvasResizes.length,backingWidth:canvas.width,backingHeight:canvas.height,width:rect.width,height:rect.height,records:window.__canvasResizes};
     });
-    assert(result.sameCanvas,mode+' kept its runtime/canvas');assert(result.allocations<12,mode+': '+JSON.stringify(result));
+    assert(result.sameCanvas,mode+' kept its runtime/canvas');assert.equal(result.allocations,1,mode+': '+JSON.stringify(result));
     assert(Math.abs(result.backingWidth/result.backingHeight-result.width/result.height)<.02,mode+' backing surface matches final aspect');
-    assert.equal(await page.getByText('这个动效暂时无法显示',{exact:false}).count(),0);
-    await page.screenshot({path:resolve(output,mode+'-resized.png')});
-    resizes.push({mode,...result});await page.setViewportSize({width:1280,height:800});
+    assert.equal(await resizePage.getByText('这个动效暂时无法显示',{exact:false}).count(),0);
+    await resizePage.screenshot({path:resolve(output,mode+'-resized.png')});
+    resizes.push({mode,...result});await resizeContext.close();
   }
   checks.push('Lumiere/Sonnet/Tempera keep their canvas while edge dragging and allocate a settled backing surface');
   await page.reload({waitUntil:'networkidle'});assert.equal(await page.evaluate(()=>localStorage.getItem('visualizer_frame_rate')),'60');

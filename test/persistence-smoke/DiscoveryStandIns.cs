@@ -27,6 +27,13 @@ namespace FoliaLyrics
         internal static MusicAppBinding[] NormalizeBindings(IEnumerable<MusicAppBinding?>? bindings) => throw new InvalidOperationException("Unexpected binding normalization.");
         internal static int NextSlot(IEnumerable<MusicAppBinding?>? bindings) => throw new InvalidOperationException("Unexpected slot allocation.");
         internal static MusicAppBinding Resolve(IEnumerable<MusicAppBinding> bindings, int slot) => throw new InvalidOperationException("Unexpected binding lookup.");
+        internal static MusicAppBinding[] ApplyRefreshedStoreIcons(MusicAppBinding[] bindings, IReadOnlyDictionary<int, MusicAppBinding> refreshed)
+            => throw new InvalidOperationException("Unexpected Store icon refresh.");
+    }
+    internal static class MusicAppStore
+    {
+        internal static Task<MusicAppBinding?> ReadBindingAsync(string appUserModelId, CancellationToken token)
+            => throw new InvalidOperationException("Unexpected Store binding lookup.");
     }
     internal sealed partial class MainWindow
     {
