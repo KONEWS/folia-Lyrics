@@ -555,3 +555,5 @@ foreach ($file in $entryPath, $libPath, $testPath) {
     }
 }
 Write-Host ('{0} background-cost checks passed' -f $script:passed)
+# Expected child-process failures set LASTEXITCODE; return the suite's own success to CI shell wrappers.
+exit 0

@@ -55,6 +55,8 @@ try {
   const results = page.locator('.online-results'), visibleCandidates = results.locator('.online-result:visible');
   const toggle = results.locator('.online-candidates-toggle');
   const waitCount = count => page.waitForFunction(count => [...document.querySelectorAll('.online-result')].filter(element => element.getClientRects().length > 0).length === count, count);
+  // Host messages enqueue React updates; wait for the rendered disabled state before taking a snapshot.
+  const waitSelectableCount = count => page.waitForFunction(count => document.querySelectorAll('.online-results .online-result:not(:disabled)').length === count, count);
   await waitCount(5);
   assert.equal(await results.locator('.online-result').count(), 12, 'all host candidates remain in the UI');
   assert.deepEqual(await visibleCandidates.locator('strong').allTextContents(), candidates.slice(0, 5).map(candidate => candidate.title));
@@ -93,6 +95,7 @@ try {
 
   await toggle.click(); await waitCount(12);
   await emit('online', { ...online, busy: true });
+  await waitSelectableCount(0);
   assert.equal(await toggle.getAttribute('aria-expanded'), 'true');
   assert.equal(await visibleCandidates.count(), 12);
   assert.equal(await results.locator('.online-result:not(:disabled)').count(), 0);
@@ -111,10 +114,12 @@ try {
   checks.push('selection loading and late arrivals preserve expansion; fresh searches, cleared results and song changes reset it');
 
   await page.evaluate(() => window.__foliaSetMockPreferences({ onlineEnabled: false }));
+  await waitSelectableCount(0);
   assert.equal(await results.locator('.online-result:not(:disabled)').count(), 0);
   await toggle.click(); await waitCount(12);
   assert.equal(await results.locator('.online-result:not(:disabled)').count(), 0, 'offline results remain inspectable but cannot select');
   await page.evaluate(() => window.__foliaSetMockPreferences({ onlineEnabled: true, onlineProviders: ['qq'] }));
+  await waitSelectableCount(6);
   assert.equal(await results.locator('.online-result:not(:disabled)').count(), 6, 'disabled providers and unavailable candidates stay disabled');
   await emit('online', { ...online, key: 'new-song', candidates: candidates.slice(0, 5), selectedKey: candidates[0].key }); await waitCount(5);
   assert.equal(await toggle.count(), 0, 'five or fewer candidates need no disclosure');

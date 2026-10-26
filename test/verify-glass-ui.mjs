@@ -150,7 +150,8 @@ export async function verifyGlassUi(page, song, output) {
   };
   await selectDesktopOption(page, '歌词样式', { label: '流光' });
   const choices = await readDesktopOptions(page, '歌词样式');
-  assert.equal(choices.length, 13); assert(!choices.some(choice => choice.value === 'still'));
+  assert.equal(choices.filter(choice => choice.value !== '__random__').length, 14);
+  assert.equal(choices.filter(choice => choice.value === '__random__').length, 1); assert(!choices.some(choice => choice.value === 'still'));
   assert.equal(await page.locator('.topbar-mode-picker select, .control-panel select').count(), 0);
   await setCover('#dc5432');
   let menu = await menuFor('歌词样式');
@@ -172,7 +173,7 @@ export async function verifyGlassUi(page, song, output) {
   await topbarAlignment(menu, '1280x800 next-cover window');
   assert.notEqual(await style(menu, 'backgroundColor'), red, 'portaled menus must change color with the next cover');
   await page.screenshot({ path: `${output}/glass-menu-blue.png` }); await dismiss(menu);
-  checks.push('desktop selectors expose 13 dynamic styles through accessible themed listboxes', 'nested menus inherit each cover theme and preserve selected-item indication');
+  checks.push('desktop selectors expose 14 dynamic styles plus random selection through accessible themed listboxes', 'nested menus inherit each cover theme and preserve selected-item indication');
   checks.push(...await verifyStyleCapsule(page, output));
 
   await openSettings();
@@ -422,7 +423,7 @@ export async function verifyGlassUi(page, song, output) {
     await page.screenshot({ path: `${output}/glass-player-menu-${width}x${height}.png` }); await dismiss(menu);
     await selectDesktopOption(page, '选择播放器', { value: originalSource }); await closeSettings();
     checks.push(`${width}x${height} style menus align with the complete capsule and scroll inside the viewport`,
-      `${width}x${height} all 13 style names remain complete in the trigger and selected menu option`, `${width}x${height} player menus support long labels and native selection without overflow`);
+      `${width}x${height} all 14 style names and random selection remain complete in the trigger and selected menu option`, `${width}x${height} player menus support long labels and native selection without overflow`);
   }
   await page.setViewportSize({ width: 1280, height: 800 });
   menu = await menuFor('歌词样式');

@@ -82,7 +82,7 @@ export async function verifyUxPolish(page, song, output) {
     checks.push('1280 and 450 chrome keep song information at the top, time/transport at the bottom and reachable essential controls');
 
     await page.setViewportSize({ width: 1280, height: 800 }); await open();
-    assert.deepEqual(await page.locator('.control-panel [data-settings-section]').evaluateAll(elements => elements.map(element => element.dataset.settingsSection)), ['transparency', 'sync', 'player', 'immersion', 'window-sound', 'online', 'local']);
+    assert.deepEqual(await page.locator('.control-panel [data-settings-section]').evaluateAll(elements => elements.map(element => element.dataset.settingsSection)), ['transparency', 'sync', 'player', 'immersion', 'window-sound', 'online', 'local', 'diagnostics']);
     assert.equal(await page.locator('.desktop-main-settings > .desktop-settings-scroll').evaluate(element => element.firstElementChild.dataset.settingsSection), 'transparency');
     assert.equal(await page.locator('.control-panel .panel-heading').count(), 0);
     assert.equal(await page.locator('.control-panel [aria-label="歌词样式"]').count(), 0);
@@ -100,7 +100,7 @@ export async function verifyUxPolish(page, song, output) {
     await close(); await page.setViewportSize({ width: 450, height: 300 }); await open();
     for (const control of [page.getByRole('checkbox', { name: '播放页面透明背景', exact: true }), page.getByRole('button', { name: '歌词提前 0.2 秒', exact: true }), page.getByRole('combobox', { name: '选择播放器', exact: true })]) await hit(control, 'short panel reachable setting', true);
     await page.locator('.desktop-main-settings > .desktop-settings-scroll').evaluate(element => { element.scrollTop = 0; }); await shoot('settings-450x300'); await close();
-    checks.push('seven settings groups prioritize transparency, sync and player; six long explanations fold by default and still open in a short window');
+    checks.push('eight settings groups prioritize transparency, sync and player and retain diagnostics; six long explanations fold by default and still open in a short window');
 
     await page.setViewportSize({ width: 1280, height: 800 });
     for (const [name, titleOn, titleOff] of [['显示译文', '译文已开启', '译文已关闭'], ['窗口置顶', '窗口已置顶', '窗口未置顶']]) {

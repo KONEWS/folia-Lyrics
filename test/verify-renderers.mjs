@@ -216,7 +216,9 @@ try {
   } else {
   await page.getByRole('button', { name: '打开歌词设置' }).click();
   const selector = desktopSelect(page, '歌词样式');
-  const modes = await readDesktopOptions(page, '歌词样式');
+  const choices = await readDesktopOptions(page, '歌词样式');
+  assert.equal(choices.filter(choice => choice.value === '__random__').length, 1, 'random is one selection control, not a renderer');
+  const modes = choices.filter(choice => choice.value !== '__random__');
   const modeCount = modes.length;
   assert(modeCount > 0, 'registry must expose dynamic modes');
   assert.equal(modeCount, 14, 'the desktop exposes all 14 dynamic modes');

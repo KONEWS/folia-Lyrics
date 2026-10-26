@@ -143,8 +143,9 @@ export async function verifyFullscreenImmersion(page, song, output) {
       const scroll = menu.locator('.custom-select-options-scroll'); await scroll.hover(); await page.mouse.wheel(0, 800);
       await page.waitForFunction(() => document.querySelector('.desktop-top-menu .custom-select-options-scroll')?.scrollTop > 0);
       await revealed(true, false, 'menu-internal-scroll');
+      const lastValue = await menu.getByRole('option').last().getAttribute('data-value');
       await trigger.focus(); await page.keyboard.press('End');
-      await page.waitForFunction(() => document.activeElement?.getAttribute('data-option-index') === '12');
+      await page.waitForFunction(value => document.activeElement?.getAttribute('data-value') === value, lastValue);
       await revealed(true, false, 'menu-keyboard-focus');
       await page.screenshot({ path: `${output}/fullscreen-immersion-narrow-menu.png` });
       await page.keyboard.press('Escape'); await menu.waitFor({ state: 'detached' });

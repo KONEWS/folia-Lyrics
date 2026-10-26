@@ -92,14 +92,15 @@ export async function verifyStyleMenu(page, song, output) {
       const capsule = document.querySelector('.topbar-mode-picker').getBoundingClientRect(), element = document.querySelector('.desktop-top-menu');
       const scroll = element.querySelector('.custom-select-options-scroll[role="listbox"]');
       return { capsule: capsule.toJSON(), menu: element.getBoundingClientRect().toJSON(), width: innerWidth, height: innerHeight,
-        count: scroll.querySelectorAll('[role="option"]').length, scrollHeight: scroll.scrollHeight, clientHeight: scroll.clientHeight,
+        count: scroll.querySelectorAll('[role="option"]').length, randomCount: scroll.querySelectorAll('[role="option"][data-value="__random__"]').length,
+        scrollHeight: scroll.scrollHeight, clientHeight: scroll.clientHeight,
         scrollbar: getComputedStyle(scroll).scrollbarWidth, webkitScrollbar: getComputedStyle(scroll, '::-webkit-scrollbar').display,
         overflow: getComputedStyle(scroll).overflowY, groupRole: element.getAttribute('role'), footerCount: element.querySelectorAll('[data-custom-select-footer]').length };
     });
     const expectedWidth = Math.min(sample.capsule.width, sample.width - 16), expectedLeft = Math.max(8, Math.min(sample.capsule.left, sample.width - expectedWidth - 8));
     assert(Math.abs(sample.menu.width - expectedWidth) <= 0.75 && Math.abs(sample.menu.left - expectedLeft) <= 0.75, `${context}: both menu edges follow the whole capsule`);
     assert(sample.menu.top >= 7.5 && sample.menu.bottom <= sample.height - 7.5, `${context}: menu stays within the viewport`);
-    assert.equal(sample.count, 14); assert.equal(sample.groupRole, 'group'); assert.equal(sample.footerCount, 1);
+    assert.equal(sample.count, 15); assert.equal(sample.randomCount, 1); assert.equal(sample.groupRole, 'group'); assert.equal(sample.footerCount, 1);
     assert.equal(sample.scrollbar, 'none'); assert.equal(sample.webkitScrollbar, 'none');
     assert(['auto', 'scroll'].includes(sample.overflow)); assert(sample.scrollHeight > sample.clientHeight);
     samples.push({ context, geometry: sample });
@@ -113,7 +114,7 @@ export async function verifyStyleMenu(page, song, output) {
         selected: element.getAttribute('aria-selected') === 'true', selectedIndicatorColor: selectedIndicator ? getComputedStyle(selectedIndicator).color : null,
         iconCount: element.querySelectorAll('.custom-select-option-icon svg').length, labelCount: element.querySelectorAll('.custom-select-option-label').length,
         wrapperHidden: icon?.getAttribute('aria-hidden'), hidden: svg?.getAttribute('aria-hidden'), focusable: svg?.getAttribute('focusable'),
-        viewBox: svg?.getAttribute('viewBox'), fill: svg?.getAttribute('fill'), stroke: svg?.getAttribute('stroke'),
+        viewBox: svg?.getAttribute('viewBox'), fill: svg?.getAttribute('fill'), stroke: svg?.getAttribute('stroke'), shuffle: svg?.classList.contains('lucide-shuffle'),
         color: getComputedStyle(element).color, renderedStroke: svg ? getComputedStyle(svg).stroke : null,
         icon: icon?.getBoundingClientRect().toJSON(), svg: svg?.getBoundingClientRect().toJSON(), label: label?.getBoundingClientRect().toJSON(),
         labelScrollWidth: label?.scrollWidth, labelClientWidth: label?.clientWidth,
@@ -121,12 +122,18 @@ export async function verifyStyleMenu(page, song, output) {
         shapes: svg ? [...svg.children].map(child => ({ tag: child.tagName.toLowerCase(),
           attributes: Object.fromEntries([...child.attributes].map(attribute => [attribute.name, attribute.value])) })) : [] };
     }));
-    assert.equal(rows.length, 14); assert.equal(rows.some(row => row.value === 'still'), false);
+    assert.equal(rows.filter(row => row.value !== '__random__').length, 14);
+    assert.equal(rows.filter(row => row.value === '__random__').length, 1); assert.equal(rows.some(row => row.value === 'still'), false);
     for (const row of rows) {
-      assert.equal(row.iconCount, 1, `${context}/${row.value}: exactly one original schematic`); assert.equal(row.labelCount, 1);
-      assert(glyphShapes[row.value]?.length, `${row.value}: original source has actual drawing commands`);
-      assert.deepEqual(row.shapes, glyphShapes[row.value], `${context}/${row.value}: drawn paths must match the original player`);
-      assert.equal(row.wrapperHidden, 'true'); assert.equal(row.hidden, 'true'); assert.equal(row.focusable, 'false'); assert.equal(row.focusTargets, 0);
+      assert.equal(row.iconCount, 1, `${context}/${row.value}: exactly one decorative icon`); assert.equal(row.labelCount, 1);
+      if (row.value === '__random__') {
+        assert.equal(row.shuffle, true, 'random selection uses its Shuffle control icon'); assert(row.shapes.length > 0);
+      } else {
+        assert(glyphShapes[row.value]?.length, `${row.value}: original source has actual drawing commands`);
+        assert.deepEqual(row.shapes, glyphShapes[row.value], `${context}/${row.value}: drawn paths must match the original player`);
+      }
+      assert.equal(row.wrapperHidden, 'true'); assert.equal(row.hidden, 'true');
+      assert.equal(row.focusable, row.value === '__random__' ? null : 'false'); assert.equal(row.focusTargets, 0);
       assert.equal(row.viewBox, '0 0 24 24'); assert.equal(row.fill, 'none'); assert.equal(row.stroke, 'currentColor');
       if (row.selected) assert(row.selectedIndicatorColor, `${context}/${row.value}: selected option retains its original indicator`);
       assert.equal(row.renderedStroke, row.selected ? row.selectedIndicatorColor : row.color,
@@ -177,7 +184,7 @@ export async function verifyStyleMenu(page, song, output) {
     checks.push('no redundant style text; Sparkles, current name, chevron and outer padding open one semantic capsule with its accessible label and title intact');
 
     await open(); await icons('1280x800-original-icons'); await close();
-    checks.push('all thirteen decorative 16px schematics match the original player SVG paths, preserve selected accent and ordinary glass text colors and share aligned icon and label columns');
+    checks.push('all fourteen decorative 16px schematics match the original player SVG paths; the random Shuffle control shares their selected colors and aligned icon and label columns');
     for (const [value, name] of [['sonnet', '商籁'], ['lumiere', '绘光'], ['diorama', '镜台']]) {
       await open(); const option = menu(page).getByRole('option', { name, exact: true });
       assert.equal(await option.getAttribute('data-value'), value);
@@ -211,7 +218,7 @@ export async function verifyStyleMenu(page, song, output) {
     assert.equal((await counts()).volume, beforeWheel.volume, 'selector wheel scroll must not adjust system volume');
     await last.click(); await menu(page).waitFor({ state: 'detached' }); assert.equal(await trigger(page).getAttribute('data-value'), lastValue);
     await selectDesktopOption(page, menuName, { value: 'classic' }); await trigger(page).focus(); await page.keyboard.press('End'); await settle(page);
-    await page.waitForFunction(() => document.activeElement?.getAttribute('data-option-index') === '13');
+    await page.waitForFunction(value => document.activeElement?.getAttribute('data-value') === value, lastValue);
     await page.keyboard.press('Enter'); await menu(page).waitFor({ state: 'detached' }); assert.equal(await trigger(page).getAttribute('data-value'), lastValue);
     await selectDesktopOption(page, menuName, { value: 'classic' }); await open(); await bounds('450x300-after-selection');
     await page.screenshot({ path: `${output}/style-menu-narrow.png` }); await close();
