@@ -163,4 +163,15 @@
 /* The upstream settings kit names switches by role; retain their track and thumb geometry inside desktop button styling. */
 .desktop-lyrics .desktop-visual-settings .desktop-visual-original-panel button[role=switch]{width:40px;height:24px;min-width:40px;min-height:24px;padding:0;border:0!important;border-radius:99px;flex:none}
 .desktop-lyrics .desktop-visual-settings .desktop-visual-original-panel button[role=switch]>span{width:18px;height:18px;left:3px;top:3px;border-radius:50%}
+/* Preserve system-colour borders and a visible thumb after the upstream switch geometry overrides. */
+.desktop-lyrics.high-contrast .desktop-visual-settings .desktop-visual-original-panel button[role=switch]{border:1px solid ButtonText!important}
+.desktop-lyrics.high-contrast .desktop-visual-settings .desktop-visual-original-panel button[role=switch][aria-checked=true]{border:3px double Highlight!important}
+.desktop-lyrics.high-contrast .desktop-visual-settings .desktop-visual-original-panel button[role=switch]>span{background:ButtonText!important;box-shadow:none!important;left:2px;top:2px}
+.desktop-lyrics.high-contrast .desktop-visual-settings .desktop-visual-original-panel button[role=switch][aria-checked=true]>span{width:14px;height:14px}
+@media(forced-colors:active){
+  .desktop-lyrics .desktop-visual-settings .desktop-visual-original-panel button[role=switch]{border:1px solid ButtonText!important}
+  .desktop-lyrics .desktop-visual-settings .desktop-visual-original-panel button[role=switch][aria-checked=true]{border:3px double Highlight!important}
+  .desktop-lyrics .desktop-visual-settings .desktop-visual-original-panel button[role=switch]>span{background:ButtonText!important;box-shadow:none!important;left:2px;top:2px}
+  .desktop-lyrics .desktop-visual-settings .desktop-visual-original-panel button[role=switch][aria-checked=true]>span{width:14px;height:14px}
+}
 .desktop-lyrics .desktop-visual-settings .desktop-visual-original-panel .st-card{background:transparent;box-shadow:none;border-radius:0}

@@ -29,6 +29,9 @@ export async function verifyLyricsChromeLayout(page, song, output) {
   };
   // Wait for the original MotionValue spring and CSS transitions to settle, rather than reading an intermediate frame.
   const settle = async () => {
+    // A style handover retains outgoing subtitles until the original renderer transition finishes.
+    await page.waitForFunction(() => document.querySelectorAll('[data-font-debug-target="visualizer-translation"]').length === 1,
+      null, { timeout: 60000 });
     await subtitle.waitFor({ timeout: 60000 });
     await page.evaluate(() => { delete window.__foliaChromeLayoutStability; });
     await page.waitForFunction(() => {

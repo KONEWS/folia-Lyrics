@@ -70,6 +70,50 @@ export async function verifySelectedControls(page, song, output) {
     const otherHover = await skin(controls, `${context}-other-hover`); assert.equal(otherHover.background, idle.background);
     await selected.hover(); await controls.screenshot({ path: `${output}/selected-controls-${context}.png` });
   };
+  // The upstream keyword controls are switches: verify their checked state and moving thumb instead of a removed pair of presets.
+  const switchSkin = async (control, context, systemContrast = false) => {
+    const sample = await control.evaluate(element => {
+      const style = getComputedStyle(element), bounds = element.getBoundingClientRect(), thumb = element.firstElementChild.getBoundingClientRect();
+      return { checked: element.getAttribute('aria-checked'), background: `${style.backgroundImage}|${style.backgroundColor}`,
+        trackColor: style.backgroundColor, thumbColor: getComputedStyle(element.firstElementChild).backgroundColor,
+        border: style.borderTopColor, borderWidth: parseFloat(style.borderTopWidth), borderStyle: style.borderTopStyle,
+        thumbOffset: thumb.x - bounds.x, thumbWidth: thumb.width, bounds: bounds.toJSON(),
+        checks: element.querySelectorAll('.lucide-check,.lucide-check-check').length };
+    });
+    assert(['true', 'false'].includes(sample.checked), `${context}: the switch exposes its checked state`);
+    assert.equal(sample.checks, 0, `${context}: the switch does not add a checkmark`);
+    assert(sample.thumbWidth > 0 && sample.thumbOffset >= 0 && sample.thumbOffset + sample.thumbWidth <= sample.bounds.width,
+      `${context}: the visible thumb stays inside the switch`);
+    if (systemContrast) {
+      assert.notEqual(sample.thumbColor, sample.trackColor, `${context}: the thumb remains visible in system colours`);
+      if (sample.checked === 'true') {
+        assert.equal(sample.borderStyle, 'double'); assert(sample.borderWidth >= 3);
+      } else {
+        assert.equal(sample.borderStyle, 'solid'); assert.equal(sample.borderWidth, 1);
+      }
+    }
+    samples.push({ context, switch: sample }); return sample;
+  };
+  const hoverSwitch = async (control, context, systemContrast = false) => {
+    await control.scrollIntoViewIfNeeded(); await page.mouse.move(40, 120); await settleSkin(control);
+    const idle = await switchSkin(control, `${context}-idle`, systemContrast);
+    await control.hover(); await settleSkin(control); const hovered = await switchSkin(control, `${context}-hover`, systemContrast);
+    assert.equal(hovered.checked, idle.checked); assert.equal(hovered.thumbOffset, idle.thumbOffset);
+    if (idle.checked === 'true') {
+      assert.equal(hovered.background, idle.background, `${context}: the checked switch keeps its selected fill on hover`);
+      assert.equal(hovered.border, idle.border);
+    }
+    await control.screenshot({ path: `${output}/selected-controls-${context}.png` }); return idle;
+  };
+  const setKeyword = async (control, value, mode, field) => {
+    if ((await control.getAttribute('aria-checked')) === String(value)) {
+      await control.click(); await waitVisual(page, { [`visualizerTunings.${mode}.${field}`]: !value });
+    }
+    await control.click();
+    await waitVisual(page, { [`visualizerTunings.${mode}.${field}`]: value });
+    assert.equal(await control.getAttribute('aria-checked'), String(value));
+    assert.equal(await storageValue(`${mode}_tuning`, field), value);
+  };
   let stage = 'fixture';
   try {
     await page.evaluate(() => {
@@ -81,27 +125,31 @@ export async function verifySelectedControls(page, song, output) {
     await page.setViewportSize({ width: 1280, height: 800 });
     await setDesktopCoverTheme(page);
     stage = 'lumiere-keyword-and-quality';
-    let card = await setMode('lumiere'), keyword = group(card, '关键字着色');
-    for (const [label, value] of [['关闭', false], ['开启', true]]) {
-      await keyword.getByRole('button', { name: label, exact: true }).click(); await waitVisual(page, { 'visualizerTunings.lumiere.keywordColors': value });
-      assert.equal(await keyword.getByRole('button', { name: label, exact: true }).getAttribute('aria-pressed'), 'true');
-      assert.equal(await storageValue('lumiere_tuning', 'keywordColors'), value); await hoverSkin(keyword, `lumiere-keyword-${value}`);
+    let card = await setMode('lumiere'), keyword = card.getByRole('switch', { name: '关键字着色', exact: true });
+    const lumiereSwitch = [];
+    for (const value of [false, true]) {
+      await setKeyword(keyword, value, 'lumiere', 'keywordColors');
+      lumiereSwitch.push(await hoverSwitch(keyword, `lumiere-keyword-${value}`));
     }
+    assert.notEqual(lumiereSwitch[0].background, lumiereSwitch[1].background);
+    assert(lumiereSwitch[1].thumbOffset > lumiereSwitch[0].thumbOffset, 'Lumiere checked thumb moves to the on side');
     const quality = group(card, '画质');
     for (const [label, value] of [['省电', 'low'], ['全分辨率', 'full'], ['均衡', 'balanced']]) {
       await quality.getByRole('button', { name: label, exact: true }).click(); await waitVisual(page, { 'visualizerTunings.lumiere.renderQuality': value });
       assert.equal(await quality.getByRole('button', { name: label, exact: true }).getAttribute('aria-pressed'), 'true');
       assert.equal(await storageValue('lumiere_tuning', 'renderQuality'), value); await skin(quality, `lumiere-quality-${value}`);
     }
-    checks.push('the original Lumiere keyword-colour and quality presets expose exactly one pressed option, match genuine renderer props/storage and retain distinct flat fill, border and weight while hovering without reflections or checkmarks');
+    checks.push('the original Lumiere keyword switch exposes its checked value and distinct fill/thumb position; quality presets expose exactly one pressed option, matching genuine renderer props/storage without added checkmarks');
 
-    stage = 'monet-keyword'; card = await setMode('monet'); keyword = group(card, '关键字着色');
-    for (const [label, value] of [['启用', true], ['关闭', false]]) {
-      await keyword.getByRole('button', { name: label, exact: true }).click(); await waitVisual(page, { 'visualizerTunings.monet.keywordColoringEnabled': value });
-      assert.equal(await keyword.getByRole('button', { name: label, exact: true }).getAttribute('aria-pressed'), 'true');
-      assert.equal(await storageValue('monet_tuning', 'keywordColoringEnabled'), value); await hoverSkin(keyword, `monet-keyword-${value}`);
+    stage = 'monet-keyword'; card = await setMode('monet'); keyword = card.getByRole('switch', { name: '关键字着色', exact: true });
+    const monetSwitch = [];
+    for (const value of [true, false]) {
+      await setKeyword(keyword, value, 'monet', 'keywordColoringEnabled');
+      monetSwitch.push(await hoverSwitch(keyword, `monet-keyword-${value}`));
     }
-    checks.push('the genuine Monet Enable/Disable keyword-colouring group displays the persisted renderer setting and keeps its selected appearance distinct when either option is hovered');
+    assert.notEqual(monetSwitch[0].background, monetSwitch[1].background);
+    assert(monetSwitch[0].thumbOffset > monetSwitch[1].thumbOffset, 'Monet checked thumb moves to the on side');
+    checks.push('the genuine Monet keyword-colouring switch displays the persisted renderer setting with distinct checked/unchecked fill and thumb positions, including hover');
 
     stage = 'background-preset';
     const background = await openBackgroundSettings(page); assert.equal(await visualDialog(page).count(), 0);
@@ -115,7 +163,7 @@ export async function verifySelectedControls(page, song, output) {
     }
     checks.push('the permanent background entry retains its independent page and the original Monet theme/custom wash preset applies and clearly marks the same persisted background setting');
 
-    stage = 'cover-themes'; card = await setMode('lumiere'); keyword = group(card, '关键字着色');
+    stage = 'cover-themes'; card = await setMode('lumiere'); keyword = card.getByRole('switch', { name: '关键字着色', exact: true });
     const cover = fill => `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" fill="${fill}"/></svg>`)}`;
     for (const [context, image] of [['monochrome', cover('#888888')], ['green-cover', cover('#23c766')]]) {
       await emitVisual(page, 'session', { ...song, cover: image, playing: false, position: 36 });
@@ -125,46 +173,53 @@ export async function verifySelectedControls(page, song, output) {
           ? root.classList.contains('cover-theme') && root.style.getPropertyValue('--cover-background') !== '#121212'
           : root.style.getPropertyValue('--cover-background') === '#121212');
       }, { image, green: context === 'green-cover' });
-      await visualFrame(page); await hoverSkin(keyword, context);
+      await visualFrame(page); await hoverSwitch(keyword, context);
       samples.push({ context: `${context}-renderer-theme`, ...await readVisual(page) });
       assert.equal((await readVisual(page)).visualizerTunings.lumiere.keywordColors, true);
     }
-    checks.push('actual monochrome and green cover extraction changes the theme while the original selected keyword option keeps clearly different fill, border and weight without changing its value');
+    checks.push('actual monochrome and green cover extraction changes the theme while the original checked keyword switch retains its selected fill and thumb position without changing its value');
 
-    stage = 'small-window-keyboard'; card = await setMode('monet'); keyword = group(card, '关键字着色');
+    stage = 'small-window-keyboard'; card = await setMode('monet'); keyword = card.getByRole('switch', { name: '关键字着色', exact: true });
     const mediaBefore = await page.evaluate(() => window.__foliaCommands.filter(command => command.type === 'mediaControl').length);
     await page.setViewportSize({ width: 450, height: 300 });
     for (const fullscreen of [false, true]) {
-      await windowState(fullscreen); await keyword.getByRole('button', { name: '启用', exact: true }).focus(); await page.keyboard.press('Space');
+      await windowState(fullscreen); await keyword.focus(); await page.keyboard.press('Space');
       await waitVisual(page, { 'visualizerTunings.monet.keywordColoringEnabled': true });
-      await page.keyboard.press('Tab'); assert(await keyword.getByRole('button', { name: '关闭', exact: true }).evaluate(element => element === document.activeElement));
+      assert.equal(await keyword.getAttribute('aria-checked'), 'true');
+      await page.keyboard.press('Tab'); assert(!(await keyword.evaluate(element => element === document.activeElement)));
+      await page.keyboard.press('Shift+Tab'); assert(await keyword.evaluate(element => element === document.activeElement));
       await page.keyboard.press('Enter'); await waitVisual(page, { 'visualizerTunings.monet.keywordColoringEnabled': false });
+      assert.equal(await keyword.getAttribute('aria-checked'), 'false');
       assert.equal(await storageValue('monet_tuning', 'keywordColoringEnabled'), false);
-      await hoverSkin(keyword, fullscreen ? '450x300-fullscreen' : '450x300-window');
+      await hoverSwitch(keyword, fullscreen ? '450x300-fullscreen' : '450x300-window');
       const bounds = await visualDialog(page).boundingBox(); assert(bounds && bounds.x >= 0 && bounds.y >= 0 && bounds.x + bounds.width <= 450 && bounds.y + bounds.height <= 300);
     }
     assert.equal(await page.evaluate(() => window.__foliaCommands.filter(command => command.type === 'mediaControl').length), mediaBefore);
-    checks.push('450x300 window/fullscreen keeps both original preset options usable; Space, Tab and Enter update the pressed/persisted value without triggering external-player transport');
+    checks.push('450x300 window/fullscreen keeps the original switch usable; Space and Enter toggle its checked/persisted value, Tab returns focus correctly, and no key triggers external-player transport');
 
     stage = 'solid-and-system-contrast'; await page.setViewportSize({ width: 1280, height: 800 }); await windowState();
     await emitVisual(page, 'appearance', { acrylic: false, transparent: false, solid: true, highContrast: false }); await page.locator('.solid-surfaces').waitFor();
-    await hoverSkin(keyword, 'solid-surface');
+    await setKeyword(keyword, true, 'monet', 'keywordColoringEnabled'); await hoverSwitch(keyword, 'solid-surface');
     await emitVisual(page, 'appearance', { acrylic: false, transparent: false, solid: true, highContrast: true }); await page.locator('.high-contrast').waitFor();
-    await skin(keyword, 'high-contrast', true); await keyword.screenshot({ path: `${output}/selected-controls-high-contrast.png` });
+    await hoverSwitch(keyword, 'high-contrast', true);
+    await setKeyword(keyword, false, 'monet', 'keywordColoringEnabled'); await hoverSwitch(keyword, 'high-contrast-off', true);
+    await setKeyword(keyword, true, 'monet', 'keywordColoringEnabled');
     await emitVisual(page, 'appearance', { acrylic: false, transparent: false, solid: false, highContrast: false });
     await page.locator('.high-contrast').waitFor({ state: 'detached' }); await page.emulateMedia({ forcedColors: 'active' });
-    await skin(keyword, 'forced-colors', true); await keyword.screenshot({ path: `${output}/selected-controls-forced-colors.png` }); await page.emulateMedia({ forcedColors: 'none' });
+    await hoverSwitch(keyword, 'forced-colors', true);
+    await setKeyword(keyword, false, 'monet', 'keywordColoringEnabled'); await hoverSwitch(keyword, 'forced-colors-off', true);
+    await page.emulateMedia({ forcedColors: 'none' });
     checks.push('solid fallback keeps the flat selected treatment without reflection; high contrast and forced colours preserve a distinct double selected border without relying on translucent fills or checkmarks');
 
     stage = 'reload'; await closeVisualSettings(page); await reloadVisualSong(page, { ...song, playing: false, position: 36 }, packet);
     await waitVisual(page, { mode: 'monet', 'visualizerTunings.monet.keywordColoringEnabled': false, 'visualizerTunings.lumiere.keywordColors': true,
       'visualizerTunings.lumiere.renderQuality': 'balanced', 'background.monet.tuning.backgroundWashColorMode': 'theme' });
-    card = await setMode('monet'); keyword = group(card, '关键字着色'); assert.equal(await keyword.getByRole('button', { name: '关闭', exact: true }).getAttribute('aria-pressed'), 'true');
-    await hoverSkin(keyword, 'reload-monet');
+    card = await setMode('monet'); keyword = card.getByRole('switch', { name: '关键字着色', exact: true }); assert.equal(await keyword.getAttribute('aria-checked'), 'false');
+    await hoverSwitch(keyword, 'reload-monet');
     assert.deepEqual(await visualDialog(page).getByRole('tab').allTextContents(), ['通用', '歌词动画', '字幕']);
     await setMode('lumiere'); await waitVisual(page, { 'visualizerTunings.lumiere.keywordColors': true });
     await openBackgroundSettings(page); assert.equal(await backgroundDialog(page).getByRole('tablist').count(), 0);
-    checks.push('a real browser reload restores original keyword, quality and background values and their pressed appearance, retaining three visual tabs and the separate background entry');
+    checks.push('a real browser reload restores original keyword, quality and background values and their checked/pressed appearance, retaining three visual tabs and the separate background entry');
     await writeFile(`${output}/selected-controls-results.json`, JSON.stringify({ checks, samples }, null, 2));
     console.log(`PASS selected original controls: ${checks.length} checks`); return checks;
   } catch (error) {

@@ -163,7 +163,11 @@ export async function verifyBackgroundTopbar(page, song, output) {
 
     stage = 'draft-and-transparency';
     await selectDesktopOption(page, '背景类型', { value: 'common' }); await waitVisual(page, { 'background.mode': 'common' });
-    const range = section.locator('[data-background-settings="common"] input[type=range]').first(), previous = await readVisual(page);
+    const common = section.locator('[data-background-settings="common"]');
+    const coverColor = common.getByRole('switch', { name: '添加封面色彩', exact: true });
+    if (await coverColor.getAttribute('aria-checked') !== 'true') await coverColor.click();
+    await waitVisual(page, { 'background.common.useCoverColorBg': true });
+    const range = common.getByRole('slider', { name: '叠层透明度', exact: true }), previous = await readVisual(page);
     const opacity = await dragVisualRange(page, range, previous.background.common.opacity > 0.5 ? 0.25 : 0.8, async draft => {
       assert.notEqual(draft, previous.background.common.opacity); assert.equal((await readVisual(page)).background.common.opacity, previous.background.common.opacity);
     });

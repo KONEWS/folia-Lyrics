@@ -81,6 +81,8 @@ try {
     args: ['--no-proxy-server', '--enable-unsafe-swiftshader', '--use-angle=swiftshader', '--disable-gpu-sandbox'] });
   for (const mode of ['classic', 'lumiere']) {
     const page = await browser.newPage({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1, reducedMotion: 'reduce' });
+    // Install before React/Motion/Pixi capture timers; only the final font handover pauses this clock.
+    await page.clock.install();
     page.on('pageerror', error => errors.push(`${mode}: ${error}`));
     page.on('console', message => {
       if (message.type() === 'error') errors.push(`${mode}: ${message.text()}`);
@@ -202,10 +204,14 @@ try {
 
     await emit('clock', { ...slow, playing: false, sequence: ++sequence });
     const frozenFontTime = await page.evaluate(() => window.__foliaReadSwitchScene().currentTime.get());
+    await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
+    const handoverMs = await page.evaluate(async () => (await import('/src/desktopLyrics/DesktopStage.tsx')).DESKTOP_HANDOVER_MS);
+    await begin('delayed-font handover');
     let releaseFont;
     const delayedFont = new Promise(done => { releaseFont = done; });
     await page.route('**/fonts/noto-serif-sc-400.woff2?switch-held-font', async route => { await delayedFont; await route.continue(); });
     try {
+      const fontRequest = page.waitForRequest(request => request.url().endsWith('/fonts/noto-serif-sc-400.woff2?switch-held-font'));
       await page.evaluate(async () => {
         const { useTypographySettingsStore } = await import('/src/stores/useTypographySettingsStore.ts');
         document.fonts.add(new FontFace('SwitchHeldFont', 'url("/fonts/noto-serif-sc-400.woff2?switch-held-font")'));
@@ -215,15 +221,37 @@ try {
       await emit('session', { ...fontSong, sequence: ++sequence });
       await emit('lyrics', packet('FONT', { key: fontSong.key, title: fontSong.title, format: 'lrc',
         content: '[00:01.000]FONT CURRENT\n[00:10.000]NEXT LINE' }));
-      await page.waitForFunction(() => document.fonts.status === 'loading');
-      const scene = await page.evaluate(() => { const props = window.__foliaReadSwitchScene();
-        return props ? { time: props.currentTime.get(), paused: props.paused, text: props.lines[0]?.fullText } : null; });
-      if (scene) { assert.equal(scene.time, frozenFontTime); assert.equal(scene.paused, true); assert.equal(scene.text, 'SLOW CURRENT'); }
-      await page.waitForFunction(() => !document.querySelector('.desktop-stage')?.firstElementChild, null, { timeout: 3000 });
-      releaseFont(); await waitText('FONT CURRENT');
+      await fontRequest;
+      assert.equal(await page.evaluate(() => document.fonts.status), 'loading');
+      // GPU work and automation round trips cannot consume the grace period. The real host timer
+      // must retain its frozen scene right up to the deadline, then release its renderer once.
+      await page.clock.runFor(handoverMs - 1);
+      const scene = await page.evaluate(() => { const props = window.__foliaReadSwitchScene(), trace = window.__foliaSwitchTrace;
+        return props ? { time: props.currentTime.get(), paused: props.paused, text: props.lines[0]?.fullText,
+          sameLines: props.lines === trace.lines, sameShell: trace.stage.firstElementChild === trace.shell } : null; });
+      assert(scene, `${mode}: the outgoing scene stays mounted throughout the handover grace period`);
+      assert.equal(scene.time, frozenFontTime); assert.equal(scene.paused, true); assert.equal(scene.text, 'SLOW CURRENT');
+      assert.equal(scene.sameLines, true); assert.equal(scene.sameShell, true);
+      try {
+        await page.clock.runFor(1);
+        await page.locator('.desktop-stage > *').waitFor({ state: 'detached', timeout: 3000 });
+      } catch (error) {
+        const diagnostic = await page.evaluate(() => {
+          const props = window.__foliaReadSwitchScene();
+          return { stage: document.querySelector('.desktop-stage')?.innerHTML, fonts: [...document.fonts].map(font => ({ family: font.family, status: font.status })),
+            scene: props && { time: props.currentTime.get(), paused: props.paused, text: props.lines[0]?.fullText, theme: props.theme },
+            status: document.fonts.status, caption: document.querySelector('.track-caption')?.textContent };
+        });
+        await writeFile(`${output}/${mode}-font-handover-failure.json`, JSON.stringify(diagnostic, null, 2));
+        throw error;
+      }
+      const fontSample = await finish(false);
+      assert.equal(fontSample.shellDetachments, 1, `${mode}: font handover releases the outgoing renderer once at the deadline`);
+      assert.equal(fontSample.retainedCanvases, 0);
+      releaseFont(); await page.clock.resume(); await waitText('FONT CURRENT');
       await page.waitForFunction(() => window.__foliaReadSwitchScene()?.currentTime.get() === 7);
       checks.push(`${mode}: delayed fonts never expose the incoming clock to the outgoing scene, and the new paused scene commits at its real time`);
-    } finally { releaseFont(); }
+    } finally { releaseFont(); await page.clock.resume(); }
     await page.screenshot({ path: `${output}/${mode}-after-switching.png` });
     await page.close();
   }
