@@ -1,9 +1,8 @@
 import { useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { useMotionValue } from 'framer-motion';
-import { findLatestActiveLineIndex } from '../utils/appPlaybackHelpers';
 import type { Line } from '../types';
 import type { Clock } from './bridge';
-import { clockPosition, type ManualClock } from './clock';
+import { clockPosition, createDesktopLineResolver, type ManualClock } from './clock';
 import { DesktopClockValue } from './DesktopClockValue';
 import type { FrameDemand, FrameDemandReason } from './frameDemand';
 
@@ -23,6 +22,7 @@ export function useVisualizerClock(lines: Line[], clock: RefObject<Clock>, input
   const spectrum = useMotionValue(new Uint8Array(1024));
   const audioBands = useMemo(() => ({ bass, lowMid, mid, vocal, treble, spectrum }), [bass, lowMid, mid, vocal, treble, spectrum]);
   const [lineIndex, setLineIndex] = useState(-1); const lastLine = useRef(-1);
+  const resolveLineIndex = useMemo(() => createDesktopLineResolver(lines), [lines]);
   const presentedKey = useRef(lyricKey); presentedKey.current = lyricKey;
   const ready = useRef(presentationReady); ready.current = presentationReady;
   useLayoutEffect(() => {
@@ -41,7 +41,7 @@ export function useVisualizerClock(lines: Line[], clock: RefObject<Clock>, input
       const timeChanged = lastTime !== time;
       if (timeChanged) {
         lastTime = time;
-        const index = findLatestActiveLineIndex(lines, time); if (lastLine.current !== index) { lastLine.current = index; setLineIndex(index); }
+        const index = resolveLineIndex(time); if (lastLine.current !== index) { lastLine.current = index; setLineIndex(index); }
       }
       return timeChanged;
     };
@@ -87,6 +87,6 @@ export function useVisualizerClock(lines: Line[], clock: RefObject<Clock>, input
     publishClock(performance.now());
     frame = requestAnimationFrame(tick);
     return () => { unsubscribe?.(); cancelAnimationFrame(frame); };
-  }, [lines, clock, input, manual, offset, reactive, demand, currentTime, playbackTime, audioPower, bass, lowMid, mid, vocal, treble, spectrum, lyricKey, presentationReady]);
+  }, [resolveLineIndex, clock, input, manual, offset, reactive, demand, currentTime, playbackTime, audioPower, bass, lowMid, mid, vocal, treble, spectrum, lyricKey, presentationReady]);
   return { currentTime, playbackTime, audioPower, audioBands, lineIndex };
 }

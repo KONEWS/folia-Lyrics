@@ -1,21 +1,12 @@
-import type { Line, LyricBackgroundVocal, SubtitleContentMode, Word } from '../../types';
+import type { Line, LyricBackgroundVocal, SubtitleContentMode } from '../../types';
 import { resolveLyricAlternateText, resolveSubtitleContentMode } from '../../utils/lyrics/alternateText';
 
 // src/components/visualizer/harmonyRuntime.ts
 // Builds the small discrete state used by the shared top harmony overlay.
 
-export type HarmonyTokenStatus = 'waiting' | 'active' | 'passed' | 'static';
-
-export interface HarmonyDisplayToken {
-    key: string;
-    text: string;
-    status: HarmonyTokenStatus;
-}
-
 export interface ActiveHarmonyLine {
     key: string;
     vocal: LyricBackgroundVocal;
-    tokens: HarmonyDisplayToken[];
 }
 
 export interface HarmonySnapshot {
@@ -49,51 +40,6 @@ export const resolveHarmonyAlternateText = (
     resolveSubtitleContentMode(subtitleContentMode, legacyShowTranslation),
 );
 
-const resolveWordStatus = (word: Word, currentTime: number): HarmonyTokenStatus => {
-    if (currentTime < word.startTime) return 'waiting';
-    if (currentTime <= word.endTime) return 'active';
-    return 'passed';
-};
-
-// Keeps untimed punctuation and whitespace from the original display text while mapping timed words by offset.
-const buildHarmonyTokens = (vocal: LyricBackgroundVocal, currentTime: number): HarmonyDisplayToken[] => {
-    if (vocal.words.length === 0) {
-        return [{ key: 'full', text: vocal.text, status: 'active' }];
-    }
-
-    const tokens: HarmonyDisplayToken[] = [];
-    let cursor = 0;
-    vocal.words.forEach((word, index) => {
-        const matchIndex = vocal.text.indexOf(word.text, cursor);
-        if (matchIndex < 0) {
-            return;
-        }
-        if (matchIndex > cursor) {
-            tokens.push({
-                key: `static-${cursor}`,
-                text: vocal.text.slice(cursor, matchIndex),
-                status: 'static',
-            });
-        }
-        tokens.push({
-            key: `word-${index}-${word.startTime}`,
-            text: word.text,
-            status: resolveWordStatus(word, currentTime),
-        });
-        cursor = matchIndex + word.text.length;
-    });
-
-    if (cursor < vocal.text.length) {
-        tokens.push({
-            key: `static-${cursor}`,
-            text: vocal.text.slice(cursor),
-            status: 'static',
-        });
-    }
-
-    return tokens.length > 0 ? tokens : [{ key: 'full', text: vocal.text, status: 'active' }];
-};
-
 export const resolveHarmonySnapshotFromVocals = (
     vocals: LyricBackgroundVocal[],
     currentTime: number,
@@ -104,10 +50,9 @@ export const resolveHarmonySnapshotFromVocals = (
         .map((vocal, index) => ({
             key: `${vocal.startTime}-${vocal.endTime}-${vocal.text}-${index}`,
             vocal,
-            tokens: buildHarmonyTokens(vocal, currentTime),
         }));
     const signature = lines
-        .map(entry => `${entry.key}:${entry.tokens.map(token => token.status).join(',')}`)
+        .map(entry => entry.key)
         .join('|');
 
     return { signature, lines };

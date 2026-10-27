@@ -43,17 +43,15 @@ describe('harmony runtime', () => {
         expect(resolveHarmonySnapshot(line, 4.01).lines).toEqual([]);
     });
 
-    it('preserves whitespace and changes only at word boundaries', () => {
+    it('keeps the same visible line state across word boundaries', () => {
         const firstWord = resolveHarmonySnapshot(line, 2.4);
         const gap = resolveHarmonySnapshot(line, 2.9);
         const secondWord = resolveHarmonySnapshot(line, 3.2);
 
-        expect(firstWord.lines[0].tokens.map(token => token.text).join('')).toBe(vocal.text);
-        expect(firstWord.lines[0].tokens.map(token => token.status)).toEqual(['active', 'static', 'waiting']);
-        expect(gap.lines[0].tokens.map(token => token.status)).toEqual(['passed', 'static', 'waiting']);
-        expect(secondWord.lines[0].tokens.map(token => token.status)).toEqual(['passed', 'static', 'active']);
-        expect(firstWord.signature).not.toBe(gap.signature);
-        expect(gap.signature).not.toBe(secondWord.signature);
+        expect(firstWord.lines[0].vocal).toBe(vocal);
+        expect(firstWord.signature).toBe(gap.signature);
+        expect(gap.signature).toBe(secondWord.signature);
+        expect(secondWord.signature).not.toBe(resolveHarmonySnapshot(line, 4.01).signature);
     });
 
     it('supports multiple concurrent vocals in stable start-time order', () => {

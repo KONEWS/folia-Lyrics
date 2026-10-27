@@ -2,8 +2,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MotionValue } from 'framer-motion';
 import { useVisualizerClock } from '../../../src/desktopLyrics/useVisualizerClock';
 import { EMPTY, type Clock } from '../../../src/desktopLyrics/bridge';
-import type { ManualClock } from '../../../src/desktopLyrics/clock';
+import { createDesktopLineResolver, type ManualClock } from '../../../src/desktopLyrics/clock';
 import { createFrameDemand, type FrameDemand } from '../../../src/desktopLyrics/frameDemand';
+import type { Line } from '../../../src/types';
+import { findLatestActiveLineIndex } from '../../../src/utils/appPlaybackHelpers';
 
 // test/unit/desktop/desktopVisualizerClock.test.ts — drive the real desktop clock without reducing its frame cadence.
 const hooks = vi.hoisted(() => ({ effects: [] as (() => (() => void) | void)[], states: [] as unknown[] }));
@@ -40,6 +42,21 @@ function mount(reactive: boolean, demand?: FrameDemand, lyricKey?: string, prese
   return { clock, input, runtime, tick, cleanup, scheduled };
 }
 describe('desktop clock audio work', () => {
+  it('reuses lyric intervals while preserving overlaps, inclusive ends, gaps and backward seeks', () => {
+    const lines = [
+      { get startTime() { return 1; }, endTime: 3, renderHints: { renderEndTime: 6 } },
+      { startTime: 2, endTime: 4 },
+      { startTime: 8, endTime: 8 },
+      { startTime: 10, endTime: 12 },
+    ] as Line[];
+    const resolve = createDesktopLineResolver(lines);
+    const times = [0, 1, 1.1, 1.9, 2, 2.1, 3, 4, 4.001, 5, 6, 6.001, 7, 8, 8.001, 10, 11, 12, 12.001];
+    for (const time of [...times, ...times.toReversed()]) expect(resolve(time)).toBe(findLatestActiveLineIndex(lines, time));
+    const readStart = vi.spyOn(lines[0], 'startTime', 'get');
+    resolve(1.1); readStart.mockClear();
+    for (let frame = 1; frame < 60; frame++) resolve(1.1 + frame / 100);
+    expect(readStart).not.toHaveBeenCalled();
+  });
   it('publishes an already ready paused scene before its first animation frame', () => {
     const mounted = mount(false);
     expect(mounted.runtime.currentTime.get()).toBe(2); expect(mounted.runtime.playbackTime.get()).toBe(2);

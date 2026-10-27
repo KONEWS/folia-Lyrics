@@ -76,27 +76,30 @@ internal sealed class AudioSpectrum : IDisposable
     public byte[] Read()
     {
         var result = new byte[1024];
-        bool fresh;
+        var hasSignal = false;
         lock (gate)
         {
             // The capture worker owns device/ring reset; only this reader ever mutates FFT smoothing.
             if (readRevision != resetRevision) { Array.Clear(smooth); readRevision = resetRevision; }
-            fresh = capturing && Stopwatch.GetElapsedTime(lastSamples).TotalSeconds < .3;
+            var fresh = capturing && Stopwatch.GetElapsedTime(lastSamples).TotalSeconds < .3;
             if (fresh)
             {
                 var window = AudioSpectrumWindow.Coefficients;
                 for (var i = 0; i < 2048; i++)
                 {
                     fft[i].X = (float)(ring[(cursor + i) & 2047] * window[i]); fft[i].Y = 0;
+                    hasSignal |= fft[i].X != 0;
                 }
             }
         }
         // With no fresh samples the original FFT is all zeros; preserve the same decay without transforming silence.
-        if (fresh) FastFourierTransform.FFT(true, 11, fft);
+        // Fresh all-zero packets have the same result, including when a driver keeps sending packets during silence.
+        if (hasSignal) FastFourierTransform.FFT(true, 11, fft);
         for (var i = 0; i < 1024; i++)
         {
-            smooth[i] = (float)(smooth[i] * .6 + (fresh ? Math.Sqrt(fft[i].X * fft[i].X + fft[i].Y * fft[i].Y) : 0) * .4);
-            result[i] = (byte)Math.Clamp((20 * Math.Log10(Math.Max(1e-9, smooth[i])) + 100) / 70 * 255, 0, 255);
+            smooth[i] = (float)(smooth[i] * .6 + (hasSignal ? Math.Sqrt(fft[i].X * fft[i].X + fft[i].Y * fft[i].Y) : 0) * .4);
+            // At or below -100 dB the original clamp is zero; keep smoothing but skip its logarithm.
+            result[i] = smooth[i] <= 1e-5 ? (byte)0 : (byte)Math.Clamp((20 * Math.Log10(smooth[i]) + 100) / 70 * 255, 0, 255);
         }
         return result;
     }

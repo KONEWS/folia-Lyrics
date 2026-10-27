@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { AnimatePresence, motion, type MotionValue, useMotionValueEvent, useTransform } from 'framer-motion';
+import { AnimatePresence, motion, type MotionValue, useTransform } from 'framer-motion';
 import type { Line, LyricBackgroundVocal, SubtitleContentMode, Theme, Word } from '../../types';
 import { resolveThemeFontStack, resolveThemeFontWeight, resolveThemeTranslationFontStack } from '../../utils/fontStacks';
 import { buildLineGraphemeTimeline } from '../../utils/lyrics/graphemeTiming';
@@ -49,6 +49,7 @@ interface HarmonyTextPart {
 }
 
 // Preserves punctuation and whitespace while letting each timed word own its color and sweep.
+// Keeps untimed punctuation and whitespace from the original display text while mapping timed words by offset.
 const buildHarmonyTextParts = (vocal: LyricBackgroundVocal): HarmonyTextPart[] => {
     const parts: HarmonyTextPart[] = [];
     let cursor = 0;
@@ -187,14 +188,13 @@ const VisualizerHarmonyOverlay: React.FC<VisualizerHarmonyOverlayProps> = ({
 }) => {
     const backgroundVocals = useMemo(() => getLyricsBackgroundVocals(lines), [lines]);
     const buildSnapshot = useCallback(
-        (time: number) => showText && showHarmonySubtitle
+        (time: number) => showText && showHarmonySubtitle && backgroundVocals.length > 0
             ? resolveHarmonySnapshotFromVocals(backgroundVocals, time)
             : EMPTY_HARMONY_SNAPSHOT,
         [backgroundVocals, showHarmonySubtitle, showText],
     );
-    const initialSnapshot = buildSnapshot(currentTime.get());
-    const [snapshot, setSnapshot] = useState<HarmonySnapshot>(initialSnapshot);
-    const signatureRef = useRef(initialSnapshot.signature);
+    const [snapshot, setSnapshot] = useState<HarmonySnapshot>(() => buildSnapshot(currentTime.get()));
+    const signatureRef = useRef(snapshot.signature);
 
     const updateSnapshot = useCallback((time: number) => {
         const next = buildSnapshot(time);
@@ -206,10 +206,14 @@ const VisualizerHarmonyOverlay: React.FC<VisualizerHarmonyOverlayProps> = ({
     }, [buildSnapshot]);
 
     useEffect(() => {
-        updateSnapshot(currentTime.get());
-    }, [currentTime, updateSnapshot]);
+        // A replacement lyric can retain its text/times while changing word timing or translation.
+        const next = buildSnapshot(currentTime.get());
+        signatureRef.current = next.signature;
+        setSnapshot(next);
+        if (!showText || !showHarmonySubtitle || backgroundVocals.length === 0) return;
+        return currentTime.on('change', updateSnapshot);
+    }, [backgroundVocals, buildSnapshot, currentTime, showHarmonySubtitle, showText, updateSnapshot]);
 
-    useMotionValueEvent(currentTime, 'change', updateSnapshot);
     const harmonyTopPx = useContext(HarmonyTopContext);
 
     return (

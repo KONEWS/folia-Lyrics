@@ -130,6 +130,14 @@ void CheckSpectrum()
             throw new Exception($"Silence decay changed at {frame}");
     }
     Check(true, "24 no-signal packets: actual AudioSpectrum.Read byte/float equality");
+    typeof(AudioSpectrum).GetField("capturing", BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(audio, true);
+    for (var frame = 0; frame < 24; frame++)
+    {
+        typeof(AudioSpectrum).GetField("lastSamples", BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(audio, Stopwatch.GetTimestamp());
+        if (!SilentBaseline(oldSmooth, fft).SequenceEqual(audio.Read()) || !oldSmooth.SequenceEqual(smooth))
+            throw new Exception($"Fresh silence decay changed at {frame}");
+    }
+    Check(true, "24 fresh silent packets: actual AudioSpectrum.Read byte/float equality");
     var beforeReset = smooth.ToArray();
     typeof(AudioSpectrum).GetMethod("Stop", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(audio, null);
     Check(smooth.SequenceEqual(beforeReset), "device reset leaves reader-owned smoothing untouched");
