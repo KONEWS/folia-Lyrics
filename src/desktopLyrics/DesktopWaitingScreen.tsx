@@ -1,7 +1,6 @@
 import { AudioLines, FileUp, FolderPlus, LoaderCircle, RefreshCw, Settings2 } from 'lucide-react';
 import i18n from '../i18n/config';
 import { send, type OnlineState, type Preferences, type Session } from './bridge';
-import { MODES } from './desktopModes';
 import { waitingState } from './waitingState';
 import { DesktopMusicAppShortcuts } from './DesktopMusicApps';
 import './waiting-screen.css';
@@ -47,6 +46,5 @@ export default function DesktopWaitingScreen(p: Props) {
       <button disabled={p.scanning} onClick={() => send('addFolder')}><FolderPlus size={15}/>{text('chooseFolder')}</button>
       <button onClick={() => send('import')}><FileUp size={15}/>{text('importLyrics')}</button>
     </div></details></>}
-    <div className="waiting-notes"><span>{text('styles', { count: MODES.length })}</span><i/><span>{text('automatic')}</span><i/><span>{text('cache')}</span></div>
   </section>;
 }

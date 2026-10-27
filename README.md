@@ -27,9 +27,9 @@ folia-Lyrics 基于 [Folia](https://github.com/chthollyphile/folia-major) 的歌
 
 面向 Windows 11 x64。原生亚克力效果需要 Windows 11 22H2（22621）或更新版本，并开启系统透明效果；不满足条件时，界面会使用回退效果。
 
-当前版本是 [0.5.0](https://github.com/KONEWS/folia-Lyrics/releases/tag/desktop-v0.5.0)。从 Releases 下载 `FoliaLyrics-0.5.0-win-x64.zip`，解压后运行 `FoliaLyrics.exe`，再打开播放器播放一首歌。也可以先确认添加发现的音乐软件，再点击首页图标启动播放器。运行界面需要 Microsoft Edge WebView2 Runtime，发布包自带 .NET 运行时。
+当前版本是 [0.5.1](https://github.com/KONEWS/folia-Lyrics/releases/tag/desktop-v0.5.1)。从 Releases 下载 `FoliaLyrics-0.5.1-win-x64.exe` 直接运行，再打开播放器播放一首歌。也可以先确认添加发现的音乐软件，再点击首页图标启动播放器。运行界面需要 Microsoft Edge WebView2 Runtime，程序自带 .NET 运行时。
 
-最新功能可下载 [2026-10-25 预览版](https://github.com/KONEWS/folia-Lyrics/releases/tag/desktop-v0.5.0-preview.20261025)：包含上游 v0.7.22 的 14 种动态样式，以及随机样式、示例预览、本机字体、视频背景和本地音频智能动感。提供独立 EXE、完整便携 ZIP 和 SHA-256 校验文件；运行前请退出旧版。
+0.5.1 包含上游 v0.7.22 的 14 种动态样式，以及随机样式、示例预览、本机字体、视频背景和本地音频智能动感；移除等待页面底部说明标签，并减少重复计算。发布页提供独立 EXE 和 SHA-256 校验文件；运行前请退出旧版。
 
 窗口没显示歌词时，先确认选中了正在播放的播放器，再尝试重新匹配或加载本地歌词。某些播放器没有公开媒体会话，或没有提供完整进度，这种情况下自动同步会受到限制。
 
@@ -61,7 +61,7 @@ build-windows.cmd
 脚本会按锁文件安装依赖、检查桌面版本和 TypeScript、运行桌面单测、构建界面并发布 Windows 宿主。完成后，程序位于：
 
 ```text
-release/0.5.0/win-x64/FoliaLyrics.exe
+release/0.5.1/win-x64/FoliaLyrics.exe
 ```
 
 输出目录中的版本来自 `native/FoliaLyrics.csproj`，每个版本独立保存；发布目录包含使用说明、许可证和 `SHA256SUMS.txt`。
@@ -104,6 +104,6 @@ dotnet run --project test/transport-smoke/TransportSmoke.csproj
 
 这是从 [chthollyphile/folia-major](https://github.com/chthollyphile/folia-major) 派生的独立项目。感谢上游提供歌词渲染器和视觉效果；这个分支主要加入 Windows 桌面宿主、外部播放器连接、在线歌词匹配，以及围绕桌面使用的界面和操作。
 
-当前桌面宿主版本为 **0.5.0**，上游源码基线为 **v0.7.22**（`1f6d0f468f5bc81b23a8b40ad7ca96ccd4b1ecbe`）。两套版本号独立，本项目不是上游官方发行版。
+当前桌面宿主版本为 **0.5.1**，上游源码基线为 **v0.7.22**（`1f6d0f468f5bc81b23a8b40ad7ca96ccd4b1ecbe`）。两套版本号独立，本项目不是上游官方发行版。
 
 项目继续使用 [AGPL-3.0](LICENSE) 许可证。第三方许可证见 [licenses/](licenses/)，在线资源来源见 [ONLINE-SOURCES.md](ONLINE-SOURCES.md)。使用在线歌词、封面和音乐资源时，请遵守对应服务条款与版权要求。

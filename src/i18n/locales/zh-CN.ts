@@ -156,10 +156,7 @@ export default {
       "importLyrics": "导入本地歌词",
       "alternatives": "其他方式",
       "settings": "打开歌词设置",
-      "chooseFolder": "选择音乐目录",
-      "styles": "原版 {{count}} 种动效",
-      "automatic": "在线自动匹配",
-      "cache": "本地歌词缓存"
+      "chooseFolder": "选择音乐目录"
     },
     "appearanceImmersion": "主题与沉浸",
     "coverTheme": "主题跟随歌曲封面",

@@ -156,10 +156,7 @@ export default {
       "importLyrics": "Import local lyrics",
       "alternatives": "Other options",
       "settings": "Open lyric settings",
-      "chooseFolder": "Choose a music folder",
-      "styles": "{{count}} original effects",
-      "automatic": "Automatic online matching",
-      "cache": "Local lyric cache"
+      "chooseFolder": "Choose a music folder"
     },
     "appearanceImmersion": "Theme and immersion",
     "coverTheme": "Follow song cover colors",

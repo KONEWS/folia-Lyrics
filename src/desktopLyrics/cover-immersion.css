@@ -4,7 +4,7 @@
 .cover-theme.native-acrylic:not(.high-contrast):not(.solid-surfaces) .acrylic-backdrop{background:color-mix(in srgb,var(--cover-background) 18%,transparent)}
 .cover-theme:not(.high-contrast):not(.solid-surfaces) .acrylic-wash{background:linear-gradient(135deg,color-mix(in srgb,var(--cover-accent) 6%,transparent),color-mix(in srgb,var(--cover-background) 24%,transparent))}
 .cover-theme:not(.high-contrast) :is(.desktop-brand>span,.connection-pill,.clock-readout,.desktop-statusbar .transport-buttons button){color:var(--glass-text)}
-.cover-theme:not(.high-contrast) :is(.desktop-brand small,.eyebrow,.waiting-screen>p,.waiting-notes){color:var(--glass-muted)}
+.cover-theme:not(.high-contrast) :is(.desktop-brand small,.eyebrow,.waiting-screen>p){color:var(--glass-muted)}
 .cover-theme:not(.high-contrast) .effect-grid .effect.active{background:color-mix(in srgb,var(--cover-accent) 17%,transparent);border-color:color-mix(in srgb,var(--cover-accent) 48%,transparent)}
 .cover-theme:not(.high-contrast) .audio-progress{color:var(--cover-accent)}
 /* Raise immersive cover-theme progress opacity without dimming the brighter normal-mode progress bar. */

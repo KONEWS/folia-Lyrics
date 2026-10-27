@@ -52,12 +52,11 @@
 .desktop-lyrics:not(.high-contrast) .topbar-mode-picker:has(button[aria-expanded=true]){background:var(--desktop-glass-selected);border-color:transparent}
 .desktop-lyrics:not(.high-contrast) .topbar-mode-picker:has(button:focus-visible){outline:2px solid var(--desktop-glass-accent);outline-offset:3px}
 .desktop-lyrics :is(.window-drag,.window-drag svg,.section-label,.toggle,.result-heading strong,.waiting-screen h1){color:var(--glass-text)}
-.desktop-lyrics :is(.panel-heading small,.section-label>span:not(.online-heading),.hint,.library-summary,.control-panel details,.lyric-source small,.online-search>label,.result-heading>span,.result-artist,.result-meta,.panel-footer,.waiting-screen>p,.eyebrow,.waiting-notes,.waiting-screen .compatibility-note,.desktop-host-warning){color:var(--glass-muted)}
+.desktop-lyrics :is(.panel-heading small,.section-label>span:not(.online-heading),.hint,.library-summary,.control-panel details,.lyric-source small,.online-search>label,.result-heading>span,.result-artist,.result-meta,.panel-footer,.waiting-screen>p,.eyebrow,.waiting-screen .compatibility-note,.desktop-host-warning){color:var(--glass-muted)}
 .desktop-lyrics:not(.high-contrast) .connection-pill{border-color:transparent;background:transparent;box-shadow:none;color:var(--glass-muted)}
 .desktop-lyrics:not(.high-contrast) .connection-pill i{background:var(--glass-muted)}
 .desktop-lyrics:not(.high-contrast) .connection-pill.playing i{background:var(--desktop-glass-accent);box-shadow:none}
-.desktop-lyrics:not(.high-contrast) :is(.waiting-symbol,.waiting-notes span){background:var(--desktop-glass-control);border-color:var(--glass-line);box-shadow:var(--desktop-glass-inner);color:var(--glass-text)}
-.desktop-lyrics:not(.high-contrast) .waiting-notes i{background:var(--glass-muted)}
+.desktop-lyrics:not(.high-contrast) .waiting-symbol{background:var(--desktop-glass-control);border-color:var(--glass-line);box-shadow:var(--desktop-glass-inner);color:var(--glass-text)}
 .desktop-lyrics .control-panel :is(section,.panel-footer){border-color:var(--glass-line)}
 .desktop-lyrics:not(.high-contrast) .control-panel :is(input:not([type=checkbox],[type=range]),select,textarea){color:var(--glass-text);border-color:var(--desktop-control-border);border-radius:var(--desktop-control-radius);background:var(--desktop-glass-control);box-shadow:none;font-size:var(--desktop-control-font-size)}
 .desktop-lyrics .control-panel input::placeholder{color:var(--glass-muted);opacity:.75}
