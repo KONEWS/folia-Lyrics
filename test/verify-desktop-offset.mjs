@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { writeFile } from 'node:fs/promises';
 import { installDesktopBridgeMock } from './desktop-bridge-mock.mjs';
 
@@ -6,6 +7,8 @@ import { installDesktopBridgeMock } from './desktop-bridge-mock.mjs';
 const prefix = 'folia.desktop.offset.v2:';
 const labelFor = value => value === 0 ? '时间无偏移' : `${value > 0 ? '提前' : '延后'} ${Math.abs(value).toFixed(1)} 秒`;
 const metadataKey = song => prefix + JSON.stringify([song.title.toLowerCase(), song.artist.toLowerCase(), song.album.toLowerCase(), Math.round(song.duration)]);
+const importedKey = packet => prefix + JSON.stringify([packet.title.toLowerCase(), packet.artist.toLowerCase(), 'lyrics',
+  createHash('md5').update(JSON.stringify([packet.format ?? '', packet.content, packet.fallbackContent ?? ''])).digest('hex')]);
 
 // Reuse the caller's server and browser while keeping calibration records and reloads separate from other UI checks.
 export async function verifyDesktopOffsets(page, song, output) {
@@ -13,6 +16,7 @@ export async function verifyDesktopOffsets(page, song, output) {
   const testPage = await context.newPage();
   const checks = [], samples = [], runtimeErrors = [];
   let stage = 'initialization';
+  let releaseParser;
   testPage.on('pageerror', error => runtimeErrors.push(String(error)));
   testPage.on('console', message => { if (message.type() === 'error') runtimeErrors.push(message.text()); });
   await installDesktopBridgeMock(testPage);
@@ -97,9 +101,11 @@ export async function verifyDesktopOffsets(page, song, output) {
     const importedB = { ...importedA, content: '[00:01.00]第二份歌词\n[00:22.00]不同的时间轴', source: '本地导入 · another.lrc' };
     await emit('session', disconnected); await emit('lyrics', importedA); await expectOffset(0, 'first disconnected import has no calibration');
     await change(3, 'edit first disconnected import'); await expectOffset(.6, 'first imported lyric saves its fingerprint calibration');
-    const firstRows = await importedRows(importedA.title); assert.equal(firstRows.length, 1); await expectSaved(firstRows[0][0], .6);
+    await expectSaved(importedKey(importedA), .6);
+    const firstRows = await importedRows(importedA.title); assert.equal(firstRows.length, 1);
     await emit('lyrics', importedB); await expectOffset(0, 'same-name imported lyrics with different timed content reset calibration');
     await change(-2, 'edit second disconnected import'); await expectOffset(-.4, 'second imported lyric has an independent calibration');
+    await expectSaved(importedKey(importedB), -.4);
     const secondRows = await importedRows(importedB.title);
     assert.equal(secondRows.length, 2); assert.deepEqual(secondRows.map(([, value]) => Number(value)).sort((a, b) => a - b), [-.4, .6]);
     await emit('lyrics', { ...importedA, source: '另一个来源描述', translation: '[00:01.00]New translation' });
@@ -113,13 +119,27 @@ export async function verifyDesktopOffsets(page, song, output) {
     checks.push('both disconnected imported-lyric calibrations survive a real browser reload');
 
     stage = 'late-import-packet';
+    // Reload clears the module cache. Hold the real parser import so two animation frames
+    // cannot accidentally stand in for parsing, identity adoption and the persistence effect.
+    const parserModule = /\/parseDesktopLyrics(?:-[\w-]+)?\.(?:js|ts)(?:\?|$)/;
+    const parserGate = new Promise(done => { releaseParser = done; });
+    const holdParser = async route => { await parserGate; await route.continue(); };
+    await testPage.route(parserModule, holdParser);
     await reload(); await expectOffset(0, 'a fresh disconnected page has no song identity');
     const beforePendingImport = await storage();
     await change(4, 'edit while the first import packet is pending'); await expectOffset(.8, 'pending import retains the local calibration draft');
     assert.deepEqual(await storage(), beforePendingImport, 'a draft without title or content cannot write a guessed song version');
     const lateImport = packet('Late Imported Title', 'Late Imported Singer', '[00:01.00]歌词和标题稍后一起到达\n[00:16.00]保留刚才的校准');
-    await emit('lyrics', lateImport); await expectOffset(.8, 'the first late import packet preserves the already edited calibration');
-    const lateRows = await importedRows(lateImport.title); assert.equal(lateRows.length, 1); await expectSaved(lateRows[0][0], .8);
+    const parserRequested = testPage.waitForRequest(parserModule);
+    await emit('lyrics', lateImport); await parserRequested;
+    await expectOffset(.8, 'the pending parser still shows the calibration draft');
+    assert.deepEqual(await storage(), beforePendingImport, 'unparsed lyrics cannot persist a guessed identity');
+    releaseParser();
+    // The label is already 0.8 before lyrics arrive; only the exact fingerprint record
+    // proves that the asynchronous import has committed and saved the draft.
+    await expectSaved(importedKey(lateImport), .8);
+    await expectOffset(.8, 'the first late import packet preserves the already edited calibration');
+    const lateRows = await importedRows(lateImport.title); assert.equal(lateRows.length, 1);
     await reload(); await emit('lyrics', lateImport); await expectOffset(.8, 'late import calibration is restored from its final fingerprint');
     checks.push('an offset edited before the first disconnected lyric packet is carried into its arriving title and fingerprint and survives reload');
 
@@ -144,5 +164,5 @@ export async function verifyDesktopOffsets(page, song, output) {
     await writeFile(`${output}/desktop-offset-failure.json`, JSON.stringify(diagnostic, null, 2));
     await testPage.screenshot({ path: `${output}/desktop-offset-failure.png`, timeout: 10000 }).catch(() => {});
     throw error;
-  } finally { await context.close(); }
+  } finally { releaseParser?.(); await testPage.unrouteAll({ behavior: 'wait' }); await context.close(); }
 }
