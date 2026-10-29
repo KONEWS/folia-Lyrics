@@ -17,7 +17,7 @@ Please continue this project in English, preserve the requirements below, and im
 
 This target is the **standalone Windows lyrics application**, implemented with **.NET 10 WinForms and Microsoft Edge WebView2**. It displays lyrics while external applications play music. Windows GSMTC supplies media sessions and transport; WASAPI captures output for existing visual effects.
 
-The main work areas are `native/` and `src/desktopLyrics/`. Shared original Folia renderers, parser utilities, and settings modules are dependencies. The upstream Web/Electron baseline is **v0.7.11**; it is not the desktop application's version. Do not replace this host with Electron or treat an upstream Web/Electron build as the requested EXE.
+The main work areas are `native/` and `src/desktopLyrics/`. Shared original Folia renderers, parser utilities, and settings modules are dependencies. The upstream Web/Electron baseline is **v0.7.22**; it is not the desktop application's version. Do not replace this host with Electron or treat an upstream Web/Electron build as the requested EXE.
 
 The packaged application is `G:\AI\folia-Lyrics\release\0.4.34\win-x64\FoliaLyrics.exe`, built on 2026-10-12. File version: **0.4.34.0**. Size: **81,988,664 bytes**. SHA-256: **CBD236AD7983A2C02F5E6BDEF70BCF7480D651273F5D3EF74720AD2CF004147F**. The package includes the .NET runtime, license notices, desktop README, changelog, and `SHA256SUMS.txt`. Preserve this baseline and all older version directories.
 
