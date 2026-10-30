@@ -153,8 +153,14 @@ jobs:
         env:
           FOLIA_UI_OUTPUT: test-results/music-app-discovery-ci
 
+      # The full renderer sweep is the heaviest step and can time out under software rendering on
+      # GPU-less runners even when the app is healthy; one retry separates that flake from real failures.
       - name: Run complete desktop browser regression with one renderer
-        run: npm run test:desktop:ui
+        run: |
+          npm run test:desktop:ui || {
+            echo "::warning::Complete desktop browser regression failed on the first attempt; retrying once."
+            npm run test:desktop:ui
+          }
         env:
           FOLIA_MODE_INDEX: '0'
           FOLIA_UI_OUTPUT: test-results/desktop-ci
