@@ -39,7 +39,8 @@ export type DesktopVisualSettingsProps = { livePreviewSource?: LivePreviewSource
 
 export default function DesktopVisualSettings(props: DesktopVisualSettingsProps) {
   const [optionsOpen, setOptionsOpen] = useState(false);
-  return <SettingsKitThemeContext.Provider value={{ isDaylight: false, theme: props.model.mergedTheme }}><DesktopVisualLanguage><DesktopVisualStudio {...props} onOpenOptions={() => setOptionsOpen(true)}/>{optionsOpen ? <DesktopVisualSettingsSurface {...props} initialSection={props.initialSection === 'background' ? 'background' : 'common'} onClose={() => setOptionsOpen(false)}/> : null}</DesktopVisualLanguage></SettingsKitThemeContext.Provider>;
+  const optionsOpener = useRef<HTMLElement | null>(null);
+  return <SettingsKitThemeContext.Provider value={{ isDaylight: false, theme: props.model.mergedTheme }}><DesktopVisualLanguage><DesktopVisualStudio {...props} onOpenOptions={() => { optionsOpener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; setOptionsOpen(true); }}/>{optionsOpen ? <DesktopVisualSettingsSurface {...props} initialSection={props.initialSection === 'background' ? 'background' : 'common'} returnFocus={optionsOpener.current} onClose={() => setOptionsOpen(false)}/> : null}</DesktopVisualLanguage></SettingsKitThemeContext.Provider>;
 }
 
 export function DesktopVisualSettingsSurface({ mode, onMode, model, onClose, initialSection = 'visualizer', navigationSequence, onSegmentation, canSegment, returnFocus,
