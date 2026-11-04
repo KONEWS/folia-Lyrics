@@ -5869,6 +5869,7 @@ export default {
     }
   },
   "desktopVisual": {
+    "desktopOptions": "Desktop options",
     "beatMode_off": "Disable beat and drum effects, keep the original spectrum response, and run no audio analysis.",
     "beatMode_cached": "Use only the analysis saved locally for this song. No new audio is analysed; songs without linked analysis keep their original visuals.",
     "beatMode_on": "Use this song’s saved analysis and allow local audio to be selected for new analysis. Each style’s beat effects can be enabled and adjusted individually.",

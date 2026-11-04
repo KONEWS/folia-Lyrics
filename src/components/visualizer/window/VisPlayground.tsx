@@ -4,7 +4,7 @@ import { Pause, Play } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useShallow } from 'zustand/react/shallow';
 import VisualizerRenderer from '../VisualizerRenderer';
-import { type StoredCustomLyricsFont, type SubtitleContentMode, type Theme, type VisualizerMode } from '../../../types';
+import { type StoredCustomLyricsFont, type SubtitleContentMode, type SubtitleOverlayLayout, type Theme, type VisualizerMode } from '../../../types';
 import { useMediaQuery } from '../../../hooks/useMediaQuery';
 import { selectVisualizerSettingsSnapshot, useVisualizerSettingsStore } from '../../../stores/useVisualizerSettingsStore';
 import { PictureGrid, Tooltip } from '../../modal/settings/kit';
@@ -16,7 +16,7 @@ import { colorWithAlpha } from '../colorMix';
 import { type PreviewPlaceholderId } from '../PreviewPlaceholder';
 import { VISUALIZER_REGISTRY, getVisualizerModeLabel, getVisualizerRegistryEntry } from '../registry';
 import VisPlaygroundPreviewHotspots, { type VisPlaygroundEditSection, type VisPlaygroundHotspotSection } from './VisPlaygroundPreviewHotspots';
-import VisPlaygroundSampleStage from './VisPlaygroundSampleStage';
+import VisPlaygroundSampleStage, { SampleBox } from './VisPlaygroundSampleStage';
 import VisPlaygroundSettingsPanel from './VisPlaygroundSettingsPanel';
 import FontPicker, { type LocalFontEntry } from './FontPicker';
 import { useTuningDrafts } from './useTuningDrafts';
@@ -25,8 +25,22 @@ import type { VisualizerBackgroundActions, VisualizerBackgroundConfig } from '..
 import { LyricPreviewProvider, type LyricPreviewLook } from '../preview/LyricPreviewContext';
 import { drawLyricStyleChoice, RANDOM_VISUALIZER_CHOICE, selectLyricStyleChoice } from '../random/lyricStyleChoices';
 import { usePreviewClock } from '../preview/usePreviewClock';
+import PreviewSourceSwitch, { type PreviewSource } from '../preview/PreviewSourceSwitch';
+import type { LivePreviewSource } from '../preview/livePreviewFeed';
+import { useLivePreviewFeed } from '../preview/useLivePreviewFeed';
+import { useStillClockPulse } from '../preview/stillClockPulse';
+import { DEFAULT_SUBTITLE_OVERLAY_LAYOUT } from '../../../utils/lyrics/subtitleOverlayLayout';
 
 interface VisPlaygroundProps {
+    /** Host integrations keep desktop data and controls outside the shared studio. */
+    livePreviewSource?: LivePreviewSource;
+    headerActions?: React.ReactNode;
+    headerSlot?: React.ReactNode;
+    globalSettings?: React.ReactNode;
+    backgroundSettings?: React.ReactNode;
+    onRandomModeSelected?: () => void;
+    editSequence?: number;
+    loadFonts?: () => Promise<{ family: string }[]>;
     theme?: Theme;
     isDaylight: boolean;
     visualizerMode: VisualizerMode;
@@ -38,6 +52,7 @@ interface VisPlaygroundProps {
     hideTranslationSubtitle?: boolean;
     showSubtitleTranslation?: boolean;
     subtitleContentMode?: SubtitleContentMode;
+    subtitleOverlayLayout?: SubtitleOverlayLayout;
     subtitleOverlayOpacity?: number;
     subtitleOverlayBackground?: boolean;
     subtitleUpcomingLyricsBlur?: boolean;
@@ -72,6 +87,7 @@ interface VisPlaygroundProps {
     onToggleHideTranslationSubtitle?: (hidden: boolean) => void;
     onToggleShowSubtitleTranslation?: (shown: boolean) => void;
     onSubtitleContentModeChange?: (mode: SubtitleContentMode) => void;
+    onSubtitleOverlayLayoutChange?: (layout: SubtitleOverlayLayout) => void;
     onSubtitleOverlayOpacityChange?: (opacity: number) => void;
     onToggleSubtitleOverlayBackground?: (enabled: boolean) => void;
     onToggleSubtitleUpcomingLyricsBlur?: (enabled: boolean) => void;
@@ -118,6 +134,7 @@ const SHELF_COLUMNS = { wide: 7, narrow: 4 };
 
 const VisPlayground: React.FC<VisPlaygroundProps> = ({
     theme,
+    livePreviewSource, headerActions, headerSlot, globalSettings, backgroundSettings, onRandomModeSelected, loadFonts, editSequence,
     isDaylight,
     visualizerMode,
     initialEditSection = 'visualizer',
@@ -128,6 +145,7 @@ const VisPlayground: React.FC<VisPlaygroundProps> = ({
     hideTranslationSubtitle = false,
     showSubtitleTranslation = true,
     subtitleContentMode,
+    subtitleOverlayLayout = DEFAULT_SUBTITLE_OVERLAY_LAYOUT,
     subtitleOverlayOpacity = 0.6,
     subtitleOverlayBackground = true,
     subtitleUpcomingLyricsBlur = true,
@@ -162,6 +180,7 @@ const VisPlayground: React.FC<VisPlaygroundProps> = ({
     onToggleHideTranslationSubtitle,
     onToggleShowSubtitleTranslation,
     onSubtitleContentModeChange,
+    onSubtitleOverlayLayoutChange,
     onSubtitleOverlayOpacityChange,
     onToggleSubtitleOverlayBackground,
     onToggleSubtitleUpcomingLyricsBlur,
@@ -175,9 +194,43 @@ const VisPlayground: React.FC<VisPlaygroundProps> = ({
     const backgroundOpacity = backgroundConfig?.common?.opacity ?? 0.75;
     const [previewPlaceholderId, setPreviewPlaceholderId] = useState<PreviewPlaceholderId>('default');
     const [isPreviewPaused, setIsPreviewPaused] = useState(false);
-    // The sample's clock; the small pictures of the styles follow it too.
+    const [previewSource, setPreviewSource] = useState<PreviewSource>('builtin');
+    const previewBoxRef = useRef<HTMLDivElement>(null);
+    // What the player shows now, when the sample is set aside for it; null while it has no lyrics.
+    const livePreview = useLivePreviewFeed({ source: livePreviewSource, enabled: previewSource === 'live', paused: isPreviewPaused, stageRef: previewBoxRef });
+    const live = livePreview.content;
+    // The small pictures still use the sample's clock while the big preview shows the live picture.
     const previewClock = usePreviewClock({ mode: visualizerMode, placeholderId: previewPlaceholderId, paused: isPreviewPaused });
     const previewPlaceholder = previewClock.placeholder;
+    // The sample, paused, has no change of time for a style mounted anew (a switch from the live picture).
+    useStillClockPulse({ time: previewClock.currentTime, still: isPreviewPaused && live === null, boxRef: previewBoxRef, restartKey: previewSource });
+    const shown = live
+        ? {
+            key: 'live',
+            currentTime: livePreview.currentTime,
+            audioPower: livePreview.audioPower,
+            audioBands: livePreview.audioBands,
+            duration: live.duration,
+            currentLineIndex: live.currentLineIndex,
+            lines: live.lines,
+            songTitle: live.songTitle,
+            coverUrl: live.coverUrl ?? undefined,
+            seed: live.seed,
+        }
+        : {
+            key: previewPlaceholderId,
+            currentTime: previewClock.currentTime,
+            audioPower: previewClock.audioPower,
+            audioBands: previewClock.audioBands,
+            duration: previewPlaceholder.loopDuration,
+            currentLineIndex: previewClock.currentLineIndex,
+            lines: previewPlaceholder.lines,
+            songTitle: previewPlaceholder.title,
+            coverUrl: previewPlaceholder.coverUrl,
+            // One seed per sample song, as the player's is the song's: a seed that changed
+            // with the style would lay the background out again on every switch.
+            seed: `vis-playground-${previewPlaceholderId}`,
+        };
     const [fontPickerTarget, setFontPickerTarget] = useState<'lyrics' | 'subtitle' | 'none'>('none');
     const [draftBackgroundOpacity, setDraftBackgroundOpacity] = useState(backgroundOpacity);
     const [draftVisualizerOpacity, setDraftVisualizerOpacity] = useState(visualizerOpacity);
@@ -283,7 +336,7 @@ const VisPlayground: React.FC<VisPlaygroundProps> = ({
     useEffect(() => {
         if (subtitleFontWeight !== null) lastSubtitleFontWeightRef.current = subtitleFontWeight;
     }, [subtitleFontWeight]);
-    useEffect(() => { setActiveEditSection(initialEditSection); }, [initialEditSection]);
+    useEffect(() => { setActiveEditSection(initialEditSection); }, [initialEditSection, editSequence]);
 
     const visualizerEntry = getVisualizerRegistryEntry(visualizerMode);
     const hotspotLabels = useMemo<Record<VisPlaygroundHotspotSection, string>>(() => ({
@@ -391,6 +444,7 @@ const VisPlayground: React.FC<VisPlaygroundProps> = ({
         } else {
             onToggleShowSubtitleTranslation?.(true);
         }
+        onSubtitleOverlayLayoutChange?.(DEFAULT_SUBTITLE_OVERLAY_LAYOUT);
         onToggleSubtitleOverlayBackground?.(true);
         onToggleSubtitleUpcomingLyricsBlur?.(true);
         onToggleShowHarmonySubtitle?.(true);
@@ -440,8 +494,10 @@ const VisPlayground: React.FC<VisPlaygroundProps> = ({
     const stage = (
         <>
             {/* The sample always shows the theme being previewed, whatever the window's own colours. */}
-            <div
-                className="relative min-h-[160px] flex-1 overflow-hidden rounded-xl shadow-[0_0_0_1px_var(--st-line)]"
+            <SampleBox
+                ref={previewBoxRef}
+                room="min-h-[160px] flex-1"
+                className="relative overflow-hidden rounded-xl shadow-[0_0_0_1px_var(--st-line)]"
                 style={{ backgroundColor: previewTheme.backgroundColor }}
             >
                 {/* The style is drawn as large as the app's window and scaled to fit. */}
@@ -449,7 +505,7 @@ const VisPlayground: React.FC<VisPlaygroundProps> = ({
                     {/* Another sample song fades in. A newly chosen style is switched by the renderer, as in
                         the player: the background stays and only the style changes. */}
                     <motion.div
-                        key={previewPlaceholderId}
+                        key={shown.key}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={kitTransition('move', reducedKitMotion)}
@@ -458,21 +514,22 @@ const VisPlayground: React.FC<VisPlaygroundProps> = ({
                         <VisualizerRenderer
                             mode={visualizerMode}
                             animateStyleSwitch
-                            currentTime={previewClock.currentTime}
-                            duration={previewPlaceholder.loopDuration}
-                            currentLineIndex={previewClock.currentLineIndex}
-                            lines={previewPlaceholder.lines}
+                            currentTime={shown.currentTime}
+                            duration={shown.duration}
+                            currentLineIndex={shown.currentLineIndex}
+                            lines={shown.lines}
                             theme={previewTheme}
                             subtitleTheme={previewSubtitleTheme}
                             isDaylight={isDaylight}
-                            audioPower={previewClock.audioPower}
-                            audioBands={previewClock.audioBands}
-                            songTitle={previewPlaceholder.title}
+                            audioPower={shown.audioPower}
+                            audioBands={shown.audioBands}
+                            songTitle={shown.songTitle}
                             showText
                             staticMode={staticMode}
                             isPreviewMode
+                            paused={isPreviewPaused}
                             visualizerOpacity={draftVisualizerOpacity}
-                            coverUrl={previewPlaceholder.coverUrl}
+                            coverUrl={shown.coverUrl}
                             background={draftBackgroundConfig}
                             lyricsFontScale={normalizedFontScale}
                             subtitleFontScale={normalizedSubtitleFontScale}
@@ -484,12 +541,11 @@ const VisPlayground: React.FC<VisPlaygroundProps> = ({
                             hideTranslationSubtitle={hideTranslationSubtitle}
                             showSubtitleTranslation={showSubtitleTranslation}
                             subtitleContentMode={resolvedSubtitleContentMode}
+                            subtitleOverlayLayout={subtitleOverlayLayout}
                             visualizerTunings={tuningDrafts.sampleTunings}
                             onVisualizerTuningChange={styleDraft.change}
                             {...styleAssets}
-                            // One seed per sample song, as the player's is the song's: a seed that changed
-                            // with the style would lay the background out again on every switch.
-                            seed={`vis-playground-${previewPlaceholderId}`}
+                            seed={shown.seed}
                         />
                     </motion.div>
                 </VisPlaygroundSampleStage>
@@ -499,6 +555,7 @@ const VisPlayground: React.FC<VisPlaygroundProps> = ({
                     theme={previewTheme}
                     labels={hotspotLabels}
                 />
+                <PreviewSourceSwitch value={previewSource} onChange={setPreviewSource} liveEmpty={previewSource === 'live' && live === null} />
                 <Tooltip text={t(isPreviewPaused ? 'options.resumePreview' : 'options.pausePreview')} className="absolute right-3 top-3 z-40 inline-flex">
                     <button
                         type="button"
@@ -509,7 +566,7 @@ const VisPlayground: React.FC<VisPlaygroundProps> = ({
                         {isPreviewPaused ? <Play size={14} fill="currentColor" /> : <Pause size={14} fill="currentColor" />}
                     </button>
                 </Tooltip>
-            </div>
+            </SampleBox>
             <div className="flex shrink-0 flex-col">
                 <h3 className="mb-2 flex min-h-6 items-center px-1 text-[13px] font-semibold leading-5 text-[color:var(--st-t2)]">
                     {t('options.lyricStyles')}
@@ -521,6 +578,7 @@ const VisPlayground: React.FC<VisPlaygroundProps> = ({
                     picture={drawLyricStyleChoice}
                     columns={isWideWindow ? SHELF_COLUMNS.wide : SHELF_COLUMNS.narrow}
                     onChange={mode => {
+                        if (mode === RANDOM_VISUALIZER_CHOICE) onRandomModeSelected?.();
                         selectLyricStyleChoice(mode, next => onVisualizerModeChange?.(next));
                         setActiveEditSection('visualizer');
                     }}
@@ -533,6 +591,8 @@ const VisPlayground: React.FC<VisPlaygroundProps> = ({
     );
     const column = (
         <VisPlaygroundSettingsPanel
+            globalSettings={globalSettings}
+            backgroundSettings={backgroundSettings}
             activeSection={activeEditSection}
             onSectionChange={setActiveEditSection}
             t={t}
@@ -575,6 +635,8 @@ const VisPlayground: React.FC<VisPlaygroundProps> = ({
             onToggleShowSubtitleTranslation={onToggleShowSubtitleTranslation}
             subtitleContentMode={resolvedSubtitleContentMode}
             onSubtitleContentModeChange={onSubtitleContentModeChange}
+            subtitleOverlayLayout={subtitleOverlayLayout}
+            onSubtitleOverlayLayoutChange={onSubtitleOverlayLayoutChange}
             subtitleOverlayOpacity={draftSubtitleOverlayOpacity}
             onSubtitleOverlayOpacityChange={handleSubtitleOverlayOpacityDraft}
             subtitleOverlayBackground={subtitleOverlayBackground}
@@ -603,6 +665,7 @@ const VisPlayground: React.FC<VisPlaygroundProps> = ({
     const pickingSubtitleFont = fontPickerTarget === 'subtitle';
     const fontPicker = fontPickerTarget !== 'none' && (
         <FontPicker
+            loadFonts={loadFonts}
             family={pickingSubtitleFont ? subtitleFontFamily : customFontFamily}
             label={pickingSubtitleFont ? (subtitleFontFamily ?? '') : currentFontLabel}
             fallbackFamilies={pickingSubtitleFont ? subtitleFontFallbackFamilies : fontFallbackFamilies}
@@ -619,6 +682,8 @@ const VisPlayground: React.FC<VisPlaygroundProps> = ({
         <LyricPreviewProvider clock={previewClock} theme={previewTheme} isDaylight={isDaylight} look={pictureLook} background={backgroundConfig}>
             <StudioWindow
                 title={t('options.lyricsStyleSettings')}
+                actions={headerActions}
+                slot={headerSlot}
                 onBack={onClose}
                 backLabel={t('ui.back')}
                 isDaylight={isDaylight}

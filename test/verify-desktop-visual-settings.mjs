@@ -49,6 +49,7 @@ export async function verifyDesktopVisualSettings(page, song, output) {
       sessionStorage.setItem('folia.test.mockPreferences', JSON.stringify({ autoImmersive: false, audioReactive: false, transparentBackground: false }));
     });
     await reloadVisualSong(page, { ...song, playing: false, position: 36 }, packet);
+    await page.waitForFunction(() => window.__foliaReadVisualizerProps?.()?.currentTime.get() === 36);
     await emitVisual(page, 'appearance', { acrylic: true, transparent: false, solid: false, highContrast: false });
     const initial = await record('initial'); assert.equal(initial.background.transparent, true);
     const originalClock = await page.evaluate(() => { const props = window.__foliaReadVisualizerProps(); window.__foliaVisualOriginalClock = props.currentTime; window.__foliaVisualOriginalLines = props.lines; return props.currentTime.get(); });
@@ -62,7 +63,7 @@ export async function verifyDesktopVisualSettings(page, song, output) {
     assert.equal(await footer.getAttribute('role'), null); assert.equal(await footer.count(), 1);
     await page.keyboard.press('Tab'); assert(await footer.evaluate(element => element === document.activeElement));
     await page.keyboard.press('Shift+Tab'); assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('data-value')), 'classic');
-    await page.keyboard.press('Tab'); await page.keyboard.press('Enter'); await visualDialog(page).waitFor(); await menu.waitFor({ state: 'detached' });
+    await page.keyboard.press('Tab'); await page.keyboard.press('Enter'); await verifyStudio(page, output, checks); await visualDialog(page).waitFor(); await menu.waitFor({ state: 'detached' });
     assert.equal((await record('more-settings-open')).mode, 'classic');
     assert.equal(await visualDialog(page).getByRole('tab').count(), 3);
     assert.deepEqual(await visualDialog(page).getByRole('tab').allTextContents(), ['通用', '歌词动画', '字幕']);
@@ -244,6 +245,7 @@ export async function verifyDesktopVisualSettings(page, song, output) {
     assert(await close.evaluate(element => { const box = element.getBoundingClientRect(); return element.contains(document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2)); }));
     await page.screenshot({ path: `${output}/visual-settings-450x300.png` });
     await page.keyboard.press('Escape'); await visualDialog(page).waitFor({ state: 'detached' });
+    await page.keyboard.press('Escape'); await page.locator('[data-desktop-visual-studio]').waitFor({ state: 'detached' });
     assert.equal(await page.locator('.native-fullscreen').count(), 1, 'Escape closes visual settings before exiting fullscreen');
     await emitVisual(page, 'windowState', { fullscreen: false, maximized: false, clickThrough: false }); await page.setViewportSize({ width: 1280, height: 800 });
     const intensityBefore = (await readVisual(page)).theme.animationIntensity; await page.locator('.style-intensity-button').click();
@@ -270,4 +272,41 @@ export async function verifyDesktopVisualSettings(page, song, output) {
     await page.setViewportSize(viewport); await reloadVisualSong(page, song, packet);
     await page.evaluate(prefs => window.__foliaSetMockPreferences(prefs), saved.prefs); await emitVisual(page, 'appearance', saved.appearance);
   }
+}
+
+// Exercise the upstream studio before continuing with the desktop-only controls below it.
+async function verifyStudio(page, output, checks) {
+    const studio = page.locator('[data-desktop-visual-studio]');
+    await studio.getByRole('dialog', { name: '歌词样式', exact: true }).waitFor();
+    assert.deepEqual(await studio.getByRole('tab').allTextContents(), ['歌词动画', '背景', '字体', '字幕', '全局']);
+    assert.equal(await studio.getByRole('radiogroup', { name: '歌词样式', exact: true }).getByRole('radio').count(), 18);
+    await studio.getByRole('radio', { name: '绘光', exact: true }).click();
+    const slider = studio.getByRole('slider').first();
+    await slider.waitFor(); await slider.focus(); await slider.press('End');
+    await page.waitForFunction(() => JSON.parse(localStorage.getItem('lumiere_tuning') || '{}').lightIntensity > 1);
+    await studio.getByRole('button', { name: '默认', exact: true }).click();
+    await page.waitForFunction(() => JSON.parse(localStorage.getItem('lumiere_tuning') || '{}').lightIntensity === 1);
+    await page.screenshot({ path: output + '/upstream-studio-wide.png' });
+    checks.push('the upstream studio owns the two-column preview, 18 style choices, five tabs, and saved style reset');
+    await studio.getByRole('radio', { name: '流光', exact: true }).click();
+    const clock = await page.evaluate(() => window.__foliaReadVisualizerProps().currentTime.get());
+    await studio.getByRole('button', { name: '实时', exact: true }).click();
+    await studio.getByRole('button', { name: '暂停预览', exact: true }).click();
+    assert.equal(await page.evaluate(() => window.__foliaReadVisualizerProps().currentTime.get()), clock);
+    await studio.getByRole('button', { name: '继续预览', exact: true }).click();
+    checks.push('live preview can be held and resumed without moving the desktop playback clock');
+    await studio.getByRole('tab', { name: '背景', exact: true }).click();
+    await studio.getByRole('switch', { name: '启用原版歌词背景', exact: true }).waitFor();
+    await studio.getByRole('tab', { name: '字体', exact: true }).click();
+    assert(await studio.getByRole('slider').count() > 0);
+    await studio.getByRole('tab', { name: '字幕', exact: true }).click();
+    assert(await studio.getByRole('combobox').count() > 0);
+    await studio.getByRole('tab', { name: '全局', exact: true }).click();
+    await studio.getByRole('button', { name: '选择本曲音频并分析', exact: true }).waitFor();
+    checks.push('background, font, subtitle, and desktop audio-analysis controls remain reachable in the studio');
+    await page.setViewportSize({ width: 560, height: 760 });
+    await page.screenshot({ path: output + '/upstream-studio-narrow.png' });
+    assert(await studio.getByRole('button', { name: '返回', exact: true }).isVisible());
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await studio.getByRole('button', { name: '桌面选项', exact: true }).click();
 }

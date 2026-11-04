@@ -12,8 +12,11 @@ export async function openVisualSettings(page, section = 'visualizer') {
   if (section === 'background') return openBackgroundSettings(page);
   await closeBackgroundSettings(page);
   if (!await visualDialog(page).count()) {
-    await openDesktopMenu(page, '歌词样式');
-    await page.locator('.desktop-top-menu [data-custom-select-footer]').click();
+    if (!await page.locator('[data-desktop-visual-studio]').count()) {
+      await openDesktopMenu(page, '歌词样式');
+      await page.locator('.desktop-top-menu [data-custom-select-footer]').click();
+    }
+    await page.locator('[data-desktop-visual-studio]').getByRole('button', { name: '桌面选项', exact: true }).click();
     await visualDialog(page).waitFor();
     await page.locator('.desktop-top-menu').waitFor({ state: 'detached' });
   }
@@ -28,6 +31,7 @@ export async function closeVisualSettings(page) {
     await visualDialog(page).waitFor({ state: 'detached' });
   }
   await closeBackgroundSettings(page);
+  if (await page.locator('[data-desktop-visual-studio]').count()) await page.locator('[data-desktop-visual-studio]').getByRole('button', { name: '返回', exact: true }).click();
 }
 
 // Background settings have a persistent topbar opener instead of a tab inside the visual settings dialog.
@@ -35,6 +39,7 @@ export async function openBackgroundSettings(page) {
   if (await visualDialog(page).count()) await closeVisualSettings(page);
   if (!await backgroundDialog(page).count()) {
     await page.getByRole('button', { name: '背景设置', exact: true }).click();
+    await page.locator('[data-desktop-visual-studio]').getByRole('button', { name: '桌面选项', exact: true }).click();
     await backgroundDialog(page).waitFor();
   }
   const content = backgroundDialog(page).locator('[data-visual-section="background"]');
@@ -45,6 +50,7 @@ export async function closeBackgroundSettings(page) {
   if (await backgroundDialog(page).count()) {
     await backgroundDialog(page).getByRole('button', { name: '关闭背景设置', exact: true }).click();
     await backgroundDialog(page).waitFor({ state: 'detached' });
+    if (await page.locator('[data-desktop-visual-studio]').count()) await page.locator('[data-desktop-visual-studio]').getByRole('button', { name: '返回', exact: true }).click();
   }
 }
 

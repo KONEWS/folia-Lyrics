@@ -1,3 +1,5 @@
+import DesktopVisualStudio from './visualFeatures/DesktopVisualStudio';
+import type { LivePreviewSource } from '../components/visualizer/preview/livePreviewFeed';
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { X } from 'lucide-react';
 import type { VisualizerMode } from '../types';
@@ -31,16 +33,17 @@ const SECTIONS: DesktopVisualSection[] = ['common', 'visualizer', 'subtitle'];
 const SLIDER_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End']);
 const LABELS = { common: 'desktopVisual.commonTab', background: 'options.previewBackgroundSettings',
   visualizer: 'options.previewVisualizerSettings', subtitle: 'options.previewSubtitleSettings' } as const;
-type Props = { mode: VisualizerMode; onMode: (mode: VisualizerMode) => void; model: DesktopVisualSettingsModel;
+export type DesktopVisualSettingsProps = { livePreviewSource?: LivePreviewSource; mode: VisualizerMode; onMode: (mode: VisualizerMode) => void; model: DesktopVisualSettingsModel;
   onClose: () => void; initialSection?: DesktopVisualSection; navigationSequence?: number; onSegmentation?: () => void; canSegment?: boolean; returnFocus?: HTMLElement | null;
   searchNavigation?: DesktopSettingsSearchRequest; onSearchNavigate: (entry: DesktopSettingsSearchEntry) => void; onClearSearchNavigation: () => void };
 
-export default function DesktopVisualSettings(props: Props) {
-  return <SettingsKitThemeContext.Provider value={{ isDaylight: false, theme: props.model.mergedTheme }}><DesktopVisualLanguage><DesktopVisualSettingsSurface {...props}/></DesktopVisualLanguage></SettingsKitThemeContext.Provider>;
+export default function DesktopVisualSettings(props: DesktopVisualSettingsProps) {
+  const [optionsOpen, setOptionsOpen] = useState(false);
+  return <SettingsKitThemeContext.Provider value={{ isDaylight: false, theme: props.model.mergedTheme }}><DesktopVisualLanguage><DesktopVisualStudio {...props} onOpenOptions={() => setOptionsOpen(true)}/>{optionsOpen ? <DesktopVisualSettingsSurface {...props} initialSection={props.initialSection === 'background' ? 'background' : 'common'} onClose={() => setOptionsOpen(false)}/> : null}</DesktopVisualLanguage></SettingsKitThemeContext.Provider>;
 }
 
-function DesktopVisualSettingsSurface({ mode, onMode, model, onClose, initialSection = 'visualizer', navigationSequence, onSegmentation, canSegment, returnFocus,
-  searchNavigation, onSearchNavigate, onClearSearchNavigation }: Props) {
+export function DesktopVisualSettingsSurface({ mode, onMode, model, onClose, initialSection = 'visualizer', navigationSequence, onSegmentation, canSegment, returnFocus,
+  searchNavigation, onSearchNavigate, onClearSearchNavigation }: DesktopVisualSettingsProps) {
   const t = useVisualTranslation();
   const id = useId();
   const panel = useRef<HTMLElement>(null);

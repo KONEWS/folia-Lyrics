@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { type Theme, type SubtitleContentMode, type VisualizerBackgroundMode, type VisualizerMode } from '../../../types';
+import { type Theme, type SubtitleContentMode, type SubtitleOverlayLayout, type VisualizerBackgroundMode, type VisualizerMode } from '../../../types';
 import { Button, Group, PictureGrid, Reveal, Row, Segmented, Select, Tabs, Value, type PictureState } from '../../modal/settings/kit';
 import type { SettingsGroupDef } from '../../modal/settings/kit';
 import { StudioColumnBody } from '../../shared/StudioWindow';
@@ -7,6 +7,7 @@ import { percent, SliderRow, ToggleRow } from '../panelRows';
 import { type VisualizerRegistryEntry } from '../registry';
 import { type VisPlaygroundEditSection } from './VisPlaygroundPreviewHotspots';
 import { FontTiles, type FontChoice } from './FontTiles';
+import SubtitleOverlayRowsSetting from './SubtitleOverlayRowsSetting';
 import type { StyleDraft } from './useTuningDrafts';
 import type { VisualizerTuningSettings } from '../tuningDefinition';
 import { FoliumTuningCards, tuningsRegistry } from '@/mods/folium/registries/tunings';
@@ -41,6 +42,8 @@ interface PresetOption<T> {
 }
 
 interface VisPlaygroundSettingsPanelProps {
+    globalSettings?: React.ReactNode;
+    backgroundSettings?: React.ReactNode;
     activeSection: VisPlaygroundEditSection;
     onSectionChange: (section: VisPlaygroundEditSection) => void;
     t: (key: string) => string;
@@ -86,6 +89,8 @@ interface VisPlaygroundSettingsPanelProps {
     onToggleShowSubtitleTranslation?: (shown: boolean) => void;
     subtitleContentMode: SubtitleContentMode;
     onSubtitleContentModeChange?: (mode: SubtitleContentMode) => void;
+    subtitleOverlayLayout: SubtitleOverlayLayout;
+    onSubtitleOverlayLayoutChange?: (layout: SubtitleOverlayLayout) => void;
     subtitleOverlayOpacity: number;
     onSubtitleOverlayOpacityChange?: (opacity: number) => void;
     subtitleOverlayBackground: boolean;
@@ -175,6 +180,8 @@ const VisPlaygroundSettingsPanel: React.FC<VisPlaygroundSettingsPanelProps> = (p
         onToggleShowSubtitleTranslation,
         subtitleContentMode,
         onSubtitleContentModeChange,
+        subtitleOverlayLayout,
+        onSubtitleOverlayLayoutChange,
         subtitleOverlayOpacity,
         onSubtitleOverlayOpacityChange,
         subtitleOverlayBackground,
@@ -323,10 +330,11 @@ const VisPlaygroundSettingsPanel: React.FC<VisPlaygroundSettingsPanelProps> = (p
                     )}
 
                     {/* 智能动感模式: a setting of the whole picture, with no one style's options. */}
-                    {activeSection === 'global' && <SmartBeatSettingsCard t={t} />}
+                    {activeSection === 'global' && (props.globalSettings ?? <SmartBeatSettingsCard t={t} />)}
 
                     {activeSection === 'background' && (
                         <>
+                            {props.backgroundSettings}
                             {(enablePlayerPageNativeBlur || missingBackgroundNotice) && (
                                 <Group def={BACKGROUND_NOTICE_GROUP} bare>
                                     {enablePlayerPageNativeBlur && <Row notice={t('options.nativeBlurBackgroundNotice')} />}
@@ -447,7 +455,12 @@ const VisPlaygroundSettingsPanel: React.FC<VisPlaygroundSettingsPanelProps> = (p
                                     disabled={!onToggleHideTranslationSubtitle}
                                     onChange={next => onToggleHideTranslationSubtitle?.(next)}
                                 />
-                                <Row label={t('options.subtitleContentMode')}>
+                                <SubtitleOverlayRowsSetting
+                                    t={t}
+                                    layout={subtitleOverlayLayout}
+                                    onChange={onSubtitleOverlayLayoutChange}
+                                />
+                                <Row label={t('options.subtitleContentMode')} note={t('options.subtitleContentModeDesc')}>
                                     <Select<SubtitleContentMode>
                                         value={subtitleContentMode}
                                         options={[

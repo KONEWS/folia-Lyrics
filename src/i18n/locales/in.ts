@@ -2,6 +2,7 @@
 
 export default {
   "desktopVisual": {
+    "desktopOptions": "Opsi desktop",
     "beatMode_off": "Nonaktifkan efek ketukan dan drum, pertahankan respons spektrum asli, dan jangan jalankan analisis audio.",
     "beatMode_cached": "Hanya gunakan analisis lagu ini yang tersimpan di perangkat. Audio baru tidak dianalisis; lagu tanpa analisis tetap memakai tampilan aslinya.",
     "beatMode_on": "Gunakan analisis tersimpan lagu ini dan izinkan pemilihan audio lokal untuk analisis baru. Efek ketukan tiap gaya dapat diaktifkan dan diatur secara terpisah.",

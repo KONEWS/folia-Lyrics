@@ -5869,6 +5869,7 @@ export default {
     }
   },
   "desktopVisual": {
+    "desktopOptions": "桌面选项",
     "beatMode_off": "关闭拍点与鼓点效果，保持原有频谱响应，不运行音频分析。",
     "beatMode_cached": "仅使用本机已保存的本曲分析，不分析新音频。未关联分析的歌曲保持原有画面。",
     "beatMode_on": "使用本曲已保存的分析，并允许选择本地音频进行新分析。每个样式的动感效果可单独开关和调整强度。",

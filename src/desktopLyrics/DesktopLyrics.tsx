@@ -21,6 +21,7 @@ import { useImmersiveToggleIdle } from './useImmersiveToggleIdle';
 import DesktopWaitingScreen from './DesktopWaitingScreen';
 import { useDesktopFonts } from './useDesktopFonts';
 import { getVisualizerRegistryEntry } from '../components/visualizer/registry';
+import { useDesktopPreviewSource } from './visualFeatures/useDesktopPreviewSource';
 import { useDesktopVisualSettings } from './useDesktopVisualSettings';
 import { useDesktopSegmentation } from './useDesktopSegmentation';
 import type { DesktopVisualSection } from './DesktopVisualSettings';
@@ -87,6 +88,7 @@ export default function DesktopLyrics() {
   useDesktopSubtitleLayout(glassSurface, footer, footerVisible);
   const playing = manual.enabled ? manual.playing : state.session.playing && state.session.hasTimeline && !state.connectionError;
   const duration = manual.enabled ? state.lyrics.lines.at(-1)?.endTime ?? 0 : state.session.duration;
+  const livePreviewSource = useDesktopPreviewSource({ lines: segmentation.lyrics.lines, duration, songTitle: title, coverUrl: cover, currentLineIndex: runtime.lineIndex, seed: state.session.key || title || 'desktop' }, { currentTime: runtime.currentTime, audioPower: runtime.audioPower, audioBands: runtime.audioBands }, runtime.playbackTime);
   const beat = useDesktopBeatFx({ identity: songIdentity, duration, mode, clock: runtime.playbackTime, playing, staticMode: visual.staticMode, pageTransparent: visual.rendererProps.background?.transparent });
   useEffect(() => { cancelSettingsOpening(); setImmersive(false); }, [state.restore, cancelSettingsOpening]);
   useEffect(() => { if (state.clickThrough) { cancelSettingsOpening(); setImmersive(true); setPanel(false); setVisualSection(null); setSegmentationOpen(false); } }, [state.clickThrough, cancelSettingsOpening]);
@@ -172,7 +174,7 @@ export default function DesktopLyrics() {
     {panel ? <ControlPanel mode={mode} onMode={changeMode} session={state.session} preferences={state.preferences} library={state.library} online={state.online} scan={state.scan} offset={offset} onOffset={changeOffset}
       translated={translated} onTranslated={changeTranslated} immersiveProgress={immersiveProgress} onImmersiveProgress={changeImmersiveProgress} manual={manual} setManual={setManual} audioStatus={state.audioStatus}
       lyricSource={state.lyricInfo?.source} navigation={panelNavigation} searchNavigation={searchNavigation} onSearchNavigate={navigateSearch} returnFocus={mainOpener.current} onVisualSettings={() => showVisualSettings()} canSegment={canSegment} onSegmentation={showSegmentation} onClose={() => { cancelSettingsOpening(); setPanel(false); }}/> : null}
-    <DesktopBeatContext.Provider value={beat}>{visualSection !== null && DesktopVisualSettings ? <DesktopVisualSettings key={visualSection === 'background' ? 'background' : 'visual'} initialSection={visualSection} navigationSequence={visualNavigation} mode={mode} onMode={changeMode} model={visual}
+    <DesktopBeatContext.Provider value={beat}>{visualSection !== null && DesktopVisualSettings ? <DesktopVisualSettings key={visualSection === 'background' ? 'background' : 'visual'} initialSection={visualSection} navigationSequence={visualNavigation} mode={mode} onMode={changeMode} model={visual} livePreviewSource={livePreviewSource}
       returnFocus={visualOpener.current} searchNavigation={searchNavigation} onSearchNavigate={navigateSearch} onClearSearchNavigation={() => setSearchNavigation(undefined)}
       canSegment={canSegment} onSegmentation={showSegmentation} onClose={() => { cancelSettingsOpening(); setVisualSection(null); }}/> : null}</DesktopBeatContext.Provider>
     {segmentationOpen && DesktopSegmentationSettings ? <DesktopSegmentationSettings model={segmentation} returnFocus={segmentationOpener.current} onClose={closeSegmentation}/> : null}
