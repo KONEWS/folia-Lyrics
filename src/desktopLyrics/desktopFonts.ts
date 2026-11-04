@@ -1,12 +1,14 @@
-import type { Line, SubtitleContentMode, Theme } from '../types';
+import type { Line, SubtitleContentMode, SubtitleOverlayLayout, Theme } from '../types';
 import { resolveThemeFontStack, resolveThemeFontWeight, resolveThemeTranslationFontStack } from '../utils/fontStacks';
 import { resolveLyricSubtitleTracks } from '../utils/lyrics/alternateText';
 import { getLineBackgroundVocals } from '../components/visualizer/harmonyRuntime';
+import { getSubtitleOverlayRows } from '../utils/lyrics/subtitleOverlayLayout';
+import { resolveLyricAlternateText } from '../utils/lyrics/alternateText';
 
 // src/desktopLyrics/desktopFonts.ts — prepare the fonts used by this song before any renderer measures or rasterizes it.
 export type DesktopFontRequest = { font: string; text: string };
 export type DesktopFontInput = { lines: Line[]; theme: Theme; subtitleTheme: Theme; title: string; artist: string;
-  hideTranslationSubtitle?: boolean; subtitleContentMode?: SubtitleContentMode; showHarmonySubtitle?: boolean };
+  hideTranslationSubtitle?: boolean; subtitleContentMode?: SubtitleContentMode; subtitleOverlayLayout?: SubtitleOverlayLayout; showHarmonySubtitle?: boolean };
 const pending = new WeakMap<FontFaceSet, Map<string, Promise<void>>>();
 const uniqueText = (values: string[]) => [...new Set(values.join(''))].join('') || ' ';
 
@@ -18,6 +20,9 @@ export function desktopFontRequests(input: DesktopFontInput): DesktopFontRequest
   for (const line of lines) {
     main.push(line.fullText, ...line.words.map(word => word.text));
     subtitle.push(line.fullText, ...resolveLyricSubtitleTracks(line, contentMode).map(track => track.text));
+    for (const row of input.subtitleOverlayLayout ? getSubtitleOverlayRows(input.subtitleOverlayLayout) : []) {
+      if (row === 'translation' || row === 'romanization') subtitle.push(resolveLyricAlternateText(line, row) ?? '');
+    }
     if (input.showHarmonySubtitle !== false) for (const vocal of getLineBackgroundVocals(line)) {
       main.push(vocal.text, ...vocal.words.map(word => word.text));
       subtitle.push(...resolveLyricSubtitleTracks(vocal, contentMode).map(track => track.text));

@@ -1,4 +1,4 @@
-import type { SubtitleContentMode, Theme, VisualizerMode } from '../types';
+import type { SubtitleContentMode, SubtitleOverlayLayout, Theme, VisualizerMode } from '../types';
 import type { VisualizerTuningBundle } from '../components/visualizer/tuningRegistry';
 import type { VisualizerBackgroundConfig } from '../components/visualizer/backgrounds/definition';
 // OBS 覆盖层不加载 mods（initModVisualizers 需要 Electron 桥接，web 上是 no-op），
@@ -48,6 +48,7 @@ export interface ObsWebAppearance {
   hideTranslationSubtitle?: boolean;
   showSubtitleTranslation?: boolean;
   subtitleContentMode?: SubtitleContentMode;
+  subtitleOverlayLayout?: SubtitleOverlayLayout;
   subtitleOverlayBackground?: boolean;
   subtitleUpcomingLyricsBlur?: boolean;
   subtitleOverlayOpacity?: number;
@@ -166,6 +167,7 @@ export function buildObsAppearanceFromShortcode(
     hideTranslationSubtitle: decoded?.hidePlayerTranslationSubtitle,
     showSubtitleTranslation: decoded?.showSubtitleTranslation,
     subtitleContentMode: decoded?.subtitleContentMode,
+    subtitleOverlayLayout: decoded?.subtitleOverlayLayout,
     subtitleOverlayBackground: decoded?.subtitleOverlayBackground,
     subtitleUpcomingLyricsBlur: decoded?.subtitleUpcomingLyricsBlur,
     subtitleOverlayOpacity: decoded?.subtitleOverlayOpacity,

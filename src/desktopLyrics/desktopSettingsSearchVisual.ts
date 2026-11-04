@@ -6,11 +6,13 @@ type BackgroundCatalog = { background: VisualizerBackgroundMode; labelKey: strin
 const options = (names: string) => names.split(/\s+/).filter(Boolean).map(name => `options.${name}`);
 
 export const DESKTOP_MODE_SEARCH_CATALOG: VisualCatalog[] = [
+  { mode: 'machi', labelKey: 'ui.visualizerMachi', keys: options(`machiSceneSection machiScene machiSceneAuto machiSceneKonbini machiSceneStation machiSceneKowloon machiSkySection machiTimeOfDay machiTimeAuto machiTimeDay machiTimeDusk machiTimeNight machiWeather machiWeatherAuto machiWeatherClear machiWeatherRain machiWeatherSnow machiWeatherFog machiCameraSection machiCameraMode machiCameraDefault machiCameraCustom machiViewAzimuth machiViewElevation machiViewZoom machiViewPanX machiViewPanZ machiViewReset machiViewScene machiCameraMotion machiCameraMotionSpeed machiCameraBar machiCameraBarView machiCameraBarLens machiCameraBarMotion machiCameraBarReset machiCameraBarClose machiDofSection machiAperture machiDof machiDofRange machiTiltShift machiFocus machiFocusCenter machiFocusLyrics machiFocusManual machiFocusOffset machiQualitySection machiQuality machiQualityCustom machiQualityHigh machiQualityBalanced machiQualityLow machiRenderScale machiAntialias machiAntialiasOff machiAntialiasFxaa machiAntialiasSmaa machiAntialiasSsaa machiShadows machiReflections machiLevelOff machiLevelLow machiLevelHigh machiGlow machiAdaptive`) },
+  { mode: 'nebbia', labelKey: 'ui.visualizerNebbia', keys: options(`nebbiaWriting nebbiaWindow nebbiaAppear nebbiaAppearAuto nebbiaAppearWrite nebbiaAppearFade nebbiaFade nebbiaFadeFog nebbiaFadeFingers nebbiaFadeMix nebbiaAppearBreath nebbiaCustom nebbiaLayouts nebbiaJitter nebbiaWarp nebbiaCredits nebbiaLayout_ribbon nebbiaLayout_lines2 nebbiaLayout_lines3 nebbiaLayout_cross nebbiaLayout_pillar nebbiaLayout_header nebbiaLayout_badge nebbiaLayout_columns nebbiaLayout_orbit nebbiaStrokeWidth nebbiaWriteSpeed nebbiaDoodle nebbiaMist nebbiaHold nebbiaRefog nebbiaBusSpeed nebbiaNeon nebbiaBump nebbiaSpot nebbiaSpotX nebbiaRainHit nebbiaRainBig nebbiaScenery nebbiaScenery_spot nebbiaScenery_buildings nebbiaScenery_lights nebbiaScenery_cars nebbiaScenery_road nebbiaRain nebbiaRain_slant nebbiaRain_straight nebbiaRain_off nebbiaBehind nebbiaBehind_night nebbiaBehind_backdrop nebbiaBehind_aquarium nebbiaJellies nebbiaJellySize nebbiaBubbles nebbiaGlass nebbiaGlassStyle nebbiaGlass_rain nebbiaGlass_dew nebbiaGlass_snow nebbiaDew nebbiaDewSize nebbiaDewGlint nebbiaSnow nebbiaSnowSize nebbiaSnowMelt nebbiaAquaScenery_spot nebbiaAquaScenery_buildings nebbiaAquaScenery_lights nebbiaAquaScenery_cars nebbiaAquaScenery_road nebbiaAquaRain nebbiaAquaRain_slant nebbiaAquaRain_straight nebbiaAquaRain_off`) },
   { mode: 'classic', labelKey: 'ui.visualizerClassic', keys: options(`classicSettings classicWordRotation classicLegacyLayout
-    classicBreathingFloatMultiplier classicWordSpacing`) },
+    classicBreathingFloatMultiplier classicWordSpacing avoidOverlap`) },
   { mode: 'cadenza', labelKey: 'ui.visualizerCadenze', keys: [] },
   { mode: 'partita', labelKey: 'ui.visualizerPartita', keys: options(`partitaSettings partitaGuideLines partitaSemanticLayout
-    partitaStaggerMin partitaStaggerMax`) },
+    partitaStaggerMin partitaStaggerMax avoidOverlap`) },
   { mode: 'fume', labelKey: 'ui.visualizerFume', keys: options(`fumeSettings fumeHidePrintSymbols fumeGeometricBackground
     fumeBackgroundObjectOpacity fumeTextHoldRatio fumeCameraSpeed fumeCameraTrackingMode fumeGlowIntensity fumeHeroScale`) },
   { mode: 'claddagh', labelKey: 'ui.visualizerCladdagh', keys: options(`claddaghSettings claddaghShowAxisLine claddaghFocusScaleRatio
@@ -34,7 +36,7 @@ export const DESKTOP_MODE_SEARCH_CATALOG: VisualCatalog[] = [
     sonnetPostProcessVignette sonnetPostProcessHalftone sonnetPostProcessLensDistortion sonnetPostProcessLensDispersion
     sonnetDisplaySection sonnetShowBackgroundMg sonnetShowBackgroundDecor sonnetShowFixedGeo sonnetShowOnlyText
     sonnetShowGuide sonnetShowGiantDecorativeText sonnetEnableTransitions`) },
-  { mode: 'tempera', labelKey: 'ui.visualizerTempera', keys: options(`temperaImageSection temperaQualitySection
+  { mode: 'tempera', labelKey: 'ui.visualizerTempera', keys: options(`temperaImageSection temperaDepthStrength temperaQualitySection
     temperaTextureResolution temperaMotionSection temperaCameraIntensity temperaGlyphMotion temperaGlyphSettleStretch
     temperaColorMode temperaPostProcessSection temperaPostProcessEnabled temperaPostProcessTextureCompression
     temperaPostProcessGrain temperaPostProcessContrast temperaPostProcessRgbShift temperaPostProcessVignette temperaPostProcessLensDistortion

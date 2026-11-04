@@ -39,6 +39,24 @@ afterEach(() => {
 });
 
 describe('desktop appearance codec', () => {
+  it.each(['json', 'code'] as const)('keeps new styles, subtitle rows and render quality through %s', format => {
+    const store = useVisualizerSettingsStore.getState();
+    store.handleSetMachiTuning({ timeOfDay: 'night' });
+    store.handleSetNebbiaTuning({ behind: 'aquarium' });
+    store.handleSetLyricRenderQuality({ scale: 1.5, antialias: 'off' });
+    useTypographySettingsStore.getState().handleSetSubtitleOverlayLayout('current+romanization+translation');
+    const exported = exportDesktopVisualConfig(format, makeOptions(), 'nebbia');
+    store.handleResetMachiTuning(); store.handleResetNebbiaTuning();
+    store.handleSetLyricRenderQuality({ scale: 1, antialias: 'auto' });
+    useTypographySettingsStore.getState().handleSetSubtitleOverlayLayout('translation');
+    expect(importDesktopVisualConfig(exported, makeOptions())).toEqual({ ok: true, mode: 'nebbia' });
+    const saved = useVisualizerSettingsStore.getState();
+    expect(saved.machiTuning.timeOfDay).toBe('night');
+    expect(saved.nebbiaTuning.behind).toBe('aquarium');
+    expect(saved.lyricRenderQuality).toEqual({ scale: 1.5, antialias: 'off' });
+    expect(useTypographySettingsStore.getState().subtitleOverlayLayout).toBe('current+romanization+translation');
+    expect(storage.getItem('subtitle_overlay_layout')).toBe('current+romanization+translation');
+  });
   it.each(['json', 'code'] as const)('roundtrips all supported frame budgets through %s without accepting malformed values', format => {
     for (const value of [60, 90, 120, 'off'] as const) {
       useVisualizerSettingsStore.getState().handleSetVisualizerFrameRate(value);

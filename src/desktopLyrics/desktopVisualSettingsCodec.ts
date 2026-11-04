@@ -10,6 +10,7 @@ import { useTypographySettingsStore } from '../stores/useTypographySettingsStore
 import { useThemeSettingsStore } from '../stores/useThemeSettingsStore';
 import { useDesktopPanelSettingsStore } from '../stores/useDesktopPanelSettingsStore';
 import { applyTypographyPatch, applyVisualizerPatch, typographySetters, visualizerSetters, type DesktopTypographyPatch, type DesktopVisualizerPatch } from './desktopVisualFields';
+import { normalizeLyricRenderQuality } from '../utils/lyricRenderQuality';
 import { setStoredString } from '../stores/storagePrimitives';
 
 // src/desktopLyrics/desktopVisualSettingsCodec.ts — original shortcode/JSON format with a desktop field whitelist; never import song colours or asset URLs.
@@ -69,6 +70,7 @@ export function importDesktopVisualConfig(text: string, options: Options): Deskt
       const modeKey = key.endsWith('Tuning') ? key.slice(0, -6) : '';
       const raw = modeKey && has(tunings, modeKey) ? tunings[modeKey] : config[key];
       if (raw === undefined) continue;
+      if (key === 'lyricRenderQuality') { if (object(raw)) visualizer.lyricRenderQuality = normalizeLyricRenderQuality(raw); continue; }
       if (key === 'smartBeat') { if (object(raw)) visualizer.smartBeat = resolveSmartBeatSettings(raw, v.smartBeat); continue; }
       if (key === 'visualizerFrameRate') { if (isVisualizerFrameRate(raw)) visualizer.visualizerFrameRate = raw; continue; }
       if (key === 'visualizerBackgroundMode' && raw !== null && !hasVisualizerBackgroundMode(raw)) continue;

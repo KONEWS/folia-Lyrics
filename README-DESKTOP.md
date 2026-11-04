@@ -6,6 +6,12 @@ GitHub 发布页：[0.5.1 发布页](https://github.com/KONEWS/folia-Lyrics/rele
 
 0.5.1 移除等待页面底部的三项说明标签，并减少歌词行查找、和声处理和静音频谱计算的开销。包含下列预览版已有功能。
 
+## 歌词显示源码同步（2026-11-04，未发布）
+
+歌词显示模块同步到上游主线 `67fbac76f8a839f97b5126d80be20234db9c1f15`（v0.7.25 之后）。新增町景 Machi 与雾笺 Nebbia，动态样式增至 16 种；接入独立字幕行布局、全局及样式画质、流光与云阶的防重叠开关，并同步 RTL 排版、凝彩景深与智能动感更新。新设置支持桌面搜索、JSON 和短码导入导出。雾笺的中日文笔顺数据由构建插件生成，授权文件一并输出。
+
+桌面宿主版本仍为 0.5.1，上方下载链接对应已发布版本。
+
 ## 样式与设置补齐预览版（2026-10-25）
 
 [本次预览版下载页](https://github.com/KONEWS/folia-Lyrics/releases/tag/desktop-v0.5.0-preview.20261025)：独立程序为 `FoliaLyrics-0.5.0-preview.20261025-win-x64.exe`，完整便携包为同名 ZIP，另附 `SHA256SUMS.txt`。程序内部版本仍为 0.5.0；本包包含上游 v0.7.22 和以下补齐功能，分析模型已随包提供。退出旧版后再运行。
@@ -289,7 +295,7 @@ GitHub 发布页：[0.5.1 发布页](https://github.com/KONEWS/folia-Lyrics/rele
 4. 底部三个按钮控制外部播放器的上一首、暂停/继续、下一首；切歌后自动匹配新歌词。
 5. 从首页或设置启动音乐软件成功后，Folia 会直接跟随所点击的软件，原先固定了其他来源也会更新；启动失败保留原来源。仍需在音乐软件中播放歌曲，媒体会话出现后自动同步。启动时歌词窗口会立即前置并临时置顶，成功后保持约 5 秒，避免被刚打开的播放器遮住；之后恢复原来的置顶设置，期间手动修改置顶会立即生效。椒盐等商店图标优先读取高分辨率资源并修正透明留白，已有绑定也会更新。
 6. 点击窗口左上角标题，直接在下拉列表中选择自动跟随或运行中的应用；一致的音浪图标在播放时起伏，暂停时静止。已绑定但未运行的传统程序和商店应用均可预选。
-7. 顶栏直接选择 14 种动效、显示译文和窗口置顶；右侧设置仍可调整歌词匹配、时间微调和声音响应。
+7. 顶栏直接选择 16 种动效、显示译文和窗口置顶；右侧设置仍可调整歌词匹配、时间微调和声音响应。
 8. 顶栏按钮进入/退出全屏；Esc 退出全屏、关闭设置或恢复控制栏。窗口与全屏沉浸时，鼠标移到顶部呼出顶栏及设置入口，移到底部呼出播放控件，离开后收起；开启鼠标穿透后，Ctrl+Alt+L 或双击托盘图标恢复。
 
 ## 兼容性与边界
@@ -345,7 +351,7 @@ dotnet publish native/FoliaLyrics.csproj -c Release -r win-x64 --self-contained 
 本机已将 Node.js 24 与 .NET SDK 10 单独准备在 `%LOCALAPPDATA%\FoliaLyricsBuild`；构建脚本会优先使用该目录中的工具，并检查所需版本，不修改系统 PATH。其他电脑仍需准备构建环境。
 
 ## 来源
-原版 visualizer 源码来自 https://github.com/chthollyphile/folia-major ，基线 1f6d0f468f5bc81b23a8b40ad7ca96ccd4b1ecbe（v0.7.22）。复用原版渲染器并保留歌词时序与动效；参数控件的选中语义和 Pixi 缩放兼容修正在相应共享模块中。桌面适配主要位于 native 与 src/desktopLyrics，src/index.css 的网络字体路径调整为离线文件。本项目是独立衍生版本，不是官方发行版，按 AGPL-3.0 提供完整源码，见 LICENSE。
+原版 visualizer 源码来自 https://github.com/chthollyphile/folia-major ，整体源码基线 1f6d0f468f5bc81b23a8b40ad7ca96ccd4b1ecbe（v0.7.22），歌词显示模块另行同步至 67fbac76f8a839f97b5126d80be20234db9c1f15（2026-11-04）。复用原版渲染器并保留歌词时序与动效；参数控件的选中语义和 Pixi 缩放兼容修正在相应共享模块中。桌面适配主要位于 native 与 src/desktopLyrics，src/index.css 的网络字体路径调整为离线文件。本项目是独立衍生版本，不是官方发行版，按 AGPL-3.0 提供完整源码，见 LICENSE。
 
 第三方：.NET / NAudio 使用 MIT 等许可；TagLibSharp 2.3.0 使用 LGPL-2.1，可通过提供的工程替换依赖并重新编译；WebView2 SDK 按微软许可使用；Noto 中日文字体使用 SIL OFL。相应许可证见 licenses 目录。保留 npm 锁文件以记录其余 Folia 依赖；第三方许可证汇编见 licenses/npm-bundled-NOTICES.txt。本源码包不含用户音乐音频。
 

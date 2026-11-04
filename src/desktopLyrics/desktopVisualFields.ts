@@ -7,6 +7,7 @@ import { useVisualizerSettingsStore } from '../stores/useVisualizerSettingsStore
 export const visualizerSetters = {
   randomVisualizerModePerSong: 'handleToggleRandomVisualizerModePerSong', randomVisualizerModes: 'handleSetRandomVisualizerModes',
   backgroundOpacity: 'handleSetBackgroundOpacity', visualizerOpacity: 'handleSetVisualizerOpacity', visualizerFrameRate: 'handleSetVisualizerFrameRate',
+  lyricRenderQuality: 'handleSetLyricRenderQuality',
   disableVisualizerVignette: 'handleToggleDisableVisualizerVignette', disableVisualizerGeometricBackground: 'handleToggleDisableVisualizerGeometricBackground',
   visualizerBackgroundMode: 'handleSetVisualizerBackgroundMode', urlBackgroundList: 'handleSetUrlBackgroundList', urlBackgroundSelectedId: 'handleSetUrlBackgroundSelectedId',
   classicTuning: 'handleSetClassicTuning', cadenzaTuning: 'handleSetCadenzaTuning', partitaTuning: 'handleSetPartitaTuning',
@@ -14,6 +15,7 @@ export const visualizerSetters = {
   tiltTuning: 'handleSetTiltTuning', dioramaTuning: 'handleSetDioramaTuning', monetTuning: 'handleSetMonetTuning',
   pendoloTuning: 'handleSetPendoloTuning', sonnetTuning: 'handleSetSonnetTuning', temperaTuning: 'handleSetTemperaTuning', lumiereTuning: 'handleSetLumiereTuning', hanabiTuning: 'handleSetHanabiTuning',
   smartBeat: 'handleSetSmartBeat',
+  machiTuning: 'handleSetMachiTuning', nebbiaTuning: 'handleSetNebbiaTuning',
   monetBackgroundTuning: 'handleSetMonetBackgroundTuning', nomandBackgroundTuning: 'handleSetNomandBackgroundTuning',
   latentBackgroundTuning: 'handleSetLatentBackgroundTuning', soraBackgroundTuning: 'handleSetSoraBackgroundTuning',
 } as const satisfies Partial<Record<keyof VisualizerSettingsState, keyof VisualizerSettingsState>>;
@@ -24,6 +26,7 @@ export const typographySetters = {
   subtitleFontScale: 'handleSetSubtitleFontScale', subtitleFontWeight: 'handleSetSubtitleFontWeight', subtitleFontFamily: 'handleSetSubtitleFontFamily',
   subtitleFontFallbackFamilies: 'handleSetSubtitleFontFallbackFamilies', hidePlayerTranslationSubtitle: 'handleToggleHidePlayerTranslationSubtitle',
   showSubtitleTranslation: 'handleToggleShowSubtitleTranslation', subtitleContentMode: 'handleSetSubtitleContentMode',
+  subtitleOverlayLayout: 'handleSetSubtitleOverlayLayout',
   subtitleOverlayOpacity: 'handleSetSubtitleOverlayOpacity', subtitleOverlayBackground: 'handleToggleSubtitleOverlayBackground',
   subtitleUpcomingLyricsBlur: 'handleToggleSubtitleUpcomingLyricsBlur', showHarmonySubtitle: 'handleToggleShowHarmonySubtitle', harmonySubtitleBackground: 'handleToggleHarmonySubtitleBackground',
 } as const satisfies Partial<Record<keyof TypographySettingsState, keyof TypographySettingsState>>;

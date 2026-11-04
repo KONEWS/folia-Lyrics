@@ -14,6 +14,7 @@ import { buildDesktopBackgroundActions, buildDesktopModePanelProps, resetDesktop
 import { exportDesktopVisualConfig, importDesktopVisualConfig } from './desktopVisualSettingsCodec';
 import { DEFAULT_SETTINGS_TRANSPARENCY, useDesktopPanelSettingsStore } from '../stores/useDesktopPanelSettingsStore';
 import { desktopSubtitleVisibility } from './visualFeatures/desktopSubtitleVisibility';
+import { DEFAULT_LYRIC_RENDER_QUALITY } from '../utils/lyricRenderQuality';
 
 // src/desktopLyrics/useDesktopVisualSettings.ts — original visual settings feed the desktop renderer without App playback state.
 type Options = { baseTheme: Theme; cover: string; transparent: boolean; translated: boolean; onTranslated: (value: boolean) => void };
@@ -24,6 +25,7 @@ const readIntensity = (): Theme['animationIntensity'] | null => {
 };
 const commonDefaults: DesktopTypographyPatch = { lyricsFontStyle: 'sans', lyricsFontScale: 1, lyricsFontWeight: null, lyricsCustomFont: null, lyricsFontFallbackFamilies: [] };
 const subtitleDefaults: DesktopTypographyPatch = { hidePlayerTranslationSubtitle: false, subtitleContentMode: 'translation', showSubtitleTranslation: true,
+  subtitleOverlayLayout: 'translation',
   subtitleOverlayOpacity: .6, subtitleOverlayBackground: true, subtitleUpcomingLyricsBlur: true, showHarmonySubtitle: true, harmonySubtitleBackground: true,
   subtitleFontInheritsLyrics: true, subtitleFontScale: 1, subtitleFontStyle: 'sans', subtitleFontWeight: null, subtitleFontFamily: null, subtitleFontFallbackFamilies: [] };
 
@@ -63,11 +65,13 @@ export function useDesktopVisualSettings(input: Options) {
     subtitleOverlayOpacity: typography.subtitleOverlayOpacity, subtitleOverlayBackground: typography.subtitleOverlayBackground,
     subtitleUpcomingLyricsBlur: typography.subtitleUpcomingLyricsBlur, showHarmonySubtitle: typography.showHarmonySubtitle,
     harmonySubtitleBackground: typography.harmonySubtitleBackground,
+    subtitleOverlayLayout: typography.subtitleOverlayLayout,
     ...desktopSubtitleVisibility(typography, input.translated),
     cappellaCustomEmojiImages: assets.cappellaCustomEmojiImages, cappellaCustomAvatarImages: assets.cappellaCustomAvatarImages, monetPortraitImage: assets.monetPortraitImage,
   }), [themes.visualizerSubtitleTheme, tunings, background, staticMode, visualizer.visualizerOpacity, typography.lyricsFontScale,
     typography.subtitleFontScale, typography.subtitleOverlayOpacity, typography.subtitleOverlayBackground, typography.subtitleUpcomingLyricsBlur,
     typography.showHarmonySubtitle, typography.harmonySubtitleBackground, typography.hidePlayerTranslationSubtitle, typography.subtitleContentMode,
+    typography.subtitleOverlayLayout,
     input.translated, assets.cappellaCustomEmojiImages, assets.cappellaCustomAvatarImages, assets.monetPortraitImage]);
   const draftVisualizer = useMemo(() => {
     const value = { ...visualizer, ...assetActions, ...edits.draft.visualizer };
@@ -86,7 +90,7 @@ export function useDesktopVisualSettings(input: Options) {
     draftVisualizer.monetBackgroundTuning, draftVisualizer.nomandBackgroundTuning, draftVisualizer.latentBackgroundTuning, draftVisualizer.soraBackgroundTuning, draftVisualizer.visualizerBackgroundMode]);
   const backgroundActions = buildDesktopBackgroundActions(draftVisualizer, assets, edits.patchVisualizer);
   const panelProps = (mode: VisualizerMode) => buildDesktopModePanelProps(mode, draftVisualizer, edits.patchVisualizer, edits.beginSlider, edits.commitSlider);
-  const resetCommon = () => { edits.commitSlider(); applyTypographyPatch(commonDefaults); visualizer.handleSetVisualizerOpacity(1); visualizer.handleSetVisualizerFrameRate(60); useThemeSettingsStore.getState().handleToggleStaticMode(false); useDesktopPanelSettingsStore.getState().setSettingsTransparency(DEFAULT_SETTINGS_TRANSPARENCY); localStorage.removeItem(INTENSITY_KEY); setIntensityOverride(null); };
+  const resetCommon = () => { edits.commitSlider(); applyTypographyPatch(commonDefaults); visualizer.handleSetVisualizerOpacity(1); visualizer.handleSetVisualizerFrameRate(60); visualizer.handleSetLyricRenderQuality(DEFAULT_LYRIC_RENDER_QUALITY); useThemeSettingsStore.getState().handleToggleStaticMode(false); useDesktopPanelSettingsStore.getState().setSettingsTransparency(DEFAULT_SETTINGS_TRANSPARENCY); localStorage.removeItem(INTENSITY_KEY); setIntensityOverride(null); };
   const resetSubtitle = () => { edits.commitSlider(); applyTypographyPatch(subtitleDefaults); input.onTranslated(true); };
   const resetMode = (mode: VisualizerMode) => { edits.commitSlider(); resetDesktopMode(mode); };
   const codecOptions = { animationIntensity, backgroundEnabled, translated: input.translated, setAnimationIntensity, setBackgroundEnabled, setTranslated: input.onTranslated };

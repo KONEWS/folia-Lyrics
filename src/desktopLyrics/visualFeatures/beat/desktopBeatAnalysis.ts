@@ -34,11 +34,11 @@ export async function clearDesktopBeatBinding(identity: string) {
 }
 
 export async function readDesktopBeatEvents(key: string) {
-    const [{ readStoredBeatGrid }, { loadStoredDrumHits }] = await Promise.all([
-        import('../../../services/analysis/beatGrid'), import('../../../services/analysis/drumHits'),
+    const [{ readStoredBeatGrid }, { loadStoredDrumHits }, { loadStoredVocalEnvelope }] = await Promise.all([
+        import('../../../services/analysis/beatGrid'), import('../../../services/analysis/drumHits'), import('../../../services/analysis/vocalEnvelope'),
     ]);
     const grid = await readStoredBeatGrid(key);
-    await loadStoredDrumHits(key);
+    await Promise.all([loadStoredDrumHits(key), loadStoredVocalEnvelope(key)]);
     return { events: grid ? mergeBeatFxEvents(grid.beats, grid.downbeats, grid.accents) : [], trackScale: grid?.accents?.trackScale ?? 1 };
 }
 
@@ -79,7 +79,12 @@ export async function analyseDesktopBeatFile(identity: string, duration: number,
     setWantedDrumTrack(key);
     signal.addEventListener('abort', release, { once: true });
     try {
-        const drums = await loadTrackDrumHits(key, async () => { check(); return bytes.slice(0); });
+        const { loadTrackVocalEnvelope } = await import('../../../services/analysis/vocalStemRun');
+        check();
+        const [drums] = await Promise.all([
+            loadTrackDrumHits(key, async () => { check(); return bytes.slice(0); }),
+            loadTrackVocalEnvelope(key, async () => { check(); return bytes.slice(0); }),
+        ]);
         check();
         if (!drums) throw new Error('desktopVisual.beatFailure');
         const binding = { key, name: file.name.slice(0, 1024), duration: decoded.duration };

@@ -17,6 +17,13 @@ function deferred<T>() {
 }
 
 describe('desktop font preparation', () => {
+  it('prepares romanization selected by subtitle rows independently of the inline subtitle mode', () => {
+    const song = input();
+    song.lines[0].romanization = 'ローマ字Ω';
+    const requests = desktopFontRequests({ ...song, subtitleContentMode: 'none', subtitleOverlayLayout: 'current+romanization' });
+    expect(requests[1].text).toContain('Ω');
+    expect(desktopFontRequests({ ...song, subtitleContentMode: 'none' })[1].text).not.toContain('Ω');
+  });
   it('recognizes already loaded glyphs synchronously and keeps unloaded glyphs gated', () => {
     const check = vi.fn().mockReturnValue(true);
     vi.stubGlobal('document', { fonts: { check } });

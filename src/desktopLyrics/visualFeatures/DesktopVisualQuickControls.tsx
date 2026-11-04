@@ -61,7 +61,7 @@ export default function DesktopVisualQuickControls({ mode, model, onVisualSettin
                     <div className="mb-2 flex items-center justify-between gap-3 text-xs"><span>{getVisualizerModeLabel(mode, t)}</span>
                         <button type="button" onClick={() => openSettings(onVisualSettings)}>{t('desktopVisual.moreSettings')}</button></div>
                     <div className="flex flex-wrap items-center gap-2" data-desktop-style-quick-controls={mode}>
-                        {entry.renderQuickControls?.({ ...settings, t, isDaylight: false, theme: model.mergedTheme })}
+                        {entry.renderQuickControls?.({ ...settings, t, isDaylight: false, theme: model.mergedTheme, onClosePanel: close })}
                     </div>
                 </section>
                 <section aria-label={t('options.previewBackgroundSettings')}>

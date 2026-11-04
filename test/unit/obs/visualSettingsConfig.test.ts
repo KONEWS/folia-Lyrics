@@ -160,7 +160,10 @@ describe('buildVisualSettingsConfig', () => {
 
         expect(buildVisualSettingsConfig()).toMatchObject({ sonnetTuning });
         const restored = decompressConfig(extractCfgFromInput(asObsUrl(compressConfig(buildVisualSettingsConfig()))));
-        expect(restored.sonnetTuning).toEqual(sonnetTuning);
+        // The generic bundle carries new fields; the frozen legacy field remains readable by older builds.
+        expect(restored.visualizerTunings.sonnet).toEqual(sonnetTuning);
+        const { render, ...legacy } = sonnetTuning;
+        expect(restored.sonnetTuning).toEqual(legacy);
     });
 
     it('carries the theme generation source through compress and decompress', () => {

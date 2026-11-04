@@ -6,6 +6,8 @@ import { useHomeLayoutSettingsStore, type HomeLayoutSettingsState } from '../../
 import { usePlayerChromeSettingsStore, type PlayerChromeSettingsState } from '../../stores/usePlayerChromeSettingsStore';
 import { useThemeSettingsStore, type ThemeSettingsState } from '../../stores/useThemeSettingsStore';
 import type { SyncedSettingsRecord, SyncedVisualSettings } from './syncTypes';
+import { parseSubtitleOverlayLayout } from '../../utils/lyrics/subtitleOverlayLayout';
+import { normalizeLyricRenderQuality } from '../../utils/lyricRenderQuality';
 import { SYNC_SCHEMA_VERSION } from './syncTypes';
 import { applyVisualizerTuningsToSettings, collectVisualizerTunings } from '../../components/visualizer/tuningRegistry';
 
@@ -41,6 +43,8 @@ export const buildSyncedVisualSettings = (state: SyncableSettingsState): SyncedV
     hidePlayerTranslationSubtitle: state.hidePlayerTranslationSubtitle,
     showSubtitleTranslation: state.showSubtitleTranslation,
     subtitleContentMode: state.subtitleContentMode,
+    subtitleOverlayLayout: state.subtitleOverlayLayout,
+    lyricRenderQuality: state.lyricRenderQuality,
     subtitleOverlayBackground: state.subtitleOverlayBackground,
     subtitleUpcomingLyricsBlur: state.subtitleUpcomingLyricsBlur,
     lyricsFontStyle: state.lyricsFontStyle,
@@ -107,6 +111,9 @@ export const applySyncedVisualSettings = (
         state.handleSetVisualizerBackgroundMode(settings.visualizerBackgroundMode);
     }
     if (settings.backgroundOpacity !== undefined) state.handleSetBackgroundOpacity(settings.backgroundOpacity);
+    if (settings.lyricRenderQuality !== undefined) state.handleSetLyricRenderQuality(normalizeLyricRenderQuality(settings.lyricRenderQuality));
+    const layout = parseSubtitleOverlayLayout(settings.subtitleOverlayLayout);
+    if (layout) state.handleSetSubtitleOverlayLayout(layout);
     if (settings.visualizerOpacity !== undefined) state.handleSetVisualizerOpacity(settings.visualizerOpacity);
     if (settings.hidePlayerTranslationSubtitle !== undefined) state.handleToggleHidePlayerTranslationSubtitle(Boolean(settings.hidePlayerTranslationSubtitle));
     if (settings.showSubtitleTranslation !== undefined) state.handleToggleShowSubtitleTranslation(Boolean(settings.showSubtitleTranslation));

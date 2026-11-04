@@ -6,6 +6,8 @@ import { useVisualTranslation, VisualCard, VisualRange, VisualToggle } from './D
 import type { DesktopVisualSettingsModel } from './useDesktopVisualSettings';
 import DesktopSettingsTransparency from './DesktopSettingsTransparency';
 import { getVisualizerRegistryEntry } from '../components/visualizer/registry';
+import type { LyricAntialias, LyricRenderScale } from '../types';
+import { LYRIC_ANTIALIAS_LABEL_KEYS, lyricRenderScaleChoices } from '../components/visualizer/renderQuality/LyricRenderQualityRows';
 
 // src/desktopLyrics/DesktopVisualCommon.tsx — global typography and motion controls for the original renderer.
 export default function DesktopVisualCommon({ model, mode, onSegmentation, canSegment = false }: {
@@ -25,6 +27,14 @@ export default function DesktopVisualCommon({ model, mode, onSegmentation, canSe
         onChange={value => model.visualizer.handleSetVisualizerFrameRate(value === 'off' ? 'off' : Number(value) as VisualizerFrameRate)}
         options={[...VISUALIZER_FRAME_RATE_OPTIONS.map(value => ({ value: String(value), label: String(value) + ' FPS' })), { value: 'off', label: t('desktopVisual.frameRateDisplay') }]}/></label>
       <p className="desktop-visual-hint">{t('desktopVisual.frameRateHint')}</p>
+      <label className="desktop-visual-field"><span>{t('options.lyricRenderScale')}</span><DesktopSelect
+        value={String(model.visualizer.lyricRenderQuality.scale)} label={t('options.lyricRenderScale')}
+        onChange={value => model.patchVisualizer({ lyricRenderQuality: { ...model.visualizer.lyricRenderQuality, scale: Number(value) as LyricRenderScale } })}
+        options={lyricRenderScaleChoices()}/></label>
+      <label className="desktop-visual-field"><span>{t('options.lyricAntialias')}</span><DesktopSelect
+        value={model.visualizer.lyricRenderQuality.antialias} label={t('options.lyricAntialias')}
+        onChange={value => model.patchVisualizer({ lyricRenderQuality: { ...model.visualizer.lyricRenderQuality, antialias: value as LyricAntialias } })}
+        options={(['auto', 'on', 'off'] as const).map(value => ({ value, label: t(LYRIC_ANTIALIAS_LABEL_KEYS[value]) }))}/></label>
       <label className="desktop-visual-field"><span>{t('ui.animationIntensity')}</span><DesktopSelect
         value={model.animationIntensity} label={t('ui.animationIntensity')} onChange={value => model.setAnimationIntensity(value as 'calm' | 'normal' | 'chaotic')}
         options={['calm', 'normal', 'chaotic'].map(value => ({ value, label: t(`animation.${value}`) }))}/></label>

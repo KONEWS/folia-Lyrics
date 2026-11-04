@@ -72,10 +72,12 @@ const FIELD_GROUPS: Record<string, ImportGroup> = {
     visualizerMode: 'visualizer',
     randomVisualizerModePerSong: 'visualizer',
     randomVisualizerModes: 'visualizer',
+    lyricRenderQuality: 'visualizer',
     visualizerOpacity: 'visualizer',
     hidePlayerTranslationSubtitle: 'visualizer',
     showSubtitleTranslation: 'visualizer',
     subtitleContentMode: 'visualizer',
+    subtitleOverlayLayout: 'visualizer',
     subtitleOverlayBackground: 'visualizer',
     subtitleUpcomingLyricsBlur: 'visualizer',
     subtitleOverlayOpacity: 'visualizer',
@@ -161,6 +163,8 @@ const TRUTHY_GUARDED_FIELDS = new Set([
     // applyImportedConfig only applies subtitleContentMode for the known enum values, all of which
     // are truthy strings, so an empty/absent one is skipped there the same as here.
     'subtitleContentMode',
+    // Likewise applied only when it parses as a layout, every one of which is a non-empty string.
+    'subtitleOverlayLayout',
     'lyricsFontStyle',
     'lyricsFontFallbackFamilies',
     'lyricsCustomFontFamily',

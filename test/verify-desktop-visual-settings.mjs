@@ -56,7 +56,7 @@ export async function verifyDesktopVisualSettings(page, song, output) {
     await desktopSelect(page, '歌词样式').focus(); await page.keyboard.press('ArrowDown');
     const menu = page.locator('.desktop-top-menu'); await menu.waitFor();
     assert.equal(await menu.getAttribute('role'), 'group');
-    assert.equal(await menu.getByRole('listbox', { name: '歌词样式', exact: true }).getByRole('option').count(), 15);
+    assert.equal(await menu.getByRole('listbox', { name: '歌词样式', exact: true }).getByRole('option').count(), 17);
     assert.equal(await menu.getByRole('option').filter({ hasText: '静止' }).count(), 0);
     const footer = menu.getByRole('button', { name: '更多设置', exact: false });
     assert.equal(await footer.getAttribute('role'), null); assert.equal(await footer.count(), 1);
@@ -68,12 +68,12 @@ export async function verifyDesktopVisualSettings(page, song, output) {
     assert.deepEqual(await visualDialog(page).getByRole('tab').allTextContents(), ['通用', '歌词动画', '字幕']);
     assert.equal(await visualDialog(page).getByRole('tab', { name: '背景', exact: true }).count(), 0);
     await page.screenshot({ path: `${output}/visual-settings-original-panel.png` });
-    checks.push('the real more-settings footer is outside the 15-option listbox (14 styles and random), supports Tab/Shift+Tab and opens common, lyric-animation and subtitle tabs without duplicating background settings or changing the current style');
+    checks.push('the real more-settings footer is outside the 17-option listbox (16 styles and random), supports Tab/Shift+Tab and opens common, lyric-animation and subtitle tabs without duplicating background settings or changing the current style');
 
     stage = 'registry-cards';
     const panel = await setTab('visualizer'), grid = panel.locator('[data-visual-mode-grid]');
     const modes = await grid.locator('button[data-visual-mode]').evaluateAll(elements => elements.map(element => ({ value: element.dataset.visualMode, label: element.textContent.trim() })));
-    assert.equal(modes.length, 14); assert(!modes.some(mode => mode.value === 'still'));
+    assert.equal(modes.length, 16); assert(!modes.some(mode => mode.value === 'still'));
     assert.equal(await panel.locator('.desktop-visual-still [data-visual-mode="still"]').count(), 1);
     let withPanel = 0, withoutPanel = 0;
     for (const mode of [...modes, { value: 'still', label: '静止' }]) {
@@ -83,27 +83,27 @@ export async function verifyDesktopVisualSettings(page, song, output) {
       assert.equal((await readVisual(page)).isPreviewMode, false); assert.equal(await page.locator('audio,video').count(), 0);
       if (mode.value !== 'still') assert.equal(await page.evaluate(mode => window.__foliaReadResolvedVisualizerProps(mode)?.isPreviewMode, mode.value), false);
       const originalPanel = panel.locator(`[data-visualizer-settings="${mode.value}"]`); await originalPanel.waitFor();
-      const none = ['cadenza', 'still'].includes(mode.value);
+      const none = mode.value === 'still';
       assert.equal(await originalPanel.getByText('此样式没有专属参数面板', { exact: false }).count(), none ? 1 : 0);
       if (none) { withoutPanel++; assert.equal(await originalPanel.locator('input,button').count(), 0); }
       else { withPanel++; assert(await originalPanel.locator('input,button').count() > 0, `${mode.value}: the real registry panel exposes its own controls`); }
       assert.equal(await panel.locator(`button[data-visual-mode="${mode.value}"]`).getAttribute('aria-pressed'), 'true');
-      const canSegment = ['classic', 'partita', 'sonnet', 'tempera', 'lumiere'].includes(mode.value);
+      const canSegment = ['classic', 'partita', 'sonnet', 'tempera', 'lumiere', 'nebbia'].includes(mode.value);
       const grouping = await setTab('common');
       assert.equal(await grouping.getByRole('button', { name: '本曲歌词分词', exact: true }).isDisabled(), !canSegment);
       await setTab('visualizer');
       samples.push({ context: 'registry-card', ...mode, dedicatedPanel: !none, canSegment });
     }
-    assert.equal(withPanel, 13); assert.equal(withoutPanel, 2);
+    assert.equal(withPanel, 16); assert.equal(withoutPanel, 1);
     assert.equal(await desktopSelect(page, '歌词样式').getAttribute('data-value'), 'still');
     await closeVisualSettings(page);
     const stillMenu = await openDesktopMenu(page, '歌词样式');
-    assert.equal(await stillMenu.getByRole('option').count(), 15); assert.equal(await stillMenu.locator('[data-value="still"]').count(), 0);
+    assert.equal(await stillMenu.getByRole('option').count(), 17); assert.equal(await stillMenu.locator('[data-value="still"]').count(), 0);
     await page.keyboard.press('Escape'); await stillMenu.waitFor({ state: 'detached' });
     await setTab('visualizer');
     await panel.locator('[data-visual-mode="classic"]').click(); await waitVisual(page, { mode: 'classic' });
-    checks.push('all 14 upstream dynamic modes and separate still mode mount with their real 13 dedicated cards and two explicit no-card states');
-    console.log('PASS visual settings: 14 dynamic modes / separate still / 13 original cards');
+    checks.push('all 16 upstream dynamic modes and separate still mode mount with their real 16 dedicated cards and one explicit no-card state');
+    console.log('PASS visual settings: 16 dynamic modes / separate still / 16 original cards');
     stage = 'monet-live-spectrum'; checks.push(...await verifyDesktopMonetAudio(page, output, samples));
     await setTab('visualizer'); await panel.locator('[data-visual-mode="classic"]').click(); await waitVisual(page, { mode: 'classic' });
 
@@ -229,11 +229,11 @@ export async function verifyDesktopVisualSettings(page, song, output) {
     await importText(JSON.stringify({ ...clearFonts, visualizerMode: 'still' })); await waitVisual(page, { mode: 'still' });
     await closeVisualSettings(page);
     const staticMenu = await openDesktopMenu(page, '歌词样式');
-    assert.equal(await staticMenu.getByRole('option').count(), 15); assert.equal(await staticMenu.locator('[data-value="still"]').count(), 0);
+    assert.equal(await staticMenu.getByRole('option').count(), 17); assert.equal(await staticMenu.locator('[data-value="still"]').count(), 0);
     await page.keyboard.press('Escape'); await staticMenu.waitFor({ state: 'detached' });
     await openVisualSettings(page, 'common');
     await importText(json); await waitVisual(page, { mode: 'classic', 'theme.fontFamily': 'Microsoft YaHei' }); await closeVisualSettings(page);
-    checks.push('false background, null system-font families and empty fallback stacks clear old values in JSON and shortcode; importing still preserves the separate static mode and the 14 dynamic styles plus random topbar option');
+    checks.push('false background, null system-font families and empty fallback stacks clear old values in JSON and shortcode; importing still preserves the separate static mode and the 16 dynamic styles plus random topbar option');
 
     stage = 'compact-dialog';
     await page.setViewportSize({ width: 450, height: 300 });

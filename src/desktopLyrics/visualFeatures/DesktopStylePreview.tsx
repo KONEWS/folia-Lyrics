@@ -36,6 +36,7 @@ export default function DesktopStylePreview({ model, mode, onMode, onClose }: Pr
     const kitTheme = useMemo(() => ({ theme: model.mergedTheme, isDaylight: false }), [model.mergedTheme]);
     const ready = useDesktopFonts({ lines: sample.lines, theme: model.mergedTheme, subtitleTheme: model.subtitleTheme,
         title: sample.title, artist: '', hideTranslationSubtitle: model.rendererProps.hideTranslationSubtitle,
+        subtitleOverlayLayout: model.rendererProps.subtitleOverlayLayout,
         subtitleContentMode: model.rendererProps.subtitleContentMode, showHarmonySubtitle: model.rendererProps.showHarmonySubtitle }, setNotice);
     const picture = useCallback((value: VisualizerMode, state: PictureState) => (
         <LyricStylePicture mode={value} {...state} active={state.active && !paused}/>

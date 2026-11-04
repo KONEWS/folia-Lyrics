@@ -11,7 +11,7 @@ describe('desktop subtitle visibility', () => {
         const visibility = desktopSubtitleVisibility({ subtitleContentMode: 'none', hidePlayerTranslationSubtitle: false }, false);
         const content = resolveVisualizerSubtitleOverlayContent({ showText: true, activeLine: current, recentCompletedLine: null, nextLines: [next], ...visibility });
         expect(content.shouldRenderOverlay).toBe(true);
-        expect(content.subtitleTracks).toEqual([]);
+        expect(content.rows).toEqual([]);
         expect(content.upcomingLines).toEqual([next]);
     });
     it('does not clear an independent hidden-overlay choice when content is enabled', () => {

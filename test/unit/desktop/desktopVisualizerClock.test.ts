@@ -51,7 +51,7 @@ describe('desktop clock audio work', () => {
     ] as Line[];
     const resolve = createDesktopLineResolver(lines);
     const times = [0, 1, 1.1, 1.9, 2, 2.1, 3, 4, 4.001, 5, 6, 6.001, 7, 8, 8.001, 10, 11, 12, 12.001];
-    for (const time of [...times, ...times.toReversed()]) expect(resolve(time)).toBe(findLatestActiveLineIndex(lines, time));
+    for (const time of [...times, ...[...times].reverse()]) expect(resolve(time)).toBe(findLatestActiveLineIndex(lines, time));
     const readStart = vi.spyOn(lines[0], 'startTime', 'get');
     resolve(1.1); readStart.mockClear();
     for (let frame = 1; frame < 60; frame++) resolve(1.1 + frame / 100);

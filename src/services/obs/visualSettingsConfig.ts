@@ -46,9 +46,11 @@ export function buildVisualSettingsConfig(): Record<string, unknown> {
     // several renderers, so a web overlay without it animates where the main window does not.
     staticMode: storeThemeSettings.staticMode,
     visualizerOpacity: storeVisualizer.visualizerOpacity,
+    lyricRenderQuality: storeVisualizer.lyricRenderQuality,
     hidePlayerTranslationSubtitle: storeTypographySettings.hidePlayerTranslationSubtitle,
     showSubtitleTranslation: storeTypographySettings.showSubtitleTranslation,
     subtitleContentMode: storeTypographySettings.subtitleContentMode,
+    subtitleOverlayLayout: storeTypographySettings.subtitleOverlayLayout,
     subtitleOverlayBackground: storeTypographySettings.subtitleOverlayBackground,
     subtitleUpcomingLyricsBlur: storeTypographySettings.subtitleUpcomingLyricsBlur,
     subtitleOverlayOpacity: storeTypographySettings.subtitleOverlayOpacity,

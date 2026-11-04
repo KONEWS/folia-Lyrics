@@ -3,17 +3,18 @@ import type { MotionValue } from 'framer-motion';
 import type { VisualizerMode } from '../../../types';
 import { useVisualizerSettingsStore } from '../../../stores/useVisualizerSettingsStore';
 import { liveBeatEffects, liveBeatEffectStrength } from '../../../components/visualizer/beatClockTargets';
-import { resolveBeatEffectSetting } from '../../../services/beatFx/beatEffects';
+import { beatEffectPartId, resolveBeatEffectPartStrength, resolveBeatEffectSetting } from '../../../services/beatFx/beatEffects';
 import { beginBeatFxTrack, setBeatFxEvents, setBeatFxIntensities, setBeatFxLiveEffects, stopBeatFx, tickBeatFxAt } from '../../../services/beatFx/beatFxLive';
 import { analyseDesktopBeatFile, clearDesktopBeatBinding, readDesktopBeatBinding, readDesktopBeatEvents, type DesktopBeatBinding, type DesktopBeatPhase } from './desktopBeatAnalysis';
 import { initializeDesktopAnalysisModels } from './desktopAnalysisModels';
 
 // Drives the original beat clock from external playback without inventing an internal audio player.
-export function useDesktopBeatFx({ identity, duration, mode, clock, playing, staticMode }: {
-    identity: string; duration: number; mode: VisualizerMode; clock: MotionValue<number>; playing: boolean; staticMode: boolean;
+export function useDesktopBeatFx({ identity, duration, mode, clock, playing, staticMode, pageTransparent = false }: {
+    identity: string; duration: number; mode: VisualizerMode; clock: MotionValue<number>; playing: boolean; staticMode: boolean; pageTransparent?: boolean;
 }) {
-    const smartBeat = useVisualizerSettingsStore(state => state.smartBeat);
-    const background = useVisualizerSettingsStore(state => state.visualizerBackgroundMode);
+    const visualizer = useVisualizerSettingsStore();
+    const smartBeat = visualizer.smartBeat;
+    const background = visualizer.visualizerBackgroundMode;
     const [storedBinding, setStoredBinding] = useState<{ identity: string; value: DesktopBeatBinding } | null>(null);
     const binding = storedBinding?.identity === identity ? storedBinding.value : null;
     const [phase, setPhase] = useState<DesktopBeatPhase | null>(null);
@@ -39,8 +40,11 @@ export function useDesktopBeatFx({ identity, duration, mode, clock, playing, sta
     }, [identity, cancel]);
     useEffect(() => { if (smartBeat.mode !== 'on') cancel(); }, [smartBeat.mode, cancel]);
 
-    const settings = { smartBeat, visualizerMode: mode, visualizerBackgroundMode: background };
-    const strengths = staticMode ? {} : Object.fromEntries(liveBeatEffects(settings).map(effect => [effect.id, resolveBeatEffectSetting(smartBeat, effect.id).strength]));
+    const settings = { ...visualizer, visualizerMode: mode, visualizerBackgroundMode: background, pageTransparent };
+    const strengths = staticMode ? {} : Object.fromEntries(liveBeatEffects(settings).flatMap(effect => {
+        const setting = resolveBeatEffectSetting(smartBeat, effect.id);
+        return [[effect.id, setting.strength], ...(effect.parts ?? []).map(part => [beatEffectPartId(effect.id, part.key), resolveBeatEffectPartStrength(setting, part.key)])];
+    }));
     const effectKey = JSON.stringify(strengths);
     const beatStrength = staticMode ? 0 : liveBeatEffectStrength(settings, 'beats');
     const wanted = Object.keys(strengths).length > 0 && Boolean(identity);

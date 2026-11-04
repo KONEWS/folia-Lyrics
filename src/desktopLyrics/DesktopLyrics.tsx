@@ -72,6 +72,7 @@ export default function DesktopLyrics() {
   const visual = useDesktopVisualSettings({ baseTheme: coverTheme.theme, cover, transparent: Boolean(state.appearance.transparent), translated, onTranslated: changeTranslated });
   const fontsReady = useDesktopFonts({ lines: segmentation.lyrics.lines, theme: visual.mergedTheme, subtitleTheme: visual.subtitleTheme, title, artist,
     hideTranslationSubtitle: visual.rendererProps.hideTranslationSubtitle, subtitleContentMode: visual.rendererProps.subtitleContentMode,
+    subtitleOverlayLayout: visual.rendererProps.subtitleOverlayLayout,
     showHarmonySubtitle: visual.rendererProps.showHarmonySubtitle }, state.setNotice);
   const hasLyrics = state.lyrics.lines.length > 0;
   const runtime = useVisualizerClock(segmentation.lyrics.lines, state.clock, state.spectrum, manual, offset, state.preferences.audioReactive,
@@ -86,7 +87,7 @@ export default function DesktopLyrics() {
   useDesktopSubtitleLayout(glassSurface, footer, footerVisible);
   const playing = manual.enabled ? manual.playing : state.session.playing && state.session.hasTimeline && !state.connectionError;
   const duration = manual.enabled ? state.lyrics.lines.at(-1)?.endTime ?? 0 : state.session.duration;
-  const beat = useDesktopBeatFx({ identity: songIdentity, duration, mode, clock: runtime.playbackTime, playing, staticMode: visual.staticMode });
+  const beat = useDesktopBeatFx({ identity: songIdentity, duration, mode, clock: runtime.playbackTime, playing, staticMode: visual.staticMode, pageTransparent: visual.rendererProps.background?.transparent });
   useEffect(() => { cancelSettingsOpening(); setImmersive(false); }, [state.restore, cancelSettingsOpening]);
   useEffect(() => { if (state.clickThrough) { cancelSettingsOpening(); setImmersive(true); setPanel(false); setVisualSection(null); setSegmentationOpen(false); } }, [state.clickThrough, cancelSettingsOpening]);
   useEffect(() => { cancelSettingsOpening('segmentation'); setSegmentationOpen(false); }, [songIdentity, state.preferences.source, cancelSettingsOpening]);

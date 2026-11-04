@@ -18,6 +18,8 @@ export function buildDesktopFeatureSearchEntries(labelFor: (key: string) => stri
         return entry;
     };
     add('common', 'options.uploadCustomFont', ['上传字体', '字体文件', 'upload font', 'woff', 'woff2', 'ttf', 'otf'], 'options.chooseSystemFont');
+    for (const key of ['lyricRenderScale', 'lyricAntialias']) add('common', `options.${key}`, ['画质', '分辨率', '抗锯齿', 'render quality', 'antialias']);
+    for (const key of ['subtitleOverlayRows', 'subtitleOverlayRow1', 'subtitleOverlayRow2', 'subtitleOverlayRow3']) add('subtitle', `options.${key}`, ['字幕', '字幕行数', 'subtitle rows']);
     add('visualizer', 'desktopVisual.previewTitle', ['独立预览', '示例歌词', '动态缩略图', '暂停预览', 'style preview', 'sample lyrics']);
     add('visualizer', RANDOM_TOGGLE, ['随机样式', 'random style', 'random per song']);
     add('visualizer', 'options.randomPool', ['随机候选', '候选样式', '选择随机池', '参与随机的样式', 'random pool'], RANDOM_TOGGLE);

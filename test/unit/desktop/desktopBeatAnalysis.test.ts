@@ -6,6 +6,8 @@ import { initializeDesktopAnalysisModels } from '@/desktopLyrics/visualFeatures/
 import { decodeAtRate } from '@/services/analysis/trackAudio';
 import { probeBeatThisGpu } from '@/services/analysis/beatThisGpu';
 import { getTrackBeatGrid, readStoredBeatGrid } from '@/services/analysis/beatGrid';
+import { loadStoredVocalEnvelope } from '@/services/analysis/vocalEnvelope';
+import { loadTrackVocalEnvelope } from '@/services/analysis/vocalStemRun';
 import { loadStoredDrumHits, loadTrackDrumHits, setWantedDrumTrack } from '@/services/analysis/drumHits';
 
 // Exercise cancellation with a real IndexedDB transaction while model computations stay deterministic.
@@ -16,6 +18,9 @@ vi.mock('@/services/analysis/beatThisGpu', () => ({ probeBeatThisGpu: vi.fn() })
 vi.mock('@/services/analysis/beatGrid', () => ({ getTrackBeatGrid: vi.fn(), readStoredBeatGrid: vi.fn() }));
 vi.mock('@/services/analysis/drumHits', () => ({ loadStoredDrumHits: vi.fn(), loadTrackDrumHits: vi.fn(), setWantedDrumTrack: vi.fn() }));
 
+vi.mock('@/services/analysis/vocalEnvelope', () => ({ loadStoredVocalEnvelope: vi.fn() }));
+vi.mock('@/services/analysis/vocalStemRun', () => ({ loadTrackVocalEnvelope: vi.fn() }));
+
 const file = () => new File([new Uint8Array([1, 2, 3, 4])], 'generated.wav', { type: 'audio/wav' });
 const controller = () => new AbortController();
 const run = (abort = controller(), identity = 'test-song') => analyseDesktopBeatFile(identity, 10, file(), abort.signal, vi.fn());
@@ -24,6 +29,8 @@ const drums = { hits: { times: new Float64Array([1]) } } as Awaited<ReturnType<t
 
 beforeEach(async () => {
     vi.clearAllMocks();
+    vi.mocked(loadStoredVocalEnvelope).mockResolvedValue(null);
+    vi.mocked(loadTrackVocalEnvelope).mockResolvedValue(null);
     await appDatabase.api_cache.clear();
     vi.mocked(initializeDesktopAnalysisModels).mockResolvedValue({ beat_this: true, htdemucs: false, htdemucs_gpu: true });
     vi.mocked(decodeAtRate).mockResolvedValue({ duration: 10 } as AudioBuffer);

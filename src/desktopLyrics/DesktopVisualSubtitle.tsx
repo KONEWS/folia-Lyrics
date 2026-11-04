@@ -3,6 +3,7 @@ import DesktopSelect from './DesktopSelect';
 import DesktopVisualFont from './DesktopVisualFont';
 import { useVisualTranslation, VisualCard, VisualRange, VisualToggle } from './DesktopVisualControls';
 import type { DesktopVisualSettingsModel } from './useDesktopVisualSettings';
+import SubtitleOverlayRowsSetting from '../components/visualizer/window/SubtitleOverlayRowsSetting';
 
 // src/desktopLyrics/DesktopVisualSubtitle.tsx — original subtitle options without a separate playback clock.
 export default function DesktopVisualSubtitle({ model }: { model: DesktopVisualSettingsModel }) {
@@ -20,6 +21,7 @@ export default function DesktopVisualSubtitle({ model }: { model: DesktopVisualS
   return <VisualCard title={t('options.previewSubtitleSettings')}>
     <button type="button" className="desktop-visual-reset" onClick={model.resetSubtitle}>{t('ui.default')}</button>
     <VisualToggle label={t('desktopVisual.showTranslation')} checked={model.translated} onChange={model.setTranslated}/>
+    <SubtitleOverlayRowsSetting t={t} layout={settings.subtitleOverlayLayout} onChange={subtitleOverlayLayout => patch({ subtitleOverlayLayout })}/>
     <label className="desktop-visual-field"><span>{t('options.subtitleContentMode')}</span><DesktopSelect label={t('options.subtitleContentMode')}
       value={settings.subtitleContentMode} onChange={value => patch({ subtitleContentMode: value as SubtitleContentMode })}
       options={(['translation', 'romanization', 'both', 'none'] as const).map(value => ({ value,

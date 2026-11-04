@@ -2,7 +2,7 @@
 
 让你喜欢的播放器，配上一个好看的桌面歌词窗口。
 
-folia-Lyrics 基于 [Folia](https://github.com/chthollyphile/folia-major) 的歌词渲染器，当前源码保留了原版的 14 种动态歌词样式，包括花火 Hanabi，另有静止样式。你照常用椒盐音乐、网易云音乐、QQ 音乐、foobar2000 或浏览器听歌，它通过 Windows 媒体会话读取歌曲和播放进度，把歌词放在独立窗口里。
+folia-Lyrics 基于 [Folia](https://github.com/chthollyphile/folia-major) 的歌词渲染器，当前源码包含 16 种动态歌词样式，包括花火 Hanabi、町景 Machi 和雾笺 Nebbia，另有静止样式。你照常用椒盐音乐、网易云音乐、QQ 音乐、foobar2000 或浏览器听歌，它通过 Windows 媒体会话读取歌曲和播放进度，把歌词放在独立窗口里。
 
 **它本身不播放音乐。** 暂停、继续和切歌会交给当前绑定的播放器执行；播放器能否被识别、进度是否准确，取决于它向 Windows 提供的媒体会话信息。
 
@@ -104,6 +104,6 @@ dotnet run --project test/transport-smoke/TransportSmoke.csproj
 
 这是从 [chthollyphile/folia-major](https://github.com/chthollyphile/folia-major) 派生的独立项目。感谢上游提供歌词渲染器和视觉效果；这个分支主要加入 Windows 桌面宿主、外部播放器连接、在线歌词匹配，以及围绕桌面使用的界面和操作。
 
-当前桌面宿主版本为 **0.5.1**，上游源码基线为 **v0.7.22**（`1f6d0f468f5bc81b23a8b40ad7ca96ccd4b1ecbe`）。两套版本号独立，本项目不是上游官方发行版。
+当前桌面宿主版本为 **0.5.1**，上游源码基线为 **v0.7.22**（`1f6d0f468f5bc81b23a8b40ad7ca96ccd4b1ecbe`）。歌词显示模块已单独同步到上游 2026-11-04 的主线（v0.7.25 之后，`67fbac76f8a839f97b5126d80be20234db9c1f15`），包含町景、雾笺、文字防重叠、RTL 排版、字幕行布局及画质设置；下载页的 0.5.1 仍为此前发布内容。两套版本号独立，本项目不是上游官方发行版。
 
 项目继续使用 [AGPL-3.0](LICENSE) 许可证。第三方许可证见 [licenses/](licenses/)，在线资源来源见 [ONLINE-SOURCES.md](ONLINE-SOURCES.md)。使用在线歌词、封面和音乐资源时，请遵守对应服务条款与版权要求。

@@ -28,7 +28,7 @@ export function useDesktopFonts(input: DesktopFontInput, onNotice: (text: string
     const requests = active ? desktopFontRequests(input) : [];
     return { requests, signature: JSON.stringify({ requests, fontId: font?.source === 'uploaded' ? font.fontId : null }) };
   }, [active, input.lines, input.theme, input.subtitleTheme, input.title, input.artist,
-    input.hideTranslationSubtitle, input.subtitleContentMode, input.showHarmonySubtitle, font]);
+    input.hideTranslationSubtitle, input.subtitleContentMode, input.subtitleOverlayLayout, input.showHarmonySubtitle, font]);
   const { signature, requests } = prepared;
   const [ready, setReady] = useState('');
   const available = useMemo(() => active && (font?.source !== 'uploaded' || Boolean(font.fontId && restoredUploads.has(font.fontId)))
