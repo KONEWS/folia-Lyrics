@@ -60,7 +60,7 @@ export default function DesktopVisualStudio({ model, mode, onMode, onClose, init
             onSubtitleFontStyleChange={subtitleFontStyle => patch({ subtitleFontStyle })} onSubtitleFontScaleChange={subtitleFontScale => patch({ subtitleFontScale })}
             onSubtitleFontWeightChange={subtitleFontWeight => patch({ subtitleFontWeight })} onSubtitleFontFamilyChange={subtitleFontFamily => patch({ subtitleFontFamily })}
             onSubtitleFontFallbackFamiliesChange={subtitleFontFallbackFamilies => patch({ subtitleFontFallbackFamilies })}
-            onVisualizerModeChange={next => { model.commitSlider(); onClearSearchNavigation(); if (next === 'still') model.setStaticMode(true); else { model.setStaticMode(false); onMode(next); } }}
+            onVisualizerModeChange={next => { model.commitSlider(); onClearSearchNavigation(); model.setStaticMode(next === 'still'); onMode(next); }}
             onVisualizerOpacityChange={visualizerOpacity => model.patchVisualizer({ visualizerOpacity })}
             onToggleHideTranslationSubtitle={hidePlayerTranslationSubtitle => patch({ hidePlayerTranslationSubtitle })}
             onToggleShowSubtitleTranslation={model.setTranslated} onSubtitleContentModeChange={subtitleContentMode => patch({ subtitleContentMode })}
