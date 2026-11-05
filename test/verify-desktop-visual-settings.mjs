@@ -79,7 +79,7 @@ export async function verifyDesktopVisualSettings(page, song, output) {
     let withPanel = 0, withoutPanel = 0;
     for (const mode of [...modes, { value: 'still', label: '静止' }]) {
       await panel.locator(`button[data-visual-mode="${mode.value}"]`).click(); await waitVisual(page, { mode: mode.value });
-      if (mode.value === 'still') await page.locator('.visualizer-still').waitFor();
+      if (mode.value === 'still') await page.locator('.desktop-lyrics > .desktop-stage .visualizer-still').waitFor();
       else await page.waitForFunction(mode => Boolean(window.__foliaReadResolvedVisualizerProps(mode)), mode.value);
       assert.equal((await readVisual(page)).isPreviewMode, false); assert.equal(await page.locator('audio,video').count(), 0);
       if (mode.value !== 'still') assert.equal(await page.evaluate(mode => window.__foliaReadResolvedVisualizerProps(mode)?.isPreviewMode, mode.value), false);
@@ -280,6 +280,11 @@ async function verifyStudio(page, output, checks) {
     await studio.getByRole('dialog', { name: '歌词样式', exact: true }).waitFor();
     assert.deepEqual(await studio.getByRole('tab').allTextContents(), ['歌词动画', '背景', '字体', '字幕', '全局']);
     assert.equal(await studio.getByRole('radiogroup', { name: '歌词样式', exact: true }).getByRole('radio').count(), 18);
+    assert.equal(await studio.getByRole('button', { name: '实时', exact: true }).getAttribute('aria-pressed'), 'true');
+    const shelf = studio.locator('[data-style-shelf]');
+    assert.equal(await shelf.locator('img').count(), 17);
+    await shelf.locator('img').first().hover();
+    assert.equal(await shelf.locator('canvas,[data-picture]').count(), 0, 'static posters never mount live renderers');
     await studio.getByRole('radio', { name: '绘光', exact: true }).click();
     const slider = studio.getByRole('slider').first();
     await slider.waitFor(); await slider.focus(); await slider.press('End');
@@ -305,6 +310,8 @@ async function verifyStudio(page, output, checks) {
     await studio.getByRole('button', { name: '选择本曲音频并分析', exact: true }).waitFor();
     checks.push('background, font, subtitle, and desktop audio-analysis controls remain reachable in the studio');
     await page.setViewportSize({ width: 560, height: 760 });
+    const stageBounds = await studio.locator('section').first().boundingBox(), choicesBounds = await shelf.boundingBox();
+    assert(stageBounds && choicesBounds && stageBounds.x + stageBounds.width <= choicesBounds.x + 2, 'narrow windows keep the stage left of the style choices');
     await page.screenshot({ path: output + '/upstream-studio-narrow.png' });
     assert(await studio.getByRole('button', { name: '返回', exact: true }).isVisible());
     await page.setViewportSize({ width: 1280, height: 800 });

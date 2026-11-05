@@ -69,6 +69,20 @@ describe('desktop model availability', () => {
             .toEqual({ beat_this: false, htdemucs: false, htdemucs_gpu: false });
     });
 
+    it('recognizes WebView2 folder-mapped HEAD responses without Content-Length', async () => {
+        const request = vi.fn(async () => new Response(null, { headers: { 'content-type': 'application/octet-stream' } }));
+        expect(await createDesktopAnalysisModelHost(request).getPresent())
+            .toEqual({ beat_this: true, htdemucs: false, htdemucs_gpu: true });
+    });
+
+    it('rejects an HTML fallback or failed response even without Content-Length', async () => {
+        const request = vi.fn(async (url: RequestInfo | URL) => String(url).includes('beat_this')
+            ? new Response(null, { headers: { 'content-type': 'text/html' } })
+            : new Response(null, { status: 404, headers: { 'content-type': 'application/octet-stream' } }));
+        expect(await createDesktopAnalysisModelHost(request).getPresent())
+            .toEqual({ beat_this: false, htdemucs: false, htdemucs_gpu: false });
+    });
+
     it('does not expose an unverified downloaded body', async () => {
         vi.spyOn(console, 'warn').mockImplementation(() => {});
         const request = vi.fn(async () => new Response(packedModel()));

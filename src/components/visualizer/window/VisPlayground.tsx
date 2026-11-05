@@ -8,6 +8,7 @@ import { type StoredCustomLyricsFont, type SubtitleContentMode, type SubtitleOve
 import { useMediaQuery } from '../../../hooks/useMediaQuery';
 import { selectVisualizerSettingsSnapshot, useVisualizerSettingsStore } from '../../../stores/useVisualizerSettingsStore';
 import { PictureGrid, Tooltip } from '../../modal/settings/kit';
+import type { PictureState } from '../../modal/settings/kit/PictureGrid';
 import { kitTransition, useKitReducedMotion } from '../../modal/settings/kit/motion';
 import StudioWindow from '../../shared/StudioWindow';
 import { visualizersRegistry } from '@/mods/folium/registries/visualizers';
@@ -34,6 +35,9 @@ import { DEFAULT_SUBTITLE_OVERLAY_LAYOUT } from '../../../utils/lyrics/subtitleO
 interface VisPlaygroundProps {
     /** Host integrations keep desktop data and controls outside the shared studio. */
     livePreviewSource?: LivePreviewSource;
+    /** Desktop uses a large live stage and a compact, static shelf above the controls. */
+    compactStyleShelf?: boolean;
+    stylePicture?: (mode: VisualizerMode, state: PictureState) => React.ReactNode;
     headerActions?: React.ReactNode;
     headerSlot?: React.ReactNode;
     globalSettings?: React.ReactNode;
@@ -134,7 +138,7 @@ const SHELF_COLUMNS = { wide: 7, narrow: 4 };
 
 const VisPlayground: React.FC<VisPlaygroundProps> = ({
     theme,
-    livePreviewSource, headerActions, headerSlot, globalSettings, backgroundSettings, onRandomModeSelected, loadFonts, editSequence,
+    livePreviewSource, compactStyleShelf = false, stylePicture = drawLyricStyleChoice, headerActions, headerSlot, globalSettings, backgroundSettings, onRandomModeSelected, loadFonts, editSequence,
     isDaylight,
     visualizerMode,
     initialEditSection = 'visualizer',
@@ -194,13 +198,13 @@ const VisPlayground: React.FC<VisPlaygroundProps> = ({
     const backgroundOpacity = backgroundConfig?.common?.opacity ?? 0.75;
     const [previewPlaceholderId, setPreviewPlaceholderId] = useState<PreviewPlaceholderId>('default');
     const [isPreviewPaused, setIsPreviewPaused] = useState(false);
-    const [previewSource, setPreviewSource] = useState<PreviewSource>('builtin');
+    const [previewSource, setPreviewSource] = useState<PreviewSource>(livePreviewSource ? 'live' : 'builtin');
     const previewBoxRef = useRef<HTMLDivElement>(null);
     // What the player shows now, when the sample is set aside for it; null while it has no lyrics.
     const livePreview = useLivePreviewFeed({ source: livePreviewSource, enabled: previewSource === 'live', paused: isPreviewPaused, stageRef: previewBoxRef });
     const live = livePreview.content;
     // The small pictures still use the sample's clock while the big preview shows the live picture.
-    const previewClock = usePreviewClock({ mode: visualizerMode, placeholderId: previewPlaceholderId, paused: isPreviewPaused });
+    const previewClock = usePreviewClock({ mode: visualizerMode, placeholderId: previewPlaceholderId, paused: isPreviewPaused || (compactStyleShelf && live !== null) });
     const previewPlaceholder = previewClock.placeholder;
     // The sample, paused, has no change of time for a style mounted anew (a switch from the live picture).
     useStillClockPulse({ time: previewClock.currentTime, still: isPreviewPaused && live === null, boxRef: previewBoxRef, restartKey: previewSource });
@@ -491,6 +495,28 @@ const VisPlayground: React.FC<VisPlaygroundProps> = ({
         ...tuningDrafts.backgroundActions,
     };
 
+    const shelf = (
+        <div className={compactStyleShelf ? 'flex max-h-[34%] min-h-0 shrink-0 flex-col border-b border-[var(--st-line)] px-4 pb-3' : 'flex shrink-0 flex-col'} data-style-shelf>
+            <h3 className="mb-2 flex min-h-6 items-center px-1 text-[13px] font-semibold leading-5 text-[color:var(--st-t2)]">
+                {t('options.lyricStyles')}
+                <span className="ml-1.5 font-normal text-[color:var(--st-t3)]">{modeOptions.length}</span>
+            </h3>
+            <PictureGrid
+                value={settings.randomVisualizerModePerSong ? RANDOM_VISUALIZER_CHOICE : visualizerMode}
+                options={modeOptions}
+                picture={stylePicture}
+                columns={compactStyleShelf ? (isWideWindow ? 4 : 3) : isWideWindow ? SHELF_COLUMNS.wide : SHELF_COLUMNS.narrow}
+                onChange={mode => {
+                    if (mode === RANDOM_VISUALIZER_CHOICE) onRandomModeSelected?.();
+                    selectLyricStyleChoice(mode, next => onVisualizerModeChange?.(next));
+                    setActiveEditSection('visualizer');
+                }}
+                label={t('ui.animationMode')}
+                maxHeight={compactStyleShelf ? 190 : 250}
+                className="-mx-4 min-h-0"
+            />
+        </div>
+    );
     const stage = (
         <>
             {/* The sample always shows the theme being previewed, whatever the window's own colours. */}
@@ -567,26 +593,7 @@ const VisPlayground: React.FC<VisPlaygroundProps> = ({
                     </button>
                 </Tooltip>
             </SampleBox>
-            <div className="flex shrink-0 flex-col">
-                <h3 className="mb-2 flex min-h-6 items-center px-1 text-[13px] font-semibold leading-5 text-[color:var(--st-t2)]">
-                    {t('options.lyricStyles')}
-                    <span className="ml-1.5 font-normal text-[color:var(--st-t3)]">{modeOptions.length}</span>
-                </h3>
-                <PictureGrid
-                    value={settings.randomVisualizerModePerSong ? RANDOM_VISUALIZER_CHOICE : visualizerMode}
-                    options={modeOptions}
-                    picture={drawLyricStyleChoice}
-                    columns={isWideWindow ? SHELF_COLUMNS.wide : SHELF_COLUMNS.narrow}
-                    onChange={mode => {
-                        if (mode === RANDOM_VISUALIZER_CHOICE) onRandomModeSelected?.();
-                        selectLyricStyleChoice(mode, next => onVisualizerModeChange?.(next));
-                        setActiveEditSection('visualizer');
-                    }}
-                    label={t('ui.animationMode')}
-                    maxHeight={250}
-                    className="-mx-4"
-                />
-            </div>
+            {!compactStyleShelf && shelf}
         </>
     );
     const column = (
@@ -690,9 +697,11 @@ const VisPlayground: React.FC<VisPlaygroundProps> = ({
                 theme={baseTheme}
                 ponderId="vis-playground"
                 stage={stage}
+                sideBySide={compactStyleShelf}
                 over={fontPicker}
                 onOverClose={() => setFontPickerTarget('none')}
             >
+                {compactStyleShelf && shelf}
                 {column}
             </StudioWindow>
         </LyricPreviewProvider>

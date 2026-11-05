@@ -1,20 +1,24 @@
-# folia-Lyrics 0.5.1
+# folia-Lyrics 0.5.2
 
 Windows 歌词显示器，自身不播放音频。使用 Windows GSMTC 获取其他播放器公开的歌曲和进度，使用 WASAPI 默认输出设备的混合声音驱动原版歌词动效。
 
-GitHub 发布页：[0.5.1 发布页](https://github.com/KONEWS/folia-Lyrics/releases/tag/desktop-v0.5.1)。下载独立程序 `FoliaLyrics-0.5.1-win-x64.exe` 直接运行，发布页提供 `SHA256SUMS.txt` 用于核对文件。本地重新编译默认输出到 `release/0.5.1/win-x64/FoliaLyrics.exe`。
+GitHub 发布页：[0.5.2 发布页](https://github.com/KONEWS/folia-Lyrics/releases/tag/desktop-v0.5.2)。下载独立程序 `FoliaLyrics-0.5.2-win-x64.exe` 直接运行，发布页提供 `SHA256SUMS.txt` 用于核对文件。本地重新编译默认输出到 `release/0.5.2/win-x64/FoliaLyrics.exe`。
 
-0.5.1 移除等待页面底部的三项说明标签，并减少歌词行查找、和声处理和静音频谱计算的开销。包含下列预览版已有功能。
+0.5.2 同步上游歌词显示，新增町景与雾笺。歌词样式设置使用左右布局和静态缩略图，修复关闭译文后底部字幕残留，以及模型文件已附带却提示缺失的问题。
 
-## 上游歌词样式设置窗口（2026-11-04 预览）
+## 歌词样式设置窗口（0.5.2）
 
-歌词样式设置改用上游的完整工作窗口：左侧为可暂停的预览和样式缩略图，右侧为歌词动画、背景、字体、字幕与全局参数。预览可以切换内置示例与当前播放器的实时歌词，各标签的「默认」只重置该标签相关设置。本机字体、桌面音频分析和配置导入导出继续可用；桌面专有选项收在右上角的「桌面选项」。窄窗口下预览和参数上下排列。
+歌词样式设置复用上游工作窗口与参数控件：左侧为当前播放器的实时画面，右侧上方是紧凑的样式选择，下方为歌词动画、背景、字体、字幕与全局参数；缩小窗口仍保持左右排列。样式小图是随程序附带的固定图片，悬停、切换样式和拖动设置都不会生成或播放小图动画。左侧可切换内置示例，也可单独暂停预览，各标签的「默认」只重置该标签相关设置。本机字体、桌面音频分析和配置导入导出继续可用；桌面专有选项收在右上角的「桌面选项」。
+
+分析模型随安装包提供。修复 WebView2 未返回模型文件长度导致的误报，真正加载时仍校验文件长度与 SHA-256。智能动感需在「全局」中开启并选择与当前歌曲相同版本的完整音频；鼓点专属效果只在歌曲包含鼓点时出现，普通歌词画面不受影响。需要支持 WebGPU 的运行环境。
+
+维护静态样式图：完成 `npm run build:desktop` 后运行 `node tools/generate-desktop-style-pictures.mjs`，检查 `src/desktopLyrics/visualFeatures/stylePictures/` 的图片，再重新构建；客户端不生成这些图片。
 
 ## 歌词显示源码同步（2026-11-04）
 
 歌词显示模块同步到上游主线 `67fbac76f8a839f97b5126d80be20234db9c1f15`（v0.7.25 之后）。新增町景 Machi 与雾笺 Nebbia，动态样式增至 16 种；接入独立字幕行布局、全局及样式画质、流光与云阶的防重叠开关，并同步 RTL 排版、凝彩景深与智能动感更新。新设置支持桌面搜索、JSON 和短码导入导出。雾笺的中日文笔顺数据由构建插件生成，授权文件一并输出。
 
-桌面宿主版本仍为 0.5.1，上方下载链接对应已发布版本。
+这些更新包含在桌面宿主 0.5.2 中。
 
 ## 样式与设置补齐预览版（2026-10-25）
 
@@ -347,7 +351,7 @@ npm run typecheck:desktop
 npm run build:desktop
 npm run test:desktop
 node tools/package-web.mjs
-dotnet publish native/FoliaLyrics.csproj -c Release -r win-x64 --self-contained true -o release/0.5.1/win-x64
+dotnet publish native/FoliaLyrics.csproj -c Release -r win-x64 --self-contained true -o release/0.5.2/win-x64
 ```
 
 `build-windows.cmd` 从 `native/FoliaLyrics.csproj` 读取版本，输出到 `release/<版本>/win-x64/`。每次更新递增原生版本号后重新构建，即可得到独立的版本文件夹；手动执行上述发布命令时，也应将输出路径中的版本同步更新。

@@ -48,6 +48,8 @@ type StudioWindowProps = {
     theme?: Theme;
     /** The lesson marker of the window, for Ponder. */
     ponderId?: string;
+    /** Hosts with a compact style shelf keep the preview and controls side by side at every width. */
+    sideBySide?: boolean;
 };
 
 /** Where the window comes from: a little lower and a little smaller. It leaves a shorter way. */
@@ -55,7 +57,7 @@ const ARRIVE_FROM = { opacity: 0, y: 12, scale: 0.985 };
 const LEAVE_TO = { opacity: 0, y: 8, scale: 0.99 };
 
 export const StudioWindow: React.FC<StudioWindowProps> = ({
-    title, onBack, backLabel, slot, actions, stage, children, over, onOverClose, isDaylight, theme, ponderId,
+    title, onBack, backLabel, slot, actions, stage, children, over, onOverClose, isDaylight, theme, ponderId, sideBySide = false,
 }) => {
     const reduced = useKitReducedMotion();
     // False from the moment the window starts to leave: nothing in it can be used then, and the
@@ -205,9 +207,9 @@ export const StudioWindow: React.FC<StudioWindowProps> = ({
                         <div className="flex min-w-0 flex-1 items-center gap-2">{slot}</div>
                         {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
                     </header>
-                    <div inert={hasOver} className="st-scroll flex min-h-0 flex-col overflow-y-auto lg:grid lg:grid-cols-[minmax(0,1fr)_420px] lg:overflow-hidden">
-                        <section className="flex h-[64vh] min-h-[380px] min-w-0 shrink-0 flex-col gap-4 px-4 pb-6 sm:px-6 lg:h-auto lg:min-h-0">{stage}</section>
-                        <aside className="flex min-w-0 shrink-0 flex-col border-t border-[var(--st-line)] lg:min-h-0 lg:border-l lg:border-t-0">
+                    <div inert={hasOver} className={sideBySide ? 'grid min-h-0 grid-cols-[minmax(0,1fr)_minmax(220px,40%)] overflow-hidden' : 'st-scroll flex min-h-0 flex-col overflow-y-auto lg:grid lg:grid-cols-[minmax(0,1fr)_420px] lg:overflow-hidden'}>
+                        <section className={sideBySide ? 'flex min-h-0 min-w-0 flex-col px-3 pb-4 sm:px-5' : 'flex h-[64vh] min-h-[380px] min-w-0 shrink-0 flex-col gap-4 px-4 pb-6 sm:px-6 lg:h-auto lg:min-h-0'}>{stage}</section>
+                        <aside className={sideBySide ? 'flex min-h-0 min-w-0 flex-col border-l border-[var(--st-line)] [&>div.st-scroll]:min-h-0 [&>div.st-scroll]:flex-1 [&>div.st-scroll]:overflow-y-auto' : 'flex min-w-0 shrink-0 flex-col border-t border-[var(--st-line)] lg:min-h-0 lg:border-l lg:border-t-0'}>
                             {children}
                         </aside>
                     </div>

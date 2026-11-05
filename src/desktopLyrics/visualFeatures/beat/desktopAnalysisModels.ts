@@ -49,7 +49,12 @@ export function createDesktopAnalysisModelHost(request: typeof fetch = fetch): A
             const found = await Promise.all(DESKTOP_ANALYSIS_MODELS.map(async model => {
                 try {
                     const response = await request(modelUrl(model), { method: 'HEAD', cache: 'no-cache', mode: 'same-origin', redirect: 'error' });
-                    return response.ok && Number(response.headers.get('content-length')) === model.bytes;
+                    // WebView2's folder mapping omits Content-Length on HEAD. A successful binary
+                    // response still confirms presence; the complete size and digest are verified before use.
+                    const length = response.headers.get('content-length');
+                    return response.ok && (length === null
+                        ? response.headers.get('content-type')?.split(';')[0].trim().toLowerCase() === 'application/octet-stream'
+                        : Number(length) === model.bytes);
                 } catch (error) {
                     console.warn(`[DesktopAnalysis] Could not check bundled model ${model.file}`, error);
                     return false;
