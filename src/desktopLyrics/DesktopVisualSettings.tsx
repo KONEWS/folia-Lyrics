@@ -10,7 +10,7 @@ import DesktopVisualSubtitle from './DesktopVisualSubtitle';
 import DesktopVisualConfigActions from './DesktopVisualConfigActions';
 import DesktopVisualFeedback from './DesktopVisualFeedback';
 import DesktopVisualLanguage from './DesktopVisualLanguage';
-import { useVisualTranslation } from './DesktopVisualControls';
+import { useVisualTranslation, UnifiedVisualControlsContext } from './DesktopVisualControls';
 import { useDesktopVisualDialogSkin } from './useDesktopVisualDialogSkin';
 import { getDesktopVisualFocusableElements, useDesktopVisualDialogFocus } from './useDesktopVisualDialogFocus';
 import { useDesktopSettingsDismiss } from './useDesktopSettingsDismiss';
@@ -26,6 +26,8 @@ import { SettingsKitThemeContext, settingsTokens } from '../components/modal/set
 import DesktopStylePreview from './visualFeatures/DesktopStylePreview';
 import DesktopVideoSettings from './visualFeatures/video/DesktopVideoSettings';
 import { DesktopBeatEffects, DesktopBeatSettings } from './visualFeatures/beat/DesktopBeatSettings';
+import { Tabs } from '../components/modal/settings/kit';
+import './visualFeatures/desktopVisualOptions.css';
 
 // src/desktopLyrics/DesktopVisualSettings.tsx — one desktop settings surface, with the live original renderer behind it.
 export type DesktopVisualSection = 'common' | 'background' | 'visualizer' | 'subtitle';
@@ -40,7 +42,7 @@ export type DesktopVisualSettingsProps = { livePreviewSource?: LivePreviewSource
 export default function DesktopVisualSettings(props: DesktopVisualSettingsProps) {
   const [optionsOpen, setOptionsOpen] = useState(false);
   const optionsOpener = useRef<HTMLElement | null>(null);
-  return <SettingsKitThemeContext.Provider value={{ isDaylight: false, theme: props.model.mergedTheme }}><DesktopVisualLanguage><DesktopVisualStudio {...props} onOpenOptions={() => { optionsOpener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; setOptionsOpen(true); }}/>{optionsOpen ? <DesktopVisualSettingsSurface {...props} initialSection={props.initialSection === 'background' ? 'background' : 'common'} returnFocus={optionsOpener.current} onClose={() => setOptionsOpen(false)}/> : null}</DesktopVisualLanguage></SettingsKitThemeContext.Provider>;
+  return <SettingsKitThemeContext.Provider value={{ isDaylight: false, theme: props.model.mergedTheme }}><DesktopVisualLanguage><DesktopVisualStudio {...props} onOpenOptions={() => { optionsOpener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; setOptionsOpen(true); }}/>{optionsOpen ? <UnifiedVisualControlsContext.Provider value><DesktopVisualSettingsSurface {...props} initialSection={props.initialSection === 'background' ? 'background' : 'common'} returnFocus={optionsOpener.current} onClose={() => setOptionsOpen(false)}/></UnifiedVisualControlsContext.Provider> : null}</DesktopVisualLanguage></SettingsKitThemeContext.Provider>;
 }
 
 export function DesktopVisualSettingsSurface({ mode, onMode, model, onClose, initialSection = 'visualizer', navigationSequence, onSegmentation, canSegment, returnFocus,
@@ -73,7 +75,7 @@ export function DesktopVisualSettingsSurface({ mode, onMode, model, onClose, ini
     if (searchNavigation) return;
     const scroll = panel.current?.querySelector<HTMLElement>('.desktop-visual-content');
     if (scroll) scroll.scrollTop = 0;
-    (document.getElementById(`${id}-${initialSection}`) ?? closeButton.current)?.focus({ preventScroll: true });
+    (panel.current?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]') ?? closeButton.current)?.focus({ preventScroll: true });
   }, [id, initialSection, navigationSequence]);
   // Original asset portals remain in this React tree; Escape respects their in-flight write lock.
   const keyboard = (event: KeyboardEvent<HTMLElement>) => {
@@ -99,7 +101,7 @@ export function DesktopVisualSettingsSurface({ mode, onMode, model, onClose, ini
     else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
   };
   return <aside ref={panel} style={settingsTokens(false, model.mergedTheme)} role="dialog" aria-modal="true" aria-label={title} data-desktop-visual-settings
-    className={`control-panel desktop-visual-settings${backgroundOnly ? ' desktop-background-settings' : ''}`} onKeyDown={keyboard}
+    className={`st-window desktop-visual-settings desktop-visual-options${backgroundOnly ? ' desktop-background-settings' : ''}`} onKeyDown={keyboard}
     onKeyDownCapture={event => { if (event.target instanceof HTMLInputElement && event.target.type === 'range' && SLIDER_KEYS.has(event.key)) model.beginSlider(); }}
     onKeyUpCapture={event => { if (event.target instanceof HTMLInputElement && event.target.type === 'range' && SLIDER_KEYS.has(event.key)) model.commitSlider(); }}
     onBlurCapture={event => { if (event.target instanceof HTMLInputElement && event.target.type === 'range') model.commitSlider(); }}>
@@ -107,17 +109,14 @@ export function DesktopVisualSettingsSurface({ mode, onMode, model, onClose, ini
       <button ref={closeButton} type="button" aria-label={t(backgroundOnly ? 'desktopVisual.backgroundClose' : 'desktopVisual.close')} onClick={() => { model.commitSlider(); onClose(); }}><X size={19}/></button></header>
     <DesktopSettingsSearch onNavigate={entry => { model.commitSlider(); onSearchNavigate(entry); }}/>
     {searchHint ? <p className="desktop-settings-search-hint" role="status">{searchHint}</p> : null}
-    {!backgroundOnly ? <div role="tablist" aria-label={t('desktopVisual.tabs')} className="desktop-visual-tabs">
-      {SECTIONS.map(value => <button key={value} type="button" role="tab" id={`${id}-${value}`} aria-selected={section === value}
-        aria-controls={`${id}-content`} tabIndex={section === value ? 0 : -1} onClick={() => { model.commitSlider(); onClearSearchNavigation(); setSection(value); }}
-        onKeyDown={event => {
-          if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
-          event.preventDefault(); event.stopPropagation(); model.commitSlider();
-          const next = event.key === 'Home' ? 0 : event.key === 'End' ? SECTIONS.length - 1 : (SECTIONS.indexOf(value) + (event.key === 'ArrowRight' ? 1 : -1) + SECTIONS.length) % SECTIONS.length;
-          onClearSearchNavigation(); setSection(SECTIONS[next]); document.getElementById(`${id}-${SECTIONS[next]}`)?.focus();
-        }}>{t(LABELS[value])}</button>)}
-    </div> : null}
-    <div ref={content} role={backgroundOnly ? 'region' : 'tabpanel'} id={`${id}-content`} aria-labelledby={backgroundOnly ? `${id}-heading` : `${id}-${section}`} data-visual-section={section} className={`desktop-visual-content${backgroundOnly ? ' desktop-settings-scroll' : ''}`}>
+    {!backgroundOnly ? <div className="desktop-visual-tabs" onKeyDown={event => {
+      if (event.key !== 'Home' && event.key !== 'End') return;
+      event.preventDefault(); event.stopPropagation(); model.commitSlider(); onClearSearchNavigation();
+      const index = event.key === 'Home' ? 0 : SECTIONS.length - 1;
+      setSection(SECTIONS[index]); panel.current?.querySelectorAll<HTMLElement>('[role="tab"]')[index]?.focus();
+    }}><Tabs tabs={SECTIONS.map(value => ({ id: value, label: t(LABELS[value]) }))}
+      activeId={section} label={t('desktopVisual.tabs')} className="px-5" onSelect={value => { model.commitSlider(); onClearSearchNavigation(); setSection(value as DesktopVisualSection); }}/></div> : null}
+    <div ref={content} role={backgroundOnly ? 'region' : 'tabpanel'} id={`${id}-content`} aria-labelledby={backgroundOnly ? `${id}-heading` : undefined} aria-label={backgroundOnly ? undefined : t(LABELS[section])} data-visual-section={section} className={`desktop-visual-content${backgroundOnly ? ' desktop-settings-scroll' : ''}`}>
       {section === 'visualizer' ? <button type="button" className="desktop-visual-reset" onClick={() => setPreviewOpen(true)}>{t('desktopVisual.previewTitle')}</button> : null}
       {editingName ? <div className="desktop-search-editing"><span>{i18n.t('desktopLyrics.settingsSearch.editing', { lng: 'zh-CN', name: editingName })}</span>
         <button type="button" onClick={onClearSearchNavigation}>{t('desktopLyrics.settingsSearch.current')}</button></div> : null}
@@ -127,7 +126,7 @@ export function DesktopVisualSettingsSurface({ mode, onMode, model, onClose, ini
           onMode={next => { onClearSearchNavigation(); onMode(next); }}/>}
       {section === 'common' ? <DesktopBeatSettings/> : null}
       {section === 'visualizer' ? <DesktopBeatEffects mode={searchNavigation?.entry.mode ?? mode} onOpenSmartBeat={() => {
-        model.commitSlider(); onClearSearchNavigation(); setSection('common'); document.getElementById(`${id}-common`)?.focus({ preventScroll: true });
+        model.commitSlider(); onClearSearchNavigation(); setSection('common'); requestAnimationFrame(() => panel.current?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')?.focus({ preventScroll: true }));
       }}/> : null}
       {section === 'background' ? <DesktopVideoSettings transparent={model.transparent}/> : null}
       <DesktopVisualConfigActions model={model} mode={mode} onMode={onMode}/>

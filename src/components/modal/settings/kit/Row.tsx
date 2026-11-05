@@ -76,6 +76,8 @@ export const Row: React.FC<RowProps> = ({ option, label, notice, hint, note, sub
     const openLink = (event: React.MouseEvent) => {
         const control = (event.target as Element).closest('button, a, input, textarea, [role="listbox"]');
         if (!control || control === linkRef.current) {
+            // A dialog opened by the row restores focus to its keyboard link when it closes.
+            linkRef.current?.focus({ preventScroll: true });
             onClick?.();
         }
     };

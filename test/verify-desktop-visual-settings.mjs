@@ -302,6 +302,12 @@ async function verifyStudio(page, output, checks) {
     checks.push('live preview can be held and resumed without moving the desktop playback clock');
     await studio.getByRole('tab', { name: '背景', exact: true }).click();
     await studio.getByRole('switch', { name: '启用原版歌词背景', exact: true }).waitFor();
+    const backgrounds = studio.getByRole('radiogroup', { name: '背景类型', exact: true });
+    assert.equal(await backgrounds.getByRole('radio').count(), 6);
+    assert.equal(await backgrounds.locator('img').count(), 5);
+    await backgrounds.getByRole('radio', { name: '莫奈', exact: true }).hover();
+    assert.equal(await backgrounds.locator('canvas,iframe,[data-picture]').count(), 0, 'background choices use shipped still pictures even on hover');
+    await page.screenshot({ path: output + '/static-background-choices.png' });
     await studio.getByRole('tab', { name: '字体', exact: true }).click();
     assert(await studio.getByRole('slider').count() > 0);
     await studio.getByRole('tab', { name: '字幕', exact: true }).click();
@@ -312,6 +318,8 @@ async function verifyStudio(page, output, checks) {
     await page.setViewportSize({ width: 560, height: 760 });
     const stageBounds = await studio.locator('section').first().boundingBox(), choicesBounds = await shelf.boundingBox();
     assert(stageBounds && choicesBounds && stageBounds.x + stageBounds.width <= choicesBounds.x + 2, 'narrow windows keep the stage left of the style choices');
+    const scale = await studio.getByRole('dialog', { name: '歌词样式', exact: true }).evaluate(node => node.getBoundingClientRect().width / node.offsetWidth);
+    assert(Math.abs(scale - 0.94) < 0.005, 'the complete settings window is reduced by six percent');
     await page.screenshot({ path: output + '/upstream-studio-narrow.png' });
     assert(await studio.getByRole('button', { name: '返回', exact: true }).isVisible());
     await page.setViewportSize({ width: 1280, height: 800 });

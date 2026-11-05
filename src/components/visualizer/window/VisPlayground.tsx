@@ -4,7 +4,7 @@ import { Pause, Play } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useShallow } from 'zustand/react/shallow';
 import VisualizerRenderer from '../VisualizerRenderer';
-import { type StoredCustomLyricsFont, type SubtitleContentMode, type SubtitleOverlayLayout, type Theme, type VisualizerMode } from '../../../types';
+import { type StoredCustomLyricsFont, type SubtitleContentMode, type SubtitleOverlayLayout, type Theme, type VisualizerMode, type VisualizerBackgroundMode } from '../../../types';
 import { useMediaQuery } from '../../../hooks/useMediaQuery';
 import { selectVisualizerSettingsSnapshot, useVisualizerSettingsStore } from '../../../stores/useVisualizerSettingsStore';
 import { PictureGrid, Tooltip } from '../../modal/settings/kit';
@@ -38,6 +38,8 @@ interface VisPlaygroundProps {
     /** Desktop uses a large live stage and a compact, static shelf above the controls. */
     compactStyleShelf?: boolean;
     stylePicture?: (mode: VisualizerMode, state: PictureState) => React.ReactNode;
+    backgroundPicture?: (mode: VisualizerBackgroundMode, state: PictureState) => React.ReactNode;
+    uiScale?: number;
     headerActions?: React.ReactNode;
     headerSlot?: React.ReactNode;
     globalSettings?: React.ReactNode;
@@ -138,7 +140,7 @@ const SHELF_COLUMNS = { wide: 7, narrow: 4 };
 
 const VisPlayground: React.FC<VisPlaygroundProps> = ({
     theme,
-    livePreviewSource, compactStyleShelf = false, stylePicture = drawLyricStyleChoice, headerActions, headerSlot, globalSettings, backgroundSettings, onRandomModeSelected, loadFonts, editSequence,
+    livePreviewSource, compactStyleShelf = false, stylePicture = drawLyricStyleChoice, backgroundPicture, uiScale, headerActions, headerSlot, globalSettings, backgroundSettings, onRandomModeSelected, loadFonts, editSequence,
     isDaylight,
     visualizerMode,
     initialEditSection = 'visualizer',
@@ -598,6 +600,7 @@ const VisPlayground: React.FC<VisPlaygroundProps> = ({
     );
     const column = (
         <VisPlaygroundSettingsPanel
+            backgroundPicture={backgroundPicture}
             globalSettings={globalSettings}
             backgroundSettings={backgroundSettings}
             activeSection={activeEditSection}
@@ -698,6 +701,7 @@ const VisPlayground: React.FC<VisPlaygroundProps> = ({
                 ponderId="vis-playground"
                 stage={stage}
                 sideBySide={compactStyleShelf}
+                uiScale={uiScale}
                 over={fontPicker}
                 onOverClose={() => setFontPickerTarget('none')}
             >

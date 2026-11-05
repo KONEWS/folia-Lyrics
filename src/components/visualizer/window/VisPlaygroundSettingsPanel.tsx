@@ -42,6 +42,7 @@ interface PresetOption<T> {
 }
 
 interface VisPlaygroundSettingsPanelProps {
+    backgroundPicture?: (mode: VisualizerBackgroundMode, state: PictureState) => React.ReactNode;
     globalSettings?: React.ReactNode;
     backgroundSettings?: React.ReactNode;
     activeSection: VisPlaygroundEditSection;
@@ -346,7 +347,7 @@ const VisPlaygroundSettingsPanel: React.FC<VisPlaygroundSettingsPanelProps> = (p
                                     <PictureGrid
                                         value={resolvedBackgroundMode}
                                         options={backgroundModeOptions}
-                                        picture={drawBackground}
+                                        picture={props.backgroundPicture ?? drawBackground}
                                         columns={3}
                                         onChange={mode => backgroundActions?.onModeChange?.(mode)}
                                         label={t('options.visualizerBackgroundMode')}

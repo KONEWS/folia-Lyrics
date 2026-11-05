@@ -10,9 +10,11 @@ GitHub 发布页：[0.5.2 发布页](https://github.com/KONEWS/folia-Lyrics/rele
 
 歌词样式设置复用上游工作窗口与参数控件：左侧为当前播放器的实时画面，右侧上方是紧凑的样式选择，下方为歌词动画、背景、字体、字幕与全局参数；缩小窗口仍保持左右排列。样式小图是随程序附带的固定图片，悬停、切换样式和拖动设置都不会生成或播放小图动画。左侧可切换内置示例，也可单独暂停预览，各标签的「默认」只重置该标签相关设置。本机字体、桌面音频分析和配置导入导出继续可用；桌面专有选项收在右上角的「桌面选项」。
 
+后续界面调整：歌词设置窗口和内容整体缩小 6%，桌面选项使用同款卡片、页签、开关与滑块。背景类型也改为附带的固定图片，悬停与参数修改不再生成小图；嵌入背景使用固定图标，不加载嵌入页面预览。
+
 分析模型随安装包提供。修复 WebView2 未返回模型文件长度导致的误报，真正加载时仍校验文件长度与 SHA-256。智能动感需在「全局」中开启并选择与当前歌曲相同版本的完整音频；鼓点专属效果只在歌曲包含鼓点时出现，普通歌词画面不受影响。需要支持 WebGPU 的运行环境。
 
-维护静态样式图：完成 `npm run build:desktop` 后运行 `node tools/generate-desktop-style-pictures.mjs`，检查 `src/desktopLyrics/visualFeatures/stylePictures/` 的图片，再重新构建；客户端不生成这些图片。
+维护静态样式图：完成 `npm run build:desktop` 后运行 `node tools/generate-desktop-style-pictures.mjs`，追加 `--backgrounds` 则截取背景层。检查 `src/desktopLyrics/visualFeatures/stylePictures/` 与 `backgroundPictures/` 的图片后重新构建；客户端不生成这些图片。
 
 ## 歌词显示源码同步（2026-11-04）
 

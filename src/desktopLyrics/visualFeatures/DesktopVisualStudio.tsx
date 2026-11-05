@@ -10,7 +10,7 @@ import { DesktopBeatSettings } from './beat/DesktopBeatSettings';
 import { loadDesktopSystemFonts } from './desktopSystemFonts';
 import DesktopVisualFeedback from '../DesktopVisualFeedback';
 import DesktopVideoSettings from './video/DesktopVideoSettings';
-import { drawDesktopStylePicture } from './DesktopStylePicture';
+import { drawDesktopStylePicture, drawDesktopBackgroundPicture } from './DesktopStylePicture';
 
 // The desktop host supplies data and actions; the upstream studio owns the layout, preview and controls.
 export default function DesktopVisualStudio({ model, mode, onMode, onClose, initialSection = 'visualizer', searchNavigation, navigationSequence,
@@ -33,7 +33,7 @@ export default function DesktopVisualStudio({ model, mode, onMode, onClose, init
     return <div ref={root} data-desktop-visual-studio onKeyDown={keyboard}>
         <VisPlayground theme={model.mergedTheme} isDaylight={false} visualizerMode={searchNavigation?.entry.mode ?? (model.staticMode ? 'still' : mode)}
             initialEditSection={initialSection} editSequence={navigationSequence} livePreviewSource={livePreviewSource} loadFonts={loadDesktopSystemFonts}
-            compactStyleShelf stylePicture={drawDesktopStylePicture}
+            compactStyleShelf stylePicture={drawDesktopStylePicture} backgroundPicture={drawDesktopBackgroundPicture} uiScale={0.94}
             headerActions={<>
                 <Button variant="quiet" onClick={() => setSearchOpen(value => !value)} aria-label={t('desktopLyrics.settingsSearch.label')}><Search size={16}/></Button>
                 <Button variant="quiet" onClick={onOpenOptions}>{t('desktopVisual.desktopOptions')}</Button>

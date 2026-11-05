@@ -1,0 +1,49 @@
+/* Desktop-only options use the studio's surfaces and controls, with the same 6% size reduction. */
+.desktop-lyrics .desktop-visual-settings.desktop-visual-options {
+    position: fixed;
+    inset: 50% auto auto 50%;
+    width: min(590px, calc(100% - 40px));
+    height: min(720px, calc(100% - 40px));
+    transform: translate(-50%, -50%) scale(.94);
+    transform-origin: center;
+    border: 0;
+    border-radius: 16px;
+    background: var(--st-win);
+    box-shadow: 0 36px 90px rgb(0 0 0 / .5), 0 0 0 1px var(--st-line2);
+    color: var(--st-t1);
+    --glass-text: var(--st-t1);
+    --glass-muted: var(--st-t2);
+    --glass-line: var(--st-line);
+    --desktop-glass-control: var(--st-fill);
+    --desktop-glass-hover: var(--st-fill2);
+    --desktop-glass-selected: var(--st-fill2);
+    --desktop-control-radius: 8px;
+    --desktop-control-font-size: 13px;
+    --desktop-control-line-height: 20px;
+    --desktop-control-height: 32px;
+    --desktop-control-padding: 6px 12px;
+}
+.desktop-visual-options .desktop-visual-heading { border-bottom: 0; padding: 16px 20px 12px; }
+.desktop-visual-options .desktop-visual-heading h2 { font-size: 20px; line-height: 32px; }
+.desktop-visual-options .desktop-visual-heading p { color: var(--st-t2); }
+.desktop-visual-options .desktop-visual-tabs { display: block; padding: 0; border: 0; }
+.desktop-lyrics .desktop-visual-options .desktop-visual-tabs button { padding: 0 4px; border: 0; background: transparent; box-shadow: none; border-radius: 6px; }
+.desktop-lyrics:not(.high-contrast) .desktop-visual-options .desktop-visual-tabs button[aria-selected=true] { background: transparent!important; border-color: transparent!important; font-weight: 400; }
+.desktop-visual-options .desktop-visual-content { padding: 20px; }
+.desktop-lyrics .desktop-visual-options .desktop-visual-kit-card:not(:first-child) { border-top: 0; padding-top: 0; }
+.desktop-visual-options .desktop-visual-kit-card h3 { color: var(--st-t2); }
+.desktop-visual-options :is(.desktop-visual-field,.desktop-visual-font) { font-size: 13px; }
+.desktop-visual-options .desktop-visual-hint { font-size: 12px; line-height: 18px; }
+.desktop-visual-options :is(.desktop-visual-kit-range,.desktop-visual-kit-toggle) { margin: -4px -16px; }
+.desktop-lyrics .desktop-visual-options .desktop-visual-kit-range input[type=range] { appearance: none; height: 24px; accent-color: auto; }
+.desktop-lyrics .desktop-visual-options .desktop-visual-kit-toggle button[role=switch] { width: 40px; height: 24px; min-width: 40px; min-height: 24px; padding: 0; border: 0; border-radius: 999px; }
+.desktop-lyrics .desktop-visual-options .desktop-visual-kit-toggle button[aria-checked=true] { background: var(--st-accent)!important; }
+.desktop-lyrics .desktop-visual-options .desktop-visual-kit-toggle button[aria-checked=false] { background: var(--st-track); }
+.desktop-lyrics:not(.high-contrast) .desktop-visual-options .desktop-visual-original-panel .st-card { background: var(--st-card)!important; border-radius: 12px; box-shadow: 0 0 0 1px var(--st-line)!important; }
+.desktop-lyrics.high-contrast .desktop-visual-options .desktop-visual-kit-toggle button[role=switch] { border: 1px solid ButtonText!important; }
+.desktop-lyrics.high-contrast .desktop-visual-options .desktop-visual-kit-toggle button[role=switch]>span { background: ButtonText!important; }
+@media (forced-colors: active) {
+    .desktop-lyrics .desktop-visual-options .desktop-visual-kit-toggle button[role=switch] { border: 1px solid ButtonText!important; }
+    .desktop-lyrics .desktop-visual-options .desktop-visual-kit-toggle button[role=switch]>span { background: ButtonText!important; }
+    .desktop-lyrics .desktop-visual-options .desktop-visual-kit-range input[type=range] { appearance: auto; }
+}

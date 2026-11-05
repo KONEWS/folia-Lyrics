@@ -15,7 +15,8 @@ export async function verifyDesktopVisualAssets(page, song, packet, output, samp
   await section.locator('[data-visual-mode="tempera"]').click(); await waitVisual(page, { mode: 'tempera' });
   const upstream = section.locator('[data-visualizer-settings="tempera"]');
   assert.equal((await readVisual(page)).visualizerTunings.tempera.layerImages.length, 0, 'fresh isolated browser image pool');
-  await upstream.getByRole('button', { name: '添加图片', exact: true }).click();
+  // The kit's link button sits below its label; pointer users activate the complete row.
+  await upstream.getByRole('button', { name: '添加图片', exact: true }).locator('..').click();
   const images = page.getByRole('dialog', { name: '画布图片', exact: true }); await images.waitFor();
   await page.waitForFunction(() => document.querySelector('[role="dialog"][aria-label="画布图片"]')?.contains(document.activeElement));
   await page.keyboard.press('Escape'); await images.waitFor({ state: 'detached' });
@@ -24,7 +25,7 @@ export async function verifyDesktopVisualAssets(page, song, packet, output, samp
   // The settings kit names picture buttons through aria-labelledby rather than button text.
   await page.waitForFunction(element => element === document.activeElement, await add.elementHandle());
   assert(await add.evaluate(element => element === document.activeElement), 'child dismissal restores its original parent trigger');
-  await add.click(); await images.waitFor();
+  await add.press('Enter'); await images.waitFor();
   const tabCount = await images.evaluate(element => [...element.querySelectorAll('button:not(:disabled),input:not(:disabled),textarea:not(:disabled),select:not(:disabled),[tabindex="0"]')]
     .filter(control => control.getClientRects().length > 0).length);
   assert(tabCount > 2);

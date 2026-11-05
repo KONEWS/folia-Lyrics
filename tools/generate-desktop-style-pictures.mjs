@@ -6,7 +6,8 @@ import { installDesktopBridgeMock } from '../test/desktop-bridge-mock.mjs';
 import { openDesktopMenu } from '../test/desktop-select.mjs';
 
 // Capture shipped desktop style posters once; the application only loads the resulting PNGs.
-const output = resolve('src/desktopLyrics/visualFeatures/stylePictures');
+const captureBackgrounds = process.argv.includes('--backgrounds');
+const output = resolve('src/desktopLyrics/visualFeatures', captureBackgrounds ? 'backgroundPictures' : 'stylePictures');
 await mkdir(output, { recursive: true });
 const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.woff2': 'font/woff2' };
 const server = createServer(async (req, res) => {
@@ -35,14 +36,33 @@ try {
     const studio = page.locator('[data-ponder="vis-playground"]');
     await studio.waitFor();
     await studio.getByRole('button', { name: '内置', exact: true }).click();
-    const choices = await studio.getByRole('radio').evaluateAll(nodes => nodes.map(node => node.dataset.value).filter(value => value !== '__random__'));
-    // The poster uses a real sample frame, with no controls or hotspots over it.
-    for (const mode of choices) {
-        await studio.locator(`[role="radio"][data-value="${mode}"]`).click();
-        await page.waitForTimeout(mode === 'machi' ? 8000 : 2000);
-        const box = studio.locator('section div[style*="aspect-ratio"]').first();
-        await box.evaluate(element => element.querySelectorAll('button,[role="group"]').forEach(node => { node.style.visibility = 'hidden'; }));
-        await box.screenshot({ path: resolve(output, `${mode}.png`), timeout: 60000 });
-        console.log(`Captured ${mode}`);
+    if (captureBackgrounds) {
+        await studio.getByRole('tab', { name: '背景', exact: true }).click();
+        const enabled = studio.getByRole('switch', { name: '启用原版歌词背景', exact: true });
+        if (await enabled.getAttribute('aria-checked') !== 'true') await enabled.click();
+        const grid = studio.getByRole('radiogroup', { name: '背景类型', exact: true });
+        const modes = await grid.getByRole('radio').evaluateAll(nodes => nodes.map(node => node.dataset.value));
+        await studio.locator('section').first().evaluate(node => { node.dataset.posterStage = 'true'; });
+        await page.addStyleTag({ content: '[data-poster-stage] [data-visualizer-style], [data-poster-stage] button, [data-poster-stage] [role="group"] { visibility:hidden !important }' });
+        for (const mode of modes.filter(mode => mode !== 'url')) {
+            const tile = grid.locator(`[data-value="${mode}"]`);
+            await tile.click();
+            const layer = studio.locator('section').first().locator(`[data-visualizer-background="${mode}"]`).last();
+            await layer.waitFor();
+            await page.waitForTimeout(4000);
+            await layer.screenshot({ path: resolve(output, `${mode}.png`) });
+            console.log(`Captured background ${mode}`);
+        }
+    } else {
+        const choices = await studio.getByRole('radio').evaluateAll(nodes => nodes.map(node => node.dataset.value).filter(value => value !== '__random__'));
+        // The poster uses a real sample frame, with no controls or hotspots over it.
+        for (const mode of choices) {
+            await studio.locator(`[role="radio"][data-value="${mode}"]`).click();
+            await page.waitForTimeout(mode === 'machi' ? 8000 : 2000);
+            const box = studio.locator('section div[style*="aspect-ratio"]').first();
+            await box.evaluate(element => element.querySelectorAll('button,[role="group"]').forEach(node => { node.style.visibility = 'hidden'; }));
+            await box.screenshot({ path: resolve(output, `${mode}.png`), timeout: 60000 });
+            console.log(`Captured ${mode}`);
+        }
     }
 } finally { await browser.close(); server.close(); }

@@ -50,6 +50,8 @@ type StudioWindowProps = {
     ponderId?: string;
     /** Hosts with a compact style shelf keep the preview and controls side by side at every width. */
     sideBySide?: boolean;
+    /** Visual density of the complete window, including its controls. */
+    uiScale?: number;
 };
 
 /** Where the window comes from: a little lower and a little smaller. It leaves a shorter way. */
@@ -57,7 +59,7 @@ const ARRIVE_FROM = { opacity: 0, y: 12, scale: 0.985 };
 const LEAVE_TO = { opacity: 0, y: 8, scale: 0.99 };
 
 export const StudioWindow: React.FC<StudioWindowProps> = ({
-    title, onBack, backLabel, slot, actions, stage, children, over, onOverClose, isDaylight, theme, ponderId, sideBySide = false,
+    title, onBack, backLabel, slot, actions, stage, children, over, onOverClose, isDaylight, theme, ponderId, sideBySide = false, uiScale = 1,
 }) => {
     const reduced = useKitReducedMotion();
     // False from the moment the window starts to leave: nothing in it can be used then, and the
@@ -184,9 +186,9 @@ export const StudioWindow: React.FC<StudioWindowProps> = ({
                 inert={!isPresent}
                 data-ponder={ponderId}
                 onKeyDown={keepTabInside}
-                initial={ARRIVE_FROM}
-                animate={{ opacity: 1, y: 0, scale: 1, transition: kitTransition('unfold', reduced) }}
-                exit={{ ...LEAVE_TO, transition: kitTransition('move', reduced) }}
+                initial={{ ...ARRIVE_FROM, scale: ARRIVE_FROM.scale * uiScale }}
+                animate={{ opacity: 1, y: 0, scale: uiScale, transition: kitTransition('unfold', reduced) }}
+                exit={{ ...LEAVE_TO, scale: LEAVE_TO.scale * uiScale, transition: kitTransition('move', reduced) }}
                 className="st-window relative grid h-[780px] max-h-full w-[1240px] max-w-full grid-rows-[64px_minmax(0,1fr)] overflow-hidden rounded-2xl bg-[var(--st-win)] text-[color:var(--st-t1)] shadow-[0_36px_90px_rgba(0,0,0,0.5),0_0_0_1px_var(--st-line2)]"
                 // The window holds focus without a mark of its own.
                 style={{ outline: 'none', ...settingsTokens(isDaylight, theme), ...kitMotionTokens(reduced) }}
