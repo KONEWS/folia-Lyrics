@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 // 桌面程序的版本以 native/FoliaLyrics.csproj 的 <Version> 为准，这里核对随发布包附带的文档是否同步，
 // 避免出现“程序 0.4.33、文档仍写 0.4.30”这类错位。README.md 面向已发布的版本，不在检查范围内。
 const read = path => readFileSync(path, 'utf8');
-const SEMVER = '[0-9]+\\.[0-9]+\\.[0-9]+';
+const SEMVER = '[0-9]+\\.[0-9]+\\.[0-9]+(?:\\.[0-9]+)?';
 
 const expected = read('native/FoliaLyrics.csproj').match(new RegExp(`<Version>\\s*(${SEMVER})\\s*</Version>`))?.[1];
 if (!expected) {
