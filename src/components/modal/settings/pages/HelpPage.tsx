@@ -163,6 +163,7 @@ const HelpPage: React.FC<HelpPageProps> = ({ onOpenReleaseNotes, onOpenAiHelp, o
                     <Row sub notice={t(BUILD_KIND === 'unofficial' ? 'options.unofficialBuildNotice' : 'options.selfHostedBuildNotice')} />
                 )}
                 <FoundUpdateRow sub />
+                <Row label={t('help.fontNotice')} hint="© 2021 Huawei Device Co., Ltd." />
                 <Row
                     label={(
                         // The settings window counts the clicks and shows the cat at the seventh.

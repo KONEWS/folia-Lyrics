@@ -88,7 +88,7 @@ try {
   for (const style of ['mono', 'serif']) {
     await open(url, style);
     let defaultRequests = 0;
-    await page.route('**/fonts/NotoSansCJKsc-Regular.otf', route => { defaultRequests++; return route.abort(); });
+    await page.route('**/fonts/HarmonyOS_Sans_SC.ttf', route => { defaultRequests++; return route.abort(); });
     await connect(url);
     assert.equal((await probe()).requests.length, 0, 'no lyrics means no explicit font loading');
     await lyrics(); await rendered();
@@ -96,15 +96,15 @@ try {
     assert.equal(defaultRequests, 0, `${style} must not request the default sans font`);
     assert(observed.measures.length > 0 && observed.measures.every(sample => sample.ready));
     samples.push({ scenario: style, defaultSansRequests: defaultRequests, defaultSansEncodedBytes: await page.evaluate(() => performance.getEntriesByType('resource')
-      .filter(entry => entry.name.includes('NotoSansCJKsc-Regular.otf')).reduce((total, entry) => total + entry.encodedBodySize, 0)),
+      .filter(entry => entry.name.includes('HarmonyOS_Sans_SC.ttf')).reduce((total, entry) => total + entry.encodedBodySize, 0)),
       firstMeasureMs: observed.measures[0].at - observed.started, measuredFonts: [...new Set(observed.measures.map(sample => sample.font))] });
-    checks.push(`${style}: idle controls connect without font loads; lyrics measure correctly with zero default Noto Sans requests`);
+    checks.push(`${style}: idle controls connect without font loads; lyrics measure correctly with zero default HarmonyOS Sans requests`);
     await page.close();
   }
 
   await open(url, 'sans');
   const sans = deferred();
-  await page.route('**/fonts/NotoSansCJKsc-Regular.otf', async route => { await sans.promise; await route.continue(); });
+  await page.route('**/fonts/HarmonyOS_Sans_SC.ttf', async route => { await sans.promise; await route.continue(); });
   try {
     await connect(url); await lyrics();
     await page.waitForFunction(() => document.fonts.status === 'loading');
@@ -174,7 +174,7 @@ try {
   await page.close();
 
   await open(url, 'sans');
-  await page.route('**/fonts/NotoSansCJKsc-Regular.otf', route => route.abort('failed'));
+  await page.route('**/fonts/HarmonyOS_Sans_SC.ttf', route => route.abort('failed'));
   await connect(url); await lyrics(); await rendered();
   checks.push('failed font: normal fallback still renders lyrics and leaves controls available');
   await page.close();

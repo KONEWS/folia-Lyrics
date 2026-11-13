@@ -14,7 +14,7 @@ export default function DesktopVisualBackground({ model, mode, editingBackground
   const entry = getVisualizerBackgroundRegistryEntry(edited);
   return <>
     <VisualCard>
-      <VisualToggle label={t('desktopVisual.originalBackground')} checked={model.backgroundEnabled} onChange={model.setBackgroundEnabled} checkbox/>
+      <VisualToggle label={t('desktopVisual.originalBackground')} checked={model.backgroundEnabled} onChange={model.setBackgroundEnabled}/>
       <p className="desktop-visual-hint">{t(model.backgroundSuppressed ? 'desktopVisual.backgroundSuppressed' : 'desktopVisual.backgroundHint')}</p>
       <label className="desktop-visual-field desktop-background-type"><span>{t('options.visualizerBackgroundMode')}</span><DesktopSelect label={t('options.visualizerBackgroundMode')}
         value={resolved} onChange={value => { onSelection?.(); model.backgroundActions.onModeChange?.(value as typeof resolved); }}

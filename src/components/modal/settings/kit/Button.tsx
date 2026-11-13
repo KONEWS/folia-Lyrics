@@ -8,13 +8,13 @@ import { Tooltip } from './Tooltip';
 // on, and a quiet text button for the action beside a group heading. Given an icon and no text it
 // is a square icon button, named by its tip.
 
-const BASE_CLASS = 'st-t-fast inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap transition-[background-color,color,opacity,scale] enabled:active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40';
+const BASE_CLASS = 'st-t-fast inline-flex max-w-full shrink-0 items-center justify-center gap-1.5 whitespace-normal [overflow-wrap:anywhere] transition-[background-color,color,opacity,scale] enabled:active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40';
 
 /** With text. */
 const TEXT_CLASS = {
-    fill: 'h-8 rounded-lg bg-[var(--st-fill)] px-3 text-[13px] text-[color:var(--st-t1)] enabled:hover:bg-[var(--st-fill2)]',
-    primary: 'h-8 rounded-lg bg-[var(--st-accent)] px-3 text-[13px] text-[color:var(--st-on-accent)] enabled:hover:opacity-90',
-    quiet: 'h-6 rounded-md px-1.5 text-xs text-[color:var(--st-t2)] enabled:hover:bg-[var(--st-fill)] enabled:hover:text-[color:var(--st-t1)]',
+    fill: 'min-h-8 rounded-lg bg-[var(--st-fill)] px-3 py-1.5 text-[13px] leading-5 text-[color:var(--st-t1)] enabled:hover:bg-[var(--st-fill2)]',
+    primary: 'min-h-8 rounded-lg bg-[var(--st-accent)] px-3 py-1.5 text-[13px] leading-5 text-[color:var(--st-on-accent)] enabled:hover:opacity-90',
+    quiet: 'min-h-6 rounded-md px-1.5 py-1 text-xs leading-4 text-[color:var(--st-t2)] enabled:hover:bg-[var(--st-fill)] enabled:hover:text-[color:var(--st-t1)]',
 } as const;
 
 /** An icon alone. A disabled one keeps only its dimmed icon, not an empty filled square. */
@@ -38,7 +38,7 @@ export const Button: React.FC<ButtonProps> = ({ onClick, variant, icon: Icon, ti
     const { labelId } = useRowNaming();
 
     return (
-        <Tooltip text={tip} className="inline-flex shrink-0">
+        <Tooltip text={tip} className="inline-flex min-w-0 max-w-full">
             <button
                 type="button"
                 onClick={onClick}
@@ -48,7 +48,7 @@ export const Button: React.FC<ButtonProps> = ({ onClick, variant, icon: Icon, ti
                 aria-describedby={children ? undefined : labelId}
                 className={`${BASE_CLASS} ${(children ? TEXT_CLASS : ICON_CLASS)[variant ?? 'fill']}`}
             >
-                {Icon && <Icon size={14} />}
+                {Icon && <Icon size={14} className="shrink-0" />}
                 {children}
             </button>
         </Tooltip>

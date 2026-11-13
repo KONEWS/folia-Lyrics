@@ -101,9 +101,9 @@
 .desktop-glass-menu button:is([role=option],[role=menuitem],[role=menuitemcheckbox]){position:relative;isolation:isolate;overflow:hidden;font:inherit;font-size:var(--desktop-control-font-size);line-height:var(--desktop-control-line-height);padding:var(--desktop-control-padding);border:1px solid transparent;border-radius:var(--desktop-control-radius);color:var(--glass-text)!important;background:transparent!important;box-shadow:none;transition:background .18s,border-color .18s}
 .desktop-glass-menu button:is([role=option],[role=menuitem],[role=menuitemcheckbox])::before{display:none}
 .desktop-glass-menu button:is([role=option],[role=menuitem],[role=menuitemcheckbox]):hover:not(:disabled,[aria-selected=true],[aria-checked=true],[aria-pressed=true]){background:var(--desktop-glass-hover)!important;border-color:transparent}
-.desktop-glass-menu button:is([aria-selected=true],[aria-checked=true]){background:var(--desktop-glass-selected)!important;border-color:var(--desktop-control-selected-border);font-weight:600}
-.desktop-glass-menu button:is([aria-selected=true],[aria-checked=true]):hover{background:var(--desktop-glass-selected)!important;border-color:var(--desktop-control-selected-border)}
-.desktop-glass-menu button:is([aria-selected=true],[aria-checked=true]) svg{color:var(--desktop-glass-accent)!important}
+.desktop-glass-menu button:not([role=switch]):is([aria-selected=true],[aria-checked=true]){background:var(--desktop-glass-selected)!important;border-color:var(--desktop-control-selected-border);font-weight:600}
+.desktop-glass-menu button:not([role=switch]):is([aria-selected=true],[aria-checked=true]):hover{background:var(--desktop-glass-selected)!important;border-color:var(--desktop-control-selected-border)}
+.desktop-glass-menu button:not([role=switch]):is([aria-selected=true],[aria-checked=true]) svg{color:var(--desktop-glass-accent)!important}
 .desktop-glass-menu button:focus-visible{outline:2px solid var(--desktop-glass-accent);outline-offset:-2px}
 .desktop-top-menu>div{padding:4px}
 .desktop-top-menu button:is([role=option],[role=menuitem],[role=menuitemcheckbox]){padding-inline:12px}

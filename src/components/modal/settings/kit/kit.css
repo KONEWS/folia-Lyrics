@@ -31,6 +31,11 @@
     transform: scale(1.15);
 }
 
+/* A single switch stays beside its label; only the text wraps when the row is narrow. */
+.st-row:has(> div > button[role='switch']:only-child) > div:first-of-type {
+    flex-basis: 0;
+}
+
 /* ---- the stacked slider: the box its row keeps controls in gives way, so the slider's value ends
    the label's line and its track spans the row under it. A disabled row dims the two parts itself. */
 .st-row > div:has(> .st-slider-stacked),

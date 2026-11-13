@@ -8,12 +8,21 @@
 /* 全局字体栈（#659）：Tailwind 默认的 --font-sans / --font-serif 里没有任何 CJK 家族，中文只能靠系统回退。
    Arch 系默认回退到文泉驿正黑，它的竖排度量是坏的（大量字形 advanceHeight = 0），Bravais 墙面等
    writing-mode: vertical-rl 的中文会叠在同一点。这里在通用族之前补上与 src/utils/fontStacks.ts 一致的 CJK 家族，
-   拉丁文仍走原来的系统字体。 */
+   HarmonyOS Sans SC 为默认字体，系统字体作为缺字与加载失败时的回退。 */
 @theme {
   --font-cjk-sans: "Noto Sans CJK SC", "Source Han Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans JP", "Source Han Sans JP";
   --font-cjk-serif: "Noto Serif CJK SC", "Source Han Serif SC", "Songti SC", "STSong", "SimSun", "Noto Serif JP", "Source Han Serif JP";
-  --font-sans: ui-sans-serif, system-ui, var(--font-cjk-sans), sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-sans: 'HarmonyOS Sans SC', ui-sans-serif, system-ui, var(--font-cjk-sans), sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, var(--font-cjk-serif), serif;
+}
+
+/* Official, unmodified variable font; its license ships beside it in public/fonts. */
+@font-face {
+    font-family: 'HarmonyOS Sans SC';
+    font-style: normal;
+    font-weight: 100 900;
+    font-display: swap;
+    src: url('/fonts/HarmonyOS_Sans_SC.ttf') format('truetype');
 }
 
 @font-face {
@@ -36,7 +45,7 @@
 body {
   background-color: #09090b;
   color: #e4e4e7;
-  font-family: 'Inter', var(--font-cjk-sans), sans-serif;
+  font-family: var(--font-sans);
   overflow: hidden;
 }
 

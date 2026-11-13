@@ -57,7 +57,7 @@ describe('fontStacks', () => {
 
         const stack = resolveThemeFontStack(theme);
 
-        expect(stack.startsWith('"Inter"')).toBe(true);
+        expect(stack.startsWith('"HarmonyOS Sans SC"')).toBe(true);
     });
 
     it('lets translation text try the custom font before using the translation-specific fallback stack', () => {

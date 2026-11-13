@@ -104,7 +104,7 @@ export default function ControlPanel(p: Props) {
       <details className="settings-help local-formats-help"><summary>{text('settings.localFormatsHelp')}</summary>
         <p className="hint">可读取音乐内嵌歌词，以及 LRC、TTML、YRC、QRC、FIA 文件。普通逐行歌词不会自动变成精准逐字歌词。</p></details></section>
     <DesktopDiagnostics/>
-    <footer className="panel-footer">Folia 桌面歌词{typeof __DESKTOP_VERSION__ === 'string' && __DESKTOP_VERSION__ ? ` · ${__DESKTOP_VERSION__}` : ''}<br/>基于 Folia Major 原版动效 · AGPL-3.0</footer>
+    <footer className="panel-footer">Folia 桌面歌词{typeof __DESKTOP_VERSION__ === 'string' && __DESKTOP_VERSION__ ? ` · ${__DESKTOP_VERSION__}` : ''}<br/>基于 Folia Major 原版动效 · AGPL-3.0<br/>{i18n.t('help.fontNotice', { lng: 'zh-CN' })} · © 2021 Huawei Device Co., Ltd.</footer>
     </div>
   </aside>;
 }

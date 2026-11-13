@@ -1,6 +1,7 @@
-import { createContext, useContext, type ReactNode } from 'react';
+import { createContext, useContext, useId, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SliderRow, ToggleRow } from '../components/visualizer/panelRows';
+import { Toggle } from '../components/modal/settings/kit/Toggle';
 
 // src/desktopLyrics/DesktopVisualControls.tsx — accessible controls for the desktop visual settings surface.
 export const UnifiedVisualControlsContext = createContext(false);
@@ -16,21 +17,15 @@ export function VisualCard({ title, children }: { title?: string; children: Reac
   return <section className="desktop-visual-card">{title ? <h3>{title}</h3> : null}{children}</section>;
 }
 
-export function VisualToggle({ label, checked, onChange, disabled = false, checkbox = false }: {
-  label: string; checked: boolean; onChange: (next: boolean) => void; disabled?: boolean; checkbox?: boolean;
+export function VisualToggle({ label, checked, onChange, disabled = false }: {
+  label: string; checked: boolean; onChange: (next: boolean) => void; disabled?: boolean;
 }) {
-  const t = useVisualTranslation();
+  const labelId = useId();
   const unified = useContext(UnifiedVisualControlsContext);
   if (unified) return <div className="desktop-visual-kit-toggle"><ToggleRow label={label} checked={checked} onChange={onChange} disabled={disabled}/></div>;
-  const title = `${label} · ${t(checked ? 'desktopVisual.enabled' : 'desktopVisual.disabled')}`;
-  if (checkbox) return <label className="toggle desktop-visual-toggle desktop-visual-checkbox"><span>{label}</span>
-    <input type="checkbox" role="switch" aria-label={label} aria-checked={checked} checked={checked} disabled={disabled}
-      onChange={event => onChange(event.target.checked)} title={title}/></label>;
-  return <div className="desktop-visual-toggle"><span>{label}</span><button type="button" role="switch"
-    aria-label={label} aria-checked={checked} disabled={disabled} onClick={() => onChange(!checked)}
-    title={title}>
-    {t(checked ? 'desktopVisual.enabled' : 'desktopVisual.disabled')}
-  </button></div>;
+  return <div className="desktop-visual-toggle"><span id={labelId} className="min-w-0 [overflow-wrap:anywhere]">{label}</span>
+    <span className="flex shrink-0"><Toggle checked={checked} onChange={onChange} disabled={disabled} labelledBy={labelId}/></span>
+  </div>;
 }
 
 export function VisualRange({ label, value, min, max, step = 0.05, display, onChange, beginSlider, commitSlider }: {

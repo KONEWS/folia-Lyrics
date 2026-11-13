@@ -1,0 +1,2931 @@
+{
+    "title": "踊",
+    "artist": "Ado",
+    "isWordByWord": true,
+    "loopDuration": 204,
+    "lines": [
+        {
+            "words": [
+                {
+                    "text": "半",
+                    "startTime": 0.385,
+                    "endTime": 0.546
+                },
+                {
+                    "text": "端",
+                    "startTime": 0.546,
+                    "endTime": 0.79
+                },
+                {
+                    "text": "な",
+                    "startTime": 0.79,
+                    "endTime": 0.957
+                },
+                {
+                    "text": "ら",
+                    "startTime": 0.957,
+                    "endTime": 1.2770000000000001
+                },
+                {
+                    "text": "K.",
+                    "startTime": 1.2770000000000001,
+                    "endTime": 1.798
+                },
+                {
+                    "text": "O.",
+                    "startTime": 1.798,
+                    "endTime": 2.885
+                }
+            ],
+            "startTime": 0.385,
+            "endTime": 2.885,
+            "fullText": "半端なら K.O.",
+            "translation": "犹豫不决 就会被 K.O."
+        },
+        {
+            "words": [
+                {
+                    "text": "ふ",
+                    "startTime": 2.885,
+                    "endTime": 3.061
+                },
+                {
+                    "text": "わ",
+                    "startTime": 3.061,
+                    "endTime": 3.382
+                },
+                {
+                    "text": "ふ",
+                    "startTime": 3.382,
+                    "endTime": 3.448
+                },
+                {
+                    "text": "わ",
+                    "startTime": 3.448,
+                    "endTime": 3.856
+                },
+                {
+                    "text": "し",
+                    "startTime": 3.856,
+                    "endTime": 3.944
+                },
+                {
+                    "text": "た",
+                    "startTime": 3.944,
+                    "endTime": 4.112
+                },
+                {
+                    "text": "い",
+                    "startTime": 4.112,
+                    "endTime": 4.433
+                },
+                {
+                    "text": "な",
+                    "startTime": 4.433,
+                    "endTime": 4.616
+                },
+                {
+                    "text": "ら",
+                    "startTime": 4.616,
+                    "endTime": 4.944
+                },
+                {
+                    "text": "ど",
+                    "startTime": 4.944,
+                    "endTime": 5.216
+                },
+                {
+                    "text": "う",
+                    "startTime": 5.216,
+                    "endTime": 5.489
+                },
+                {
+                    "text": "ぞ",
+                    "startTime": 5.489,
+                    "endTime": 6.643
+                }
+            ],
+            "startTime": 2.885,
+            "endTime": 6.643,
+            "fullText": "ふわふわしたいならどうぞ",
+            "translation": "想选择心浮气躁都随你便"
+        },
+        {
+            "words": [
+                {
+                    "text": "開",
+                    "startTime": 6.643,
+                    "endTime": 6.938
+                },
+                {
+                    "text": "演",
+                    "startTime": 6.938,
+                    "endTime": 7.306
+                },
+                {
+                    "text": "準",
+                    "startTime": 7.306,
+                    "endTime": 7.467
+                },
+                {
+                    "text": "備",
+                    "startTime": 7.467,
+                    "endTime": 7.754
+                },
+                {
+                    "text": "し",
+                    "startTime": 7.754,
+                    "endTime": 7.774
+                },
+                {
+                    "text": "ち",
+                    "startTime": 7.774,
+                    "endTime": 7.87
+                },
+                {
+                    "text": "ゃ",
+                    "startTime": 7.87,
+                    "endTime": 7.966
+                },
+                {
+                    "text": "お",
+                    "startTime": 7.966,
+                    "endTime": 8.27
+                },
+                {
+                    "text": "う",
+                    "startTime": 8.27,
+                    "endTime": 8.459
+                },
+                {
+                    "text": "か",
+                    "startTime": 8.459,
+                    "endTime": 8.638
+                }
+            ],
+            "startTime": 6.643,
+            "endTime": 8.638,
+            "fullText": "開演準備しちゃおうか",
+            "translation": "来做好开演准备吧"
+        },
+        {
+            "words": [
+                {
+                    "text": "泣",
+                    "startTime": 8.638,
+                    "endTime": 8.806000000000001
+                },
+                {
+                    "text": "い",
+                    "startTime": 8.806000000000001,
+                    "endTime": 9.102
+                },
+                {
+                    "text": "て",
+                    "startTime": 9.102,
+                    "endTime": 9.286
+                },
+                {
+                    "text": "も",
+                    "startTime": 9.286,
+                    "endTime": 9.598
+                },
+                {
+                    "text": "笑",
+                    "startTime": 9.598,
+                    "endTime": 9.943
+                },
+                {
+                    "text": "っ",
+                    "startTime": 9.943,
+                    "endTime": 10.12
+                },
+                {
+                    "text": "て",
+                    "startTime": 10.12,
+                    "endTime": 10.286
+                },
+                {
+                    "text": "も",
+                    "startTime": 10.286,
+                    "endTime": 10.542
+                },
+                {
+                    "text": "愛",
+                    "startTime": 10.542,
+                    "endTime": 10.99
+                },
+                {
+                    "text": "し",
+                    "startTime": 10.99,
+                    "endTime": 11.182
+                },
+                {
+                    "text": "て",
+                    "startTime": 11.182,
+                    "endTime": 11.542
+                },
+                {
+                    "text": "ね",
+                    "startTime": 11.542,
+                    "endTime": 11.878
+                }
+            ],
+            "startTime": 8.638,
+            "endTime": 11.878,
+            "fullText": "泣いても笑っても愛してね",
+            "translation": "哭也好 笑也好 都要爱我哦"
+        },
+        {
+            "words": [
+                {
+                    "text": "ほ",
+                    "startTime": 11.878,
+                    "endTime": 12.038
+                },
+                {
+                    "text": "ら",
+                    "startTime": 12.038,
+                    "endTime": 12.446
+                },
+                {
+                    "text": "say ",
+                    "startTime": 12.446,
+                    "endTime": 12.942
+                },
+                {
+                    "text": "no ",
+                    "startTime": 12.942,
+                    "endTime": 14.286
+                },
+                {
+                    "text": "低",
+                    "startTime": 14.286,
+                    "endTime": 14.806000000000001
+                },
+                {
+                    "text": "音",
+                    "startTime": 14.806000000000001,
+                    "endTime": 15.278
+                },
+                {
+                    "text": "響",
+                    "startTime": 15.278,
+                    "endTime": 15.75
+                },
+                {
+                    "text": "か",
+                    "startTime": 15.75,
+                    "endTime": 15.934
+                },
+                {
+                    "text": "せ",
+                    "startTime": 15.934,
+                    "endTime": 16.25
+                },
+                {
+                    "text": "ろ",
+                    "startTime": 16.25,
+                    "endTime": 19.85
+                }
+            ],
+            "startTime": 11.878,
+            "endTime": 19.85,
+            "fullText": "ほら say no 低音響かせろ",
+            "translation": "来吧 say no 让低沉声音回荡"
+        },
+        {
+            "words": [
+                {
+                    "text": "な",
+                    "startTime": 19.85,
+                    "endTime": 19.93
+                },
+                {
+                    "text": "ん",
+                    "startTime": 19.93,
+                    "endTime": 20.005
+                },
+                {
+                    "text": "だ",
+                    "startTime": 20.005,
+                    "endTime": 20.237
+                },
+                {
+                    "text": "か",
+                    "startTime": 20.237,
+                    "endTime": 20.306
+                },
+                {
+                    "text": "な",
+                    "startTime": 20.306,
+                    "endTime": 20.462
+                },
+                {
+                    "text": "っ",
+                    "startTime": 20.462,
+                    "endTime": 20.618
+                },
+                {
+                    "text": "て",
+                    "startTime": 20.618,
+                    "endTime": 20.703
+                },
+                {
+                    "text": "つ",
+                    "startTime": 20.703,
+                    "endTime": 20.826
+                },
+                {
+                    "text": "ま",
+                    "startTime": 20.826,
+                    "endTime": 20.946
+                },
+                {
+                    "text": "ん",
+                    "startTime": 20.946,
+                    "endTime": 21.133
+                },
+                {
+                    "text": "な",
+                    "startTime": 21.133,
+                    "endTime": 21.485
+                },
+                {
+                    "text": "い",
+                    "startTime": 21.485,
+                    "endTime": 21.845
+                },
+                {
+                    "text": "こ",
+                    "startTime": 21.845,
+                    "endTime": 22.006
+                },
+                {
+                    "text": "と",
+                    "startTime": 22.006,
+                    "endTime": 22.032
+                },
+                {
+                    "text": "も",
+                    "startTime": 22.032,
+                    "endTime": 22.193
+                }
+            ],
+            "startTime": 19.85,
+            "endTime": 22.193,
+            "fullText": "なんだかなってつまんないことも",
+            "translation": "世上莫名其妙枯燥无聊的事"
+        },
+        {
+            "words": [
+                {
+                    "text": "あ",
+                    "startTime": 22.193,
+                    "endTime": 22.375
+                },
+                {
+                    "text": "る",
+                    "startTime": 22.375,
+                    "endTime": 22.751
+                },
+                {
+                    "text": "で",
+                    "startTime": 22.751,
+                    "endTime": 23.055
+                },
+                {
+                    "text": "し",
+                    "startTime": 23.055,
+                    "endTime": 23.111
+                },
+                {
+                    "text": "ょ",
+                    "startTime": 23.111,
+                    "endTime": 23.143
+                },
+                {
+                    "text": "う",
+                    "startTime": 23.143,
+                    "endTime": 23.579
+                }
+            ],
+            "startTime": 22.193,
+            "endTime": 23.579,
+            "fullText": "あるでしょう",
+            "translation": "也不少吧"
+        },
+        {
+            "words": [
+                {
+                    "text": "ロ",
+                    "startTime": 23.579,
+                    "endTime": 23.716
+                },
+                {
+                    "text": "ン",
+                    "startTime": 23.716,
+                    "endTime": 23.853
+                },
+                {
+                    "text": "リ",
+                    "startTime": 23.853,
+                    "endTime": 24.06
+                },
+                {
+                    "text": "ー",
+                    "startTime": 24.06,
+                    "endTime": 24.267
+                },
+                {
+                    "text": "論",
+                    "startTime": 24.267,
+                    "endTime": 24.371
+                },
+                {
+                    "text": "理",
+                    "startTime": 24.371,
+                    "endTime": 24.532
+                },
+                {
+                    "text": "の",
+                    "startTime": 24.532,
+                    "endTime": 24.804
+                },
+                {
+                    "text": "ノ",
+                    "startTime": 24.804,
+                    "endTime": 24.997
+                },
+                {
+                    "text": "ー",
+                    "startTime": 24.997,
+                    "endTime": 25.421
+                },
+                {
+                    "text": "ト",
+                    "startTime": 25.421,
+                    "endTime": 25.531
+                }
+            ],
+            "startTime": 23.579,
+            "endTime": 25.531,
+            "fullText": "ロンリー論理のノート",
+            "translation": "随手携带记录寂寞的"
+        },
+        {
+            "words": [
+                {
+                    "text": "ハ",
+                    "startTime": 25.531,
+                    "endTime": 25.62
+                },
+                {
+                    "text": "ン",
+                    "startTime": 25.62,
+                    "endTime": 25.708
+                },
+                {
+                    "text": "デ",
+                    "startTime": 25.708,
+                    "endTime": 25.833
+                },
+                {
+                    "text": "ィ",
+                    "startTime": 25.833,
+                    "endTime": 25.958
+                },
+                {
+                    "text": "ー",
+                    "startTime": 25.958,
+                    "endTime": 26.083
+                },
+                {
+                    "text": "本",
+                    "startTime": 26.083,
+                    "endTime": 26.267
+                },
+                {
+                    "text": "気",
+                    "startTime": 26.267,
+                    "endTime": 26.523
+                },
+                {
+                    "text": "脱",
+                    "startTime": 26.523,
+                    "endTime": 26.899
+                },
+                {
+                    "text": "走",
+                    "startTime": 26.899,
+                    "endTime": 27.308
+                }
+            ],
+            "startTime": 25.531,
+            "endTime": 27.308,
+            "fullText": "ハンディー本気脱走",
+            "translation": "理论笔记 真心出逃"
+        },
+        {
+            "words": [
+                {
+                    "text": "や",
+                    "startTime": 27.308,
+                    "endTime": 27.42
+                },
+                {
+                    "text": "ん",
+                    "startTime": 27.42,
+                    "endTime": 27.532
+                },
+                {
+                    "text": "な",
+                    "startTime": 27.532,
+                    "endTime": 27.716
+                },
+                {
+                    "text": "っ",
+                    "startTime": 27.716,
+                    "endTime": 27.9
+                },
+                {
+                    "text": "ち",
+                    "startTime": 27.9,
+                    "endTime": 27.975
+                },
+                {
+                    "text": "ゃ",
+                    "startTime": 27.975,
+                    "endTime": 28.049
+                },
+                {
+                    "text": "っ",
+                    "startTime": 28.049,
+                    "endTime": 28.124
+                },
+                {
+                    "text": "て",
+                    "startTime": 28.124,
+                    "endTime": 28.319
+                },
+                {
+                    "text": "泥",
+                    "startTime": 28.319,
+                    "endTime": 29.015
+                },
+                {
+                    "text": "に",
+                    "startTime": 29.015,
+                    "endTime": 29.375
+                },
+                {
+                    "text": "bad",
+                    "startTime": 29.375,
+                    "endTime": 29.465
+                }
+            ],
+            "startTime": 27.308,
+            "endTime": 29.465,
+            "fullText": "やんなっちゃって泥に bad",
+            "translation": "厌倦后向着泥淖 罪恶"
+        },
+        {
+            "words": [
+                {
+                    "text": "ご",
+                    "startTime": 29.465,
+                    "endTime": 29.825
+                },
+                {
+                    "text": "法",
+                    "startTime": 29.825,
+                    "endTime": 30.089
+                },
+                {
+                    "text": "度",
+                    "startTime": 30.089,
+                    "endTime": 30.241
+                },
+                {
+                    "text": "だ",
+                    "startTime": 30.241,
+                    "endTime": 30.505
+                },
+                {
+                    "text": "ろ",
+                    "startTime": 30.505,
+                    "endTime": 30.761
+                },
+                {
+                    "text": "う",
+                    "startTime": 30.761,
+                    "endTime": 31.017
+                },
+                {
+                    "text": "が",
+                    "startTime": 31.017,
+                    "endTime": 31.578
+                },
+                {
+                    "text": "溺",
+                    "startTime": 31.578,
+                    "endTime": 31.794
+                },
+                {
+                    "text": "れ",
+                    "startTime": 31.794,
+                    "endTime": 32.13
+                },
+                {
+                    "text": "て",
+                    "startTime": 32.13,
+                    "endTime": 32.207
+                },
+                {
+                    "text": "堕",
+                    "startTime": 32.207,
+                    "endTime": 32.543
+                },
+                {
+                    "text": "ち",
+                    "startTime": 32.543,
+                    "endTime": 32.887
+                },
+                {
+                    "text": "て",
+                    "startTime": 32.887,
+                    "endTime": 33.911
+                }
+            ],
+            "startTime": 29.465,
+            "endTime": 33.911,
+            "fullText": "ご法度だろうが溺れて堕ちて",
+            "translation": "尽管被禁止 仍旧沉溺堕落"
+        },
+        {
+            "words": [
+                {
+                    "text": "そ",
+                    "startTime": 33.911,
+                    "endTime": 33.981
+                },
+                {
+                    "text": "ろ",
+                    "startTime": 33.981,
+                    "endTime": 34.156
+                },
+                {
+                    "text": "そ",
+                    "startTime": 34.156,
+                    "endTime": 34.356
+                },
+                {
+                    "text": "ろ",
+                    "startTime": 34.356,
+                    "endTime": 34.482
+                },
+                {
+                    "text": "い",
+                    "startTime": 34.482,
+                    "endTime": 34.65
+                },
+                {
+                    "text": "っ",
+                    "startTime": 34.65,
+                    "endTime": 34.818
+                },
+                {
+                    "text": "か",
+                    "startTime": 34.818,
+                    "endTime": 34.972
+                }
+            ],
+            "startTime": 33.911,
+            "endTime": 34.972,
+            "fullText": "そろそろいっか",
+            "translation": "差不多够了吧"
+        },
+        {
+            "words": [
+                {
+                    "text": "も",
+                    "startTime": 34.972,
+                    "endTime": 35.059
+                },
+                {
+                    "text": "っ",
+                    "startTime": 35.059,
+                    "endTime": 35.146
+                },
+                {
+                    "text": "と",
+                    "startTime": 35.146,
+                    "endTime": 35.202
+                },
+                {
+                    "text": "頑",
+                    "startTime": 35.202,
+                    "endTime": 35.73
+                },
+                {
+                    "text": "張",
+                    "startTime": 35.73,
+                    "endTime": 35.814
+                },
+                {
+                    "text": "っ",
+                    "startTime": 35.814,
+                    "endTime": 35.873
+                },
+                {
+                    "text": "て",
+                    "startTime": 35.873,
+                    "endTime": 36.244
+                }
+            ],
+            "startTime": 34.972,
+            "endTime": 36.244,
+            "fullText": "もっと頑張って",
+            "translation": "再努力一些"
+        },
+        {
+            "words": [
+                {
+                    "text": "ア",
+                    "startTime": 36.244,
+                    "endTime": 36.299
+                },
+                {
+                    "text": "ガ",
+                    "startTime": 36.299,
+                    "endTime": 36.476
+                },
+                {
+                    "text": "る",
+                    "startTime": 36.476,
+                    "endTime": 36.667
+                },
+                {
+                    "text": "ま",
+                    "startTime": 36.667,
+                    "endTime": 36.858
+                },
+                {
+                    "text": "で",
+                    "startTime": 36.858,
+                    "endTime": 36.896
+                },
+                {
+                    "text": "も",
+                    "startTime": 36.896,
+                    "endTime": 36.987
+                },
+                {
+                    "text": "っ",
+                    "startTime": 36.987,
+                    "endTime": 37.079
+                },
+                {
+                    "text": "と",
+                    "startTime": 37.079,
+                    "endTime": 37.151
+                },
+                {
+                    "text": "頑",
+                    "startTime": 37.151,
+                    "endTime": 37.656
+                },
+                {
+                    "text": "張",
+                    "startTime": 37.656,
+                    "endTime": 37.743
+                },
+                {
+                    "text": "っ",
+                    "startTime": 37.743,
+                    "endTime": 37.783
+                },
+                {
+                    "text": "て",
+                    "startTime": 37.783,
+                    "endTime": 38.11
+                }
+            ],
+            "startTime": 36.244,
+            "endTime": 38.11,
+            "fullText": "アガるまでもっと頑張って",
+            "translation": "向更高处再努力一些"
+        },
+        {
+            "words": [
+                {
+                    "text": "繋",
+                    "startTime": 38.11,
+                    "endTime": 38.357
+                },
+                {
+                    "text": "が",
+                    "startTime": 38.357,
+                    "endTime": 38.549
+                },
+                {
+                    "text": "ろ",
+                    "startTime": 38.549,
+                    "endTime": 38.638
+                },
+                {
+                    "text": "う",
+                    "startTime": 38.638,
+                    "endTime": 38.697
+                },
+                {
+                    "text": "ひ",
+                    "startTime": 38.697,
+                    "endTime": 38.976
+                },
+                {
+                    "text": "と",
+                    "startTime": 38.976,
+                    "endTime": 39.02
+                },
+                {
+                    "text": "り",
+                    "startTime": 39.02,
+                    "endTime": 39.419
+                },
+                {
+                    "text": "よ",
+                    "startTime": 39.419,
+                    "endTime": 39.66
+                },
+                {
+                    "text": "り",
+                    "startTime": 39.66,
+                    "endTime": 40.012
+                },
+                {
+                    "text": "ふ",
+                    "startTime": 40.012,
+                    "endTime": 40.19
+                },
+                {
+                    "text": "た",
+                    "startTime": 40.19,
+                    "endTime": 40.207
+                },
+                {
+                    "text": "り",
+                    "startTime": 40.207,
+                    "endTime": 40.448
+                }
+            ],
+            "startTime": 38.11,
+            "endTime": 40.448,
+            "fullText": "繋がろうひとりよりふたり",
+            "translation": "缔结羁绊吧 比起独自一人"
+        },
+        {
+            "words": [
+                {
+                    "text": "増",
+                    "startTime": 40.448,
+                    "endTime": 40.469
+                },
+                {
+                    "text": "え",
+                    "startTime": 40.469,
+                    "endTime": 40.677
+                },
+                {
+                    "text": "た",
+                    "startTime": 40.677,
+                    "endTime": 40.901
+                },
+                {
+                    "text": "ら",
+                    "startTime": 40.901,
+                    "endTime": 40.965
+                },
+                {
+                    "text": "安",
+                    "startTime": 40.965,
+                    "endTime": 41.245
+                },
+                {
+                    "text": "心",
+                    "startTime": 41.245,
+                    "endTime": 41.463
+                },
+                {
+                    "text": "心",
+                    "startTime": 41.572,
+                    "endTime": 41.773
+                },
+                {
+                    "text": "配",
+                    "startTime": 41.773,
+                    "endTime": 41.989
+                },
+                {
+                    "text": "な",
+                    "startTime": 41.989,
+                    "endTime": 42.174
+                },
+                {
+                    "text": "い",
+                    "startTime": 42.174,
+                    "endTime": 42.203
+                },
+                {
+                    "text": "や",
+                    "startTime": 42.203,
+                    "endTime": 42.45
+                }
+            ],
+            "startTime": 40.448,
+            "endTime": 42.45,
+            "fullText": "増えたら安心 心配ないや",
+            "translation": "增加成两人比较安心吧 不要担心"
+        },
+        {
+            "words": [
+                {
+                    "text": "Alright ",
+                    "startTime": 42.45,
+                    "endTime": 42.881
+                },
+                {
+                    "text": "任",
+                    "startTime": 42.881,
+                    "endTime": 43.086
+                },
+                {
+                    "text": "せ",
+                    "startTime": 43.086,
+                    "endTime": 43.286
+                },
+                {
+                    "text": "て",
+                    "startTime": 43.286,
+                    "endTime": 43.47
+                },
+                {
+                    "text": "don't ",
+                    "startTime": 43.47,
+                    "endTime": 43.742
+                },
+                {
+                    "text": "mind",
+                    "startTime": 43.742,
+                    "endTime": 43.847
+                }
+            ],
+            "startTime": 42.45,
+            "endTime": 43.847,
+            "fullText": "Alright 任せて don't mind",
+            "translation": "没关系 交给我吧 不要在意"
+        },
+        {
+            "words": [
+                {
+                    "text": "波",
+                    "startTime": 43.847,
+                    "endTime": 44.088
+                },
+                {
+                    "text": "あ",
+                    "startTime": 44.088,
+                    "endTime": 44.256
+                },
+                {
+                    "text": "り",
+                    "startTime": 44.256,
+                    "endTime": 44.317
+                },
+                {
+                    "text": "難",
+                    "startTime": 44.317,
+                    "endTime": 44.534
+                },
+                {
+                    "text": "題",
+                    "startTime": 44.534,
+                    "endTime": 44.769
+                }
+            ],
+            "startTime": 43.847,
+            "endTime": 44.769,
+            "fullText": "波あり難題",
+            "translation": "难题波澜起伏"
+        },
+        {
+            "words": [
+                {
+                    "text": "み",
+                    "startTime": 44.769,
+                    "endTime": 44.885
+                },
+                {
+                    "text": "ん",
+                    "startTime": 44.885,
+                    "endTime": 45.002
+                },
+                {
+                    "text": "な",
+                    "startTime": 45.002,
+                    "endTime": 45.201
+                },
+                {
+                    "text": "で",
+                    "startTime": 45.201,
+                    "endTime": 45.228
+                },
+                {
+                    "text": "乗",
+                    "startTime": 45.228,
+                    "endTime": 45.331
+                },
+                {
+                    "text": "っ",
+                    "startTime": 45.331,
+                    "endTime": 45.434
+                },
+                {
+                    "text": "か",
+                    "startTime": 45.434,
+                    "endTime": 45.538
+                },
+                {
+                    "text": "っ",
+                    "startTime": 45.538,
+                    "endTime": 45.677
+                },
+                {
+                    "text": "ち",
+                    "startTime": 45.677,
+                    "endTime": 45.765
+                },
+                {
+                    "text": "ゃ",
+                    "startTime": 45.765,
+                    "endTime": 45.853
+                },
+                {
+                    "text": "え",
+                    "startTime": 45.853,
+                    "endTime": 46.237
+                },
+                {
+                    "text": "ば",
+                    "startTime": 46.237,
+                    "endTime": 47.064
+                }
+            ],
+            "startTime": 44.769,
+            "endTime": 47.064,
+            "fullText": "みんなで乗っかっちゃえば",
+            "translation": "但只要大家一起乘风破浪"
+        },
+        {
+            "words": [
+                {
+                    "text": "案",
+                    "startTime": 47.064,
+                    "endTime": 47.147
+                },
+                {
+                    "text": "外",
+                    "startTime": 47.147,
+                    "endTime": 47.484
+                },
+                {
+                    "text": "さ",
+                    "startTime": 47.484,
+                    "endTime": 47.532
+                },
+                {
+                    "text": "く",
+                    "startTime": 47.532,
+                    "endTime": 47.708
+                },
+                {
+                    "text": "っ",
+                    "startTime": 47.708,
+                    "endTime": 47.883
+                },
+                {
+                    "text": "と",
+                    "startTime": 47.883,
+                    "endTime": 48.043
+                },
+                {
+                    "text": "行",
+                    "startTime": 48.043,
+                    "endTime": 48.206
+                },
+                {
+                    "text": "っ",
+                    "startTime": 48.206,
+                    "endTime": 48.37
+                },
+                {
+                    "text": "ち",
+                    "startTime": 48.37,
+                    "endTime": 48.462
+                },
+                {
+                    "text": "ゃ",
+                    "startTime": 48.462,
+                    "endTime": 48.554
+                },
+                {
+                    "text": "い",
+                    "startTime": 48.554,
+                    "endTime": 48.585
+                },
+                {
+                    "text": "そ",
+                    "startTime": 48.585,
+                    "endTime": 48.705
+                },
+                {
+                    "text": "う",
+                    "startTime": 48.705,
+                    "endTime": 48.906
+                }
+            ],
+            "startTime": 47.064,
+            "endTime": 48.906,
+            "fullText": "案外さくっと行っちゃいそう",
+            "translation": "便会意外地轻松"
+        },
+        {
+            "words": [
+                {
+                    "text": "半",
+                    "startTime": 48.906,
+                    "endTime": 49.089
+                },
+                {
+                    "text": "端",
+                    "startTime": 49.089,
+                    "endTime": 49.393
+                },
+                {
+                    "text": "な",
+                    "startTime": 49.393,
+                    "endTime": 49.569
+                },
+                {
+                    "text": "ら",
+                    "startTime": 49.569,
+                    "endTime": 49.914
+                },
+                {
+                    "text": "K.",
+                    "startTime": 49.914,
+                    "endTime": 50.39
+                },
+                {
+                    "text": "O.",
+                    "startTime": 50.39,
+                    "endTime": 51.484
+                }
+            ],
+            "startTime": 48.906,
+            "endTime": 51.484,
+            "fullText": "半端なら K.O.",
+            "translation": "犹豫不决 就会被 K.O."
+        },
+        {
+            "words": [
+                {
+                    "text": "ふ",
+                    "startTime": 51.484,
+                    "endTime": 51.652
+                },
+                {
+                    "text": "わ",
+                    "startTime": 51.652,
+                    "endTime": 52.02
+                },
+                {
+                    "text": "ふ",
+                    "startTime": 52.02,
+                    "endTime": 52.11
+                },
+                {
+                    "text": "わ",
+                    "startTime": 52.11,
+                    "endTime": 52.542
+                },
+                {
+                    "text": "し",
+                    "startTime": 52.542,
+                    "endTime": 52.62
+                },
+                {
+                    "text": "た",
+                    "startTime": 52.62,
+                    "endTime": 52.78
+                },
+                {
+                    "text": "い",
+                    "startTime": 52.78,
+                    "endTime": 53.149
+                },
+                {
+                    "text": "な",
+                    "startTime": 53.149,
+                    "endTime": 53.332
+                },
+                {
+                    "text": "ら",
+                    "startTime": 53.332,
+                    "endTime": 53.644
+                },
+                {
+                    "text": "ど",
+                    "startTime": 53.644,
+                    "endTime": 53.912
+                },
+                {
+                    "text": "う",
+                    "startTime": 53.912,
+                    "endTime": 54.18
+                },
+                {
+                    "text": "ぞ",
+                    "startTime": 54.18,
+                    "endTime": 55.425
+                }
+            ],
+            "startTime": 51.484,
+            "endTime": 55.425,
+            "fullText": "ふわふわしたいならどうぞ",
+            "translation": "想选择心浮气躁都随你便"
+        },
+        {
+            "words": [
+                {
+                    "text": "開",
+                    "startTime": 55.425,
+                    "endTime": 55.818
+                },
+                {
+                    "text": "演",
+                    "startTime": 55.818,
+                    "endTime": 55.977
+                },
+                {
+                    "text": "準",
+                    "startTime": 55.977,
+                    "endTime": 56.203
+                },
+                {
+                    "text": "備",
+                    "startTime": 56.203,
+                    "endTime": 56.411
+                },
+                {
+                    "text": "し",
+                    "startTime": 56.411,
+                    "endTime": 56.478
+                },
+                {
+                    "text": "ち",
+                    "startTime": 56.478,
+                    "endTime": 56.577
+                },
+                {
+                    "text": "ゃ",
+                    "startTime": 56.577,
+                    "endTime": 56.677
+                },
+                {
+                    "text": "お",
+                    "startTime": 56.677,
+                    "endTime": 56.973
+                },
+                {
+                    "text": "う",
+                    "startTime": 56.973,
+                    "endTime": 57.213
+                },
+                {
+                    "text": "か",
+                    "startTime": 57.213,
+                    "endTime": 57.419
+                }
+            ],
+            "startTime": 55.425,
+            "endTime": 57.419,
+            "fullText": "開演準備しちゃおうか",
+            "translation": "来做好开演准备吧"
+        },
+        {
+            "words": [
+                {
+                    "text": "泣",
+                    "startTime": 57.419,
+                    "endTime": 57.577
+                },
+                {
+                    "text": "い",
+                    "startTime": 57.577,
+                    "endTime": 57.905
+                },
+                {
+                    "text": "て",
+                    "startTime": 57.905,
+                    "endTime": 58.081
+                },
+                {
+                    "text": "も",
+                    "startTime": 58.081,
+                    "endTime": 58.361
+                },
+                {
+                    "text": "笑",
+                    "startTime": 58.361,
+                    "endTime": 58.682
+                },
+                {
+                    "text": "っ",
+                    "startTime": 58.682,
+                    "endTime": 58.818
+                },
+                {
+                    "text": "て",
+                    "startTime": 58.818,
+                    "endTime": 59.002
+                },
+                {
+                    "text": "も",
+                    "startTime": 59.002,
+                    "endTime": 59.274
+                },
+                {
+                    "text": "愛",
+                    "startTime": 59.274,
+                    "endTime": 59.754
+                },
+                {
+                    "text": "し",
+                    "startTime": 59.754,
+                    "endTime": 59.937
+                },
+                {
+                    "text": "て",
+                    "startTime": 59.937,
+                    "endTime": 60.289
+                },
+                {
+                    "text": "ね",
+                    "startTime": 60.289,
+                    "endTime": 60.629
+                }
+            ],
+            "startTime": 57.419,
+            "endTime": 60.629,
+            "fullText": "泣いても笑っても愛してね",
+            "translation": "哭也好 笑也好 都要爱我哦"
+        },
+        {
+            "words": [
+                {
+                    "text": "ほ",
+                    "startTime": 60.629,
+                    "endTime": 60.795
+                },
+                {
+                    "text": "ら",
+                    "startTime": 60.795,
+                    "endTime": 61.148
+                },
+                {
+                    "text": "say ",
+                    "startTime": 61.148,
+                    "endTime": 61.678
+                },
+                {
+                    "text": "no ",
+                    "startTime": 61.678,
+                    "endTime": 62.987
+                },
+                {
+                    "text": "低",
+                    "startTime": 62.987,
+                    "endTime": 63.457
+                },
+                {
+                    "text": "音",
+                    "startTime": 63.457,
+                    "endTime": 63.897
+                },
+                {
+                    "text": "響",
+                    "startTime": 63.897,
+                    "endTime": 64.369
+                },
+                {
+                    "text": "か",
+                    "startTime": 64.369,
+                    "endTime": 64.57
+                },
+                {
+                    "text": "せ",
+                    "startTime": 64.57,
+                    "endTime": 64.985
+                },
+                {
+                    "text": "ろ",
+                    "startTime": 64.985,
+                    "endTime": 70.955
+                }
+            ],
+            "startTime": 60.629,
+            "endTime": 70.955,
+            "fullText": "ほら say no 低音響かせろ",
+            "translation": "来吧 say no 让低沉声音回荡"
+        },
+        {
+            "words": [
+                {
+                    "text": "今",
+                    "startTime": 70.955,
+                    "endTime": 71.005
+                },
+                {
+                    "text": "宵",
+                    "startTime": 71.005,
+                    "endTime": 71.314
+                },
+                {
+                    "text": "は",
+                    "startTime": 71.314,
+                    "endTime": 71.514
+                },
+                {
+                    "text": "暗",
+                    "startTime": 71.514,
+                    "endTime": 71.745
+                },
+                {
+                    "text": "転",
+                    "startTime": 71.745,
+                    "endTime": 72.049
+                },
+                {
+                    "text": "パ",
+                    "startTime": 72.049,
+                    "endTime": 72.185
+                },
+                {
+                    "text": "ー",
+                    "startTime": 72.185,
+                    "endTime": 72.321
+                },
+                {
+                    "text": "テ",
+                    "startTime": 72.321,
+                    "endTime": 72.378
+                },
+                {
+                    "text": "ィ",
+                    "startTime": 72.378,
+                    "endTime": 72.4
+                },
+                {
+                    "text": "ー",
+                    "startTime": 72.4,
+                    "endTime": 72.851
+                }
+            ],
+            "startTime": 70.955,
+            "endTime": 72.851,
+            "fullText": "今宵は暗転パーティー",
+            "translation": "今晚就是转场派对"
+        },
+        {
+            "words": [
+                {
+                    "text": "Woah",
+                    "startTime": 72.851,
+                    "endTime": 76.135
+                }
+            ],
+            "startTime": 72.851,
+            "endTime": 76.135,
+            "fullText": "Woah"
+        },
+        {
+            "words": [
+                {
+                    "text": "踊",
+                    "startTime": 76.135,
+                    "endTime": 76.376
+                },
+                {
+                    "text": "り",
+                    "startTime": 76.376,
+                    "endTime": 76.576
+                },
+                {
+                    "text": "だ",
+                    "startTime": 76.576,
+                    "endTime": 76.728
+                },
+                {
+                    "text": "せ",
+                    "startTime": 76.728,
+                    "endTime": 77.072
+                },
+                {
+                    "text": "踊",
+                    "startTime": 77.072,
+                    "endTime": 77.309
+                },
+                {
+                    "text": "り",
+                    "startTime": 77.309,
+                    "endTime": 77.517
+                },
+                {
+                    "text": "だ",
+                    "startTime": 77.517,
+                    "endTime": 77.634
+                },
+                {
+                    "text": "せ",
+                    "startTime": 77.634,
+                    "endTime": 77.994
+                }
+            ],
+            "startTime": 76.135,
+            "endTime": 77.994,
+            "fullText": "踊りだせ 踊りだせ",
+            "translation": "跳起来吧 跳起来吧"
+        },
+        {
+            "words": [
+                {
+                    "text": "孤",
+                    "startTime": 77.994,
+                    "endTime": 78.068
+                },
+                {
+                    "text": "独",
+                    "startTime": 78.068,
+                    "endTime": 78.335
+                },
+                {
+                    "text": "は",
+                    "startTime": 78.335,
+                    "endTime": 78.473
+                },
+                {
+                    "text": "殺",
+                    "startTime": 78.473,
+                    "endTime": 78.689
+                },
+                {
+                    "text": "菌",
+                    "startTime": 78.689,
+                    "endTime": 78.919
+                },
+                {
+                    "text": "満",
+                    "startTime": 79.034,
+                    "endTime": 79.162
+                },
+                {
+                    "text": "員",
+                    "startTime": 79.162,
+                    "endTime": 79.499
+                },
+                {
+                    "text": "御",
+                    "startTime": 79.499,
+                    "endTime": 79.722
+                },
+                {
+                    "text": "礼",
+                    "startTime": 79.722,
+                    "endTime": 80.158
+                }
+            ],
+            "startTime": 77.994,
+            "endTime": 80.158,
+            "fullText": "孤独は殺菌 満員御礼",
+            "translation": "消灭孤独 感谢满场"
+        },
+        {
+            "words": [
+                {
+                    "text": "Woah",
+                    "startTime": 80.158,
+                    "endTime": 83.565
+                }
+            ],
+            "startTime": 80.158,
+            "endTime": 83.565,
+            "fullText": "Woah"
+        },
+        {
+            "words": [
+                {
+                    "text": "痛",
+                    "startTime": 83.565,
+                    "endTime": 83.79
+                },
+                {
+                    "text": "み",
+                    "startTime": 83.79,
+                    "endTime": 84.036
+                },
+                {
+                    "text": "ま",
+                    "startTime": 84.036,
+                    "endTime": 84.197
+                },
+                {
+                    "text": "で",
+                    "startTime": 84.197,
+                    "endTime": 84.596
+                },
+                {
+                    "text": "お",
+                    "startTime": 84.596,
+                    "endTime": 84.66
+                },
+                {
+                    "text": "シ",
+                    "startTime": 84.66,
+                    "endTime": 84.84
+                },
+                {
+                    "text": "ェ",
+                    "startTime": 84.84,
+                    "endTime": 85.02
+                },
+                {
+                    "text": "ア",
+                    "startTime": 85.02,
+                    "endTime": 85.119
+                },
+                {
+                    "text": "で",
+                    "startTime": 85.119,
+                    "endTime": 85.48
+                }
+            ],
+            "startTime": 83.565,
+            "endTime": 85.48,
+            "fullText": "痛みまで おシェアで",
+            "translation": "就连痛苦 也能分享"
+        },
+        {
+            "words": [
+                {
+                    "text": "こ",
+                    "startTime": 85.48,
+                    "endTime": 85.545
+                },
+                {
+                    "text": "こ",
+                    "startTime": 85.545,
+                    "endTime": 85.78
+                },
+                {
+                    "text": "ら",
+                    "startTime": 85.78,
+                    "endTime": 85.847
+                },
+                {
+                    "text": "で",
+                    "startTime": 85.847,
+                    "endTime": 85.953
+                },
+                {
+                    "text": "バ",
+                    "startTime": 85.953,
+                    "endTime": 86.136
+                },
+                {
+                    "text": "イ",
+                    "startTime": 86.136,
+                    "endTime": 86.328
+                },
+                {
+                    "text": "バ",
+                    "startTime": 86.328,
+                    "endTime": 86.507
+                },
+                {
+                    "text": "イ",
+                    "startTime": 86.507,
+                    "endTime": 86.696
+                },
+                {
+                    "text": "let ",
+                    "startTime": 86.696,
+                    "endTime": 86.78
+                },
+                {
+                    "text": "go",
+                    "startTime": 86.78,
+                    "endTime": 103.197
+                }
+            ],
+            "startTime": 85.48,
+            "endTime": 103.197,
+            "fullText": "ここらでバイバイ let go",
+            "translation": "然后在这里告别吧 let go"
+        },
+        {
+            "words": [
+                {
+                    "text": "ど",
+                    "startTime": 103.197,
+                    "endTime": 103.665
+                },
+                {
+                    "text": "ん",
+                    "startTime": 103.665,
+                    "endTime": 104.133
+                },
+                {
+                    "text": "な",
+                    "startTime": 104.133,
+                    "endTime": 104.374
+                },
+                {
+                    "text": "劣",
+                    "startTime": 104.374,
+                    "endTime": 104.758
+                },
+                {
+                    "text": "等",
+                    "startTime": 104.758,
+                    "endTime": 105.206
+                },
+                {
+                    "text": "感",
+                    "startTime": 105.206,
+                    "endTime": 105.307
+                },
+                {
+                    "text": "だ",
+                    "startTime": 105.307,
+                    "endTime": 105.603
+                },
+                {
+                    "text": "と",
+                    "startTime": 105.603,
+                    "endTime": 106.084
+                },
+                {
+                    "text": "て",
+                    "startTime": 106.084,
+                    "endTime": 106.167
+                }
+            ],
+            "startTime": 103.197,
+            "endTime": 106.167,
+            "fullText": "どんな劣等感だとて",
+            "translation": "无论怎样的自卑感"
+        },
+        {
+            "words": [
+                {
+                    "text": "即",
+                    "startTime": 106.167,
+                    "endTime": 106.551
+                },
+                {
+                    "text": "興",
+                    "startTime": 106.551,
+                    "endTime": 106.975
+                },
+                {
+                    "text": "の",
+                    "startTime": 106.975,
+                    "endTime": 107.031
+                },
+                {
+                    "text": "血",
+                    "startTime": 107.031,
+                    "endTime": 107.272
+                },
+                {
+                    "text": "小",
+                    "startTime": 107.272,
+                    "endTime": 107.696
+                },
+                {
+                    "text": "板",
+                    "startTime": 107.696,
+                    "endTime": 107.788
+                },
+                {
+                    "text": "で",
+                    "startTime": 107.788,
+                    "endTime": 108.001
+                }
+            ],
+            "startTime": 106.167,
+            "endTime": 108.001,
+            "fullText": "即興の血小板で",
+            "translation": "也能以即兴的热血"
+        },
+        {
+            "words": [
+                {
+                    "text": "抑",
+                    "startTime": 108.001,
+                    "endTime": 108.206
+                },
+                {
+                    "text": "え",
+                    "startTime": 108.206,
+                    "endTime": 108.393
+                },
+                {
+                    "text": "込",
+                    "startTime": 108.393,
+                    "endTime": 108.625
+                },
+                {
+                    "text": "ん",
+                    "startTime": 108.625,
+                    "endTime": 108.717
+                },
+                {
+                    "text": "で",
+                    "startTime": 108.717,
+                    "endTime": 108.997
+                },
+                {
+                    "text": "突",
+                    "startTime": 108.997,
+                    "endTime": 109.181
+                },
+                {
+                    "text": "っ",
+                    "startTime": 109.181,
+                    "endTime": 109.365
+                },
+                {
+                    "text": "込",
+                    "startTime": 109.365,
+                    "endTime": 109.581
+                },
+                {
+                    "text": "ん",
+                    "startTime": 109.581,
+                    "endTime": 109.797
+                },
+                {
+                    "text": "で",
+                    "startTime": 109.797,
+                    "endTime": 109.822
+                }
+            ],
+            "startTime": 108.001,
+            "endTime": 109.822,
+            "fullText": "抑え込んで 突っ込んで",
+            "translation": "压抑控制 戳穿"
+        },
+        {
+            "words": [
+                {
+                    "text": "仕",
+                    "startTime": 109.822,
+                    "endTime": 109.902
+                },
+                {
+                    "text": "舞",
+                    "startTime": 109.902,
+                    "endTime": 110.078
+                },
+                {
+                    "text": "っ",
+                    "startTime": 110.078,
+                    "endTime": 110.255
+                },
+                {
+                    "text": "ち",
+                    "startTime": 110.255,
+                    "endTime": 110.431
+                },
+                {
+                    "text": "ゃ",
+                    "startTime": 110.431,
+                    "endTime": 110.606
+                },
+                {
+                    "text": "う",
+                    "startTime": 110.606,
+                    "endTime": 110.625
+                },
+                {
+                    "text": "で",
+                    "startTime": 110.625,
+                    "endTime": 110.857
+                },
+                {
+                    "text": "し",
+                    "startTime": 110.857,
+                    "endTime": 110.878
+                },
+                {
+                    "text": "ょ",
+                    "startTime": 110.878,
+                    "endTime": 111.878
+                }
+            ],
+            "startTime": 109.822,
+            "endTime": 111.878,
+            "fullText": "仕舞っちゃうでしょ",
+            "translation": "然后消灭"
+        },
+        {
+            "words": [
+                {
+                    "text": "Up ",
+                    "startTime": 111.878,
+                    "endTime": 111.887
+                },
+                {
+                    "text": "and ",
+                    "startTime": 111.887,
+                    "endTime": 112.287
+                },
+                {
+                    "text": "down ",
+                    "startTime": 112.287,
+                    "endTime": 112.55
+                },
+                {
+                    "text": "な",
+                    "startTime": 112.55,
+                    "endTime": 112.716
+                },
+                {
+                    "text": "テ",
+                    "startTime": 112.716,
+                    "endTime": 112.852
+                },
+                {
+                    "text": "ン",
+                    "startTime": 112.852,
+                    "endTime": 112.988
+                },
+                {
+                    "text": "シ",
+                    "startTime": 112.988,
+                    "endTime": 113.049
+                },
+                {
+                    "text": "ョ",
+                    "startTime": 113.049,
+                    "endTime": 113.13
+                },
+                {
+                    "text": "ン",
+                    "startTime": 113.13,
+                    "endTime": 113.521
+                }
+            ],
+            "startTime": 111.878,
+            "endTime": 113.521,
+            "fullText": "Up and down なテンション",
+            "translation": "情绪起起伏伏"
+        },
+        {
+            "words": [
+                {
+                    "text": "ね",
+                    "startTime": 113.521,
+                    "endTime": 113.613
+                },
+                {
+                    "text": "え",
+                    "startTime": 113.613,
+                    "endTime": 113.626
+                },
+                {
+                    "text": "ま",
+                    "startTime": 113.626,
+                    "endTime": 113.716
+                },
+                {
+                    "text": "い",
+                    "startTime": 113.716,
+                    "endTime": 113.836
+                },
+                {
+                    "text": "っ",
+                    "startTime": 113.836,
+                    "endTime": 113.956
+                },
+                {
+                    "text": "ち",
+                    "startTime": 113.956,
+                    "endTime": 114.015
+                },
+                {
+                    "text": "ゃ",
+                    "startTime": 114.015,
+                    "endTime": 114.074
+                },
+                {
+                    "text": "っ",
+                    "startTime": 114.074,
+                    "endTime": 114.138
+                },
+                {
+                    "text": "て",
+                    "startTime": 114.138,
+                    "endTime": 114.25
+                },
+                {
+                    "text": "ん",
+                    "startTime": 114.25,
+                    "endTime": 114.362
+                },
+                {
+                    "text": "の",
+                    "startTime": 114.362,
+                    "endTime": 114.634
+                },
+                {
+                    "text": "相",
+                    "startTime": 114.634,
+                    "endTime": 114.93
+                },
+                {
+                    "text": "当",
+                    "startTime": 114.93,
+                    "endTime": 115.374
+                }
+            ],
+            "startTime": 113.521,
+            "endTime": 115.374,
+            "fullText": "ねえまいっちゃってんの相当",
+            "translation": "真是让人头疼"
+        },
+        {
+            "words": [
+                {
+                    "text": "ド",
+                    "startTime": 115.374,
+                    "endTime": 115.504
+                },
+                {
+                    "text": "バ",
+                    "startTime": 115.504,
+                    "endTime": 115.624
+                },
+                {
+                    "text": "っ",
+                    "startTime": 115.624,
+                    "endTime": 115.744
+                },
+                {
+                    "text": "と",
+                    "startTime": 115.744,
+                    "endTime": 116.048
+                },
+                {
+                    "text": "噴",
+                    "startTime": 116.048,
+                    "endTime": 116.062
+                },
+                {
+                    "text": "き",
+                    "startTime": 116.062,
+                    "endTime": 116.407
+                },
+                {
+                    "text": "出",
+                    "startTime": 116.407,
+                    "endTime": 116.607
+                },
+                {
+                    "text": "す",
+                    "startTime": 116.607,
+                    "endTime": 116.879
+                },
+                {
+                    "text": "の",
+                    "startTime": 116.879,
+                    "endTime": 117.087
+                },
+                {
+                    "text": "は",
+                    "startTime": 117.087,
+                    "endTime": 117.335
+                }
+            ],
+            "startTime": 115.374,
+            "endTime": 117.335,
+            "fullText": "ドバっと噴き出すのは",
+            "translation": "一口气倾诉出来的"
+        },
+        {
+            "words": [
+                {
+                    "text": "本",
+                    "startTime": 117.335,
+                    "endTime": 117.851
+                },
+                {
+                    "text": "音",
+                    "startTime": 117.851,
+                    "endTime": 118.049
+                },
+                {
+                    "text": "の",
+                    "startTime": 118.049,
+                    "endTime": 118.354
+                },
+                {
+                    "text": "独",
+                    "startTime": 118.354,
+                    "endTime": 118.638
+                },
+                {
+                    "text": "り",
+                    "startTime": 118.638,
+                    "endTime": 119.166
+                },
+                {
+                    "text": "言",
+                    "startTime": 119.166,
+                    "endTime": 120.129
+                }
+            ],
+            "startTime": 117.335,
+            "endTime": 120.129,
+            "fullText": "本音の独り言",
+            "translation": "是真正的心声"
+        },
+        {
+            "words": [
+                {
+                    "text": "「",
+                    "startTime": 120.129,
+                    "endTime": 120.236
+                },
+                {
+                    "text": "別",
+                    "startTime": 120.236,
+                    "endTime": 120.425
+                },
+                {
+                    "text": "に",
+                    "startTime": 120.425,
+                    "endTime": 120.705
+                },
+                {
+                    "text": "興",
+                    "startTime": 120.705,
+                    "endTime": 121.103
+                },
+                {
+                    "text": "味",
+                    "startTime": 121.103,
+                    "endTime": 121.147
+                },
+                {
+                    "text": "な",
+                    "startTime": 121.147,
+                    "endTime": 121.299
+                },
+                {
+                    "text": "い",
+                    "startTime": 121.299,
+                    "endTime": 121.327
+                },
+                {
+                    "text": "」",
+                    "startTime": 121.327,
+                    "endTime": 122.115
+                }
+            ],
+            "startTime": 120.129,
+            "endTime": 122.115,
+            "fullText": "「別に興味ない」",
+            "translation": "“我不感兴趣”"
+        },
+        {
+            "words": [
+                {
+                    "text": "「",
+                    "startTime": 122.115,
+                    "endTime": 122.169
+                },
+                {
+                    "text": "特",
+                    "startTime": 122.169,
+                    "endTime": 122.304
+                },
+                {
+                    "text": "に",
+                    "startTime": 122.304,
+                    "endTime": 122.4
+                },
+                {
+                    "text": "関",
+                    "startTime": 122.4,
+                    "endTime": 122.926
+                },
+                {
+                    "text": "係",
+                    "startTime": 122.926,
+                    "endTime": 123.101
+                },
+                {
+                    "text": "な",
+                    "startTime": 123.101,
+                    "endTime": 123.285
+                },
+                {
+                    "text": "い",
+                    "startTime": 123.285,
+                    "endTime": 123.304
+                },
+                {
+                    "text": "」",
+                    "startTime": 123.304,
+                    "endTime": 124.086
+                }
+            ],
+            "startTime": 122.115,
+            "endTime": 124.086,
+            "fullText": "「特に関係ない」",
+            "translation": "“和我没什么关系”"
+        },
+        {
+            "words": [
+                {
+                    "text": "塞",
+                    "startTime": 124.086,
+                    "endTime": 124.278
+                },
+                {
+                    "text": "ぎ",
+                    "startTime": 124.278,
+                    "endTime": 124.431
+                },
+                {
+                    "text": "込",
+                    "startTime": 124.431,
+                    "endTime": 124.659
+                },
+                {
+                    "text": "ん",
+                    "startTime": 124.659,
+                    "endTime": 124.887
+                },
+                {
+                    "text": "で",
+                    "startTime": 124.887,
+                    "endTime": 125.046
+                },
+                {
+                    "text": "舌",
+                    "startTime": 125.046,
+                    "endTime": 125.148
+                },
+                {
+                    "text": "鋒",
+                    "startTime": 125.148,
+                    "endTime": 125.62
+                },
+                {
+                    "text": "絶",
+                    "startTime": 125.62,
+                    "endTime": 125.916
+                },
+                {
+                    "text": "頂",
+                    "startTime": 125.916,
+                    "endTime": 126.451
+                },
+                {
+                    "text": "へ",
+                    "startTime": 126.451,
+                    "endTime": 126.846
+                }
+            ],
+            "startTime": 124.086,
+            "endTime": 126.846,
+            "fullText": "塞ぎ込んで 舌鋒絶頂へ",
+            "translation": "心情郁闷 言辞尖锐走向极限"
+        },
+        {
+            "words": [
+                {
+                    "text": "合",
+                    "startTime": 126.846,
+                    "endTime": 127.249
+                },
+                {
+                    "text": "図",
+                    "startTime": 127.249,
+                    "endTime": 127.41
+                },
+                {
+                    "text": "を",
+                    "startTime": 127.41,
+                    "endTime": 127.714
+                },
+                {
+                    "text": "奏",
+                    "startTime": 127.714,
+                    "endTime": 128.146
+                },
+                {
+                    "text": "で",
+                    "startTime": 128.146,
+                    "endTime": 128.314
+                },
+                {
+                    "text": "て",
+                    "startTime": 128.314,
+                    "endTime": 128.721
+                },
+                {
+                    "text": "PrrPrrPrr",
+                    "startTime": 128.721,
+                    "endTime": 131.349
+                }
+            ],
+            "startTime": 126.846,
+            "endTime": 131.349,
+            "fullText": "合図を奏でて PrrPrrPrr",
+            "translation": "奏响信号 PrrPrrPrr"
+        },
+        {
+            "words": [
+                {
+                    "text": "ほ",
+                    "startTime": 131.349,
+                    "endTime": 131.501
+                },
+                {
+                    "text": "ら",
+                    "startTime": 131.501,
+                    "endTime": 131.567
+                },
+                {
+                    "text": "集",
+                    "startTime": 131.567,
+                    "endTime": 132.014
+                },
+                {
+                    "text": "ま",
+                    "startTime": 132.014,
+                    "endTime": 132.254
+                },
+                {
+                    "text": "っ",
+                    "startTime": 132.254,
+                    "endTime": 132.494
+                },
+                {
+                    "text": "て",
+                    "startTime": 132.494,
+                    "endTime": 133.11
+                },
+                {
+                    "text": "夜",
+                    "startTime": 133.11,
+                    "endTime": 133.398
+                },
+                {
+                    "text": "行",
+                    "startTime": 133.398,
+                    "endTime": 134.056
+                },
+                {
+                    "text": "だ",
+                    "startTime": 134.056,
+                    "endTime": 136.969
+                }
+            ],
+            "startTime": 131.349,
+            "endTime": 136.969,
+            "fullText": "ほら集まって夜行だ",
+            "translation": "来吧 集合 开始夜行"
+        },
+        {
+            "words": [
+                {
+                    "text": "鳴",
+                    "startTime": 136.969,
+                    "endTime": 137.128
+                },
+                {
+                    "text": "い",
+                    "startTime": 137.128,
+                    "endTime": 137.6
+                },
+                {
+                    "text": "て",
+                    "startTime": 137.6,
+                    "endTime": 137.725
+                },
+                {
+                    "text": "い",
+                    "startTime": 137.725,
+                    "endTime": 138.19
+                },
+                {
+                    "text": "こ",
+                    "startTime": 138.19,
+                    "endTime": 138.488
+                },
+                {
+                    "text": "う",
+                    "startTime": 138.488,
+                    "endTime": 163.251
+                }
+            ],
+            "startTime": 136.969,
+            "endTime": 163.251,
+            "fullText": "鳴いていこう",
+            "translation": "大声呐喊吧"
+        },
+        {
+            "words": [
+                {
+                    "text": "半",
+                    "startTime": 163.251,
+                    "endTime": 163.443
+                },
+                {
+                    "text": "端",
+                    "startTime": 163.443,
+                    "endTime": 163.778
+                },
+                {
+                    "text": "な",
+                    "startTime": 163.778,
+                    "endTime": 163.938
+                },
+                {
+                    "text": "ら",
+                    "startTime": 163.938,
+                    "endTime": 164.346
+                },
+                {
+                    "text": "K.",
+                    "startTime": 164.346,
+                    "endTime": 164.899
+                },
+                {
+                    "text": "O.",
+                    "startTime": 164.899,
+                    "endTime": 172.131
+                }
+            ],
+            "startTime": 163.251,
+            "endTime": 172.131,
+            "fullText": "半端なら K.O.",
+            "translation": "犹豫不决 就会被 K.O."
+        },
+        {
+            "words": [
+                {
+                    "text": "Woah",
+                    "startTime": 172.131,
+                    "endTime": 175.46
+                }
+            ],
+            "startTime": 172.131,
+            "endTime": 175.46,
+            "fullText": "Woah"
+        },
+        {
+            "words": [
+                {
+                    "text": "踊",
+                    "startTime": 175.46,
+                    "endTime": 175.668
+                },
+                {
+                    "text": "り",
+                    "startTime": 175.668,
+                    "endTime": 175.861
+                },
+                {
+                    "text": "だ",
+                    "startTime": 175.861,
+                    "endTime": 176.02
+                },
+                {
+                    "text": "せ",
+                    "startTime": 176.02,
+                    "endTime": 176.404
+                },
+                {
+                    "text": "踊",
+                    "startTime": 176.404,
+                    "endTime": 176.595
+                },
+                {
+                    "text": "り",
+                    "startTime": 176.595,
+                    "endTime": 176.788
+                },
+                {
+                    "text": "だ",
+                    "startTime": 176.788,
+                    "endTime": 176.987
+                },
+                {
+                    "text": "せ",
+                    "startTime": 176.987,
+                    "endTime": 177.327
+                }
+            ],
+            "startTime": 175.46,
+            "endTime": 177.327,
+            "fullText": "踊りだせ 踊りだせ",
+            "translation": "跳起来吧 跳起来吧"
+        },
+        {
+            "words": [
+                {
+                    "text": "孤",
+                    "startTime": 177.327,
+                    "endTime": 177.399
+                },
+                {
+                    "text": "独",
+                    "startTime": 177.399,
+                    "endTime": 177.776
+                },
+                {
+                    "text": "は",
+                    "startTime": 177.776,
+                    "endTime": 177.848
+                },
+                {
+                    "text": "殺",
+                    "startTime": 177.848,
+                    "endTime": 178.048
+                },
+                {
+                    "text": "菌",
+                    "startTime": 178.048,
+                    "endTime": 178.266
+                },
+                {
+                    "text": "満",
+                    "startTime": 178.375,
+                    "endTime": 178.49
+                },
+                {
+                    "text": "員",
+                    "startTime": 178.49,
+                    "endTime": 178.834
+                },
+                {
+                    "text": "御",
+                    "startTime": 178.834,
+                    "endTime": 179.194
+                },
+                {
+                    "text": "礼",
+                    "startTime": 179.194,
+                    "endTime": 179.386
+                }
+            ],
+            "startTime": 177.327,
+            "endTime": 179.386,
+            "fullText": "孤独は殺菌 満員御礼",
+            "translation": "消灭孤独 感谢满场"
+        },
+        {
+            "words": [
+                {
+                    "text": "Woah",
+                    "startTime": 179.386,
+                    "endTime": 182.894
+                }
+            ],
+            "startTime": 179.386,
+            "endTime": 182.894,
+            "fullText": "Woah"
+        },
+        {
+            "words": [
+                {
+                    "text": "痛",
+                    "startTime": 182.894,
+                    "endTime": 183.156
+                },
+                {
+                    "text": "み",
+                    "startTime": 183.156,
+                    "endTime": 183.396
+                },
+                {
+                    "text": "ま",
+                    "startTime": 183.396,
+                    "endTime": 183.564
+                },
+                {
+                    "text": "で",
+                    "startTime": 183.564,
+                    "endTime": 183.957
+                },
+                {
+                    "text": "お",
+                    "startTime": 183.957,
+                    "endTime": 184.009
+                },
+                {
+                    "text": "シ",
+                    "startTime": 184.009,
+                    "endTime": 184.145
+                },
+                {
+                    "text": "ェ",
+                    "startTime": 184.145,
+                    "endTime": 184.281
+                },
+                {
+                    "text": "ア",
+                    "startTime": 184.281,
+                    "endTime": 184.411
+                },
+                {
+                    "text": "で",
+                    "startTime": 184.411,
+                    "endTime": 184.852
+                }
+            ],
+            "startTime": 182.894,
+            "endTime": 184.852,
+            "fullText": "痛みまで おシェアで",
+            "translation": "就连痛苦 也能分享"
+        },
+        {
+            "words": [
+                {
+                    "text": "今",
+                    "startTime": 184.852,
+                    "endTime": 184.928
+                },
+                {
+                    "text": "宵",
+                    "startTime": 184.928,
+                    "endTime": 185.335
+                },
+                {
+                    "text": "も",
+                    "startTime": 185.335,
+                    "endTime": 185.413
+                },
+                {
+                    "text": "暗",
+                    "startTime": 185.413,
+                    "endTime": 185.674
+                },
+                {
+                    "text": "転",
+                    "startTime": 185.674,
+                    "endTime": 185.89
+                },
+                {
+                    "text": "パ",
+                    "startTime": 185.89,
+                    "endTime": 186.035
+                },
+                {
+                    "text": "ー",
+                    "startTime": 186.035,
+                    "endTime": 186.179
+                },
+                {
+                    "text": "テ",
+                    "startTime": 186.179,
+                    "endTime": 186.261
+                },
+                {
+                    "text": "ィ",
+                    "startTime": 186.261,
+                    "endTime": 186.344
+                },
+                {
+                    "text": "ー",
+                    "startTime": 186.344,
+                    "endTime": 186.703
+                },
+                {
+                    "text": "だ",
+                    "startTime": 186.703,
+                    "endTime": 187.002
+                }
+            ],
+            "startTime": 184.852,
+            "endTime": 187.002,
+            "fullText": "今宵も暗転パーティーだ",
+            "translation": "今晚也是转场派对"
+        },
+        {
+            "words": [
+                {
+                    "text": "Woah",
+                    "startTime": 187.002,
+                    "endTime": 190.659
+                }
+            ],
+            "startTime": 187.002,
+            "endTime": 190.659,
+            "fullText": "Woah"
+        },
+        {
+            "words": [
+                {
+                    "text": "ま",
+                    "startTime": 190.659,
+                    "endTime": 190.686
+                },
+                {
+                    "text": "た",
+                    "startTime": 190.686,
+                    "endTime": 190.879
+                },
+                {
+                    "text": "の",
+                    "startTime": 190.879,
+                    "endTime": 190.999
+                },
+                {
+                    "text": "お",
+                    "startTime": 190.999,
+                    "endTime": 191.216
+                },
+                {
+                    "text": "越",
+                    "startTime": 191.216,
+                    "endTime": 191.447
+                },
+                {
+                    "text": "し",
+                    "startTime": 191.447,
+                    "endTime": 191.736
+                },
+                {
+                    "text": "を",
+                    "startTime": 191.736,
+                    "endTime": 192.16
+                },
+                {
+                    "text": "き",
+                    "startTime": 192.16,
+                    "endTime": 192.28
+                },
+                {
+                    "text": "っ",
+                    "startTime": 192.28,
+                    "endTime": 192.474
+                },
+                {
+                    "text": "と",
+                    "startTime": 192.474,
+                    "endTime": 194.61
+                }
+            ],
+            "startTime": 190.659,
+            "endTime": 194.61,
+            "fullText": "またのお越しを きっと",
+            "translation": "一定请再次光临"
+        },
+        {
+            "words": [
+                {
+                    "text": "Woah",
+                    "startTime": 194.61,
+                    "endTime": 197.896
+                }
+            ],
+            "startTime": 194.61,
+            "endTime": 197.896,
+            "fullText": "Woah"
+        },
+        {
+            "words": [
+                {
+                    "text": "次",
+                    "startTime": 197.896,
+                    "endTime": 197.966
+                },
+                {
+                    "text": "回",
+                    "startTime": 197.966,
+                    "endTime": 198.385
+                },
+                {
+                    "text": "ま",
+                    "startTime": 198.385,
+                    "endTime": 198.55
+                },
+                {
+                    "text": "で",
+                    "startTime": 198.55,
+                    "endTime": 198.918
+                },
+                {
+                    "text": "お",
+                    "startTime": 198.918,
+                    "endTime": 199.017
+                },
+                {
+                    "text": "元",
+                    "startTime": 199.017,
+                    "endTime": 199.402
+                },
+                {
+                    "text": "気",
+                    "startTime": 199.402,
+                    "endTime": 199.457
+                },
+                {
+                    "text": "で",
+                    "startTime": 199.457,
+                    "endTime": 199.88
+                }
+            ],
+            "startTime": 197.896,
+            "endTime": 199.88,
+            "fullText": "次回までお元気で",
+            "translation": "下次相见前 请保重"
+        },
+        {
+            "words": [
+                {
+                    "text": "こ",
+                    "startTime": 199.88,
+                    "endTime": 199.933
+                },
+                {
+                    "text": "こ",
+                    "startTime": 199.933,
+                    "endTime": 200.117
+                },
+                {
+                    "text": "ら",
+                    "startTime": 200.117,
+                    "endTime": 200.143
+                },
+                {
+                    "text": "で",
+                    "startTime": 200.143,
+                    "endTime": 200.252
+                },
+                {
+                    "text": "バ",
+                    "startTime": 200.252,
+                    "endTime": 200.356
+                },
+                {
+                    "text": "イ",
+                    "startTime": 200.356,
+                    "endTime": 200.588
+                },
+                {
+                    "text": "バ",
+                    "startTime": 200.588,
+                    "endTime": 200.606
+                },
+                {
+                    "text": "イ",
+                    "startTime": 200.606,
+                    "endTime": 200.966
+                },
+                {
+                    "text": "let ",
+                    "startTime": 200.966,
+                    "endTime": 201.2
+                },
+                {
+                    "text": "go",
+                    "startTime": 201.2,
+                    "endTime": 202.183
+                }
+            ],
+            "startTime": 199.88,
+            "endTime": 202.183,
+            "fullText": "ここらでバイバイ let go",
+            "translation": "然后在这里告别吧 let go"
+        }
+    ]
+}

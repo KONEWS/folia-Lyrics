@@ -87,7 +87,7 @@ export const Row: React.FC<RowProps> = ({ option, label, notice, hint, note, sub
             data-settings-row={option?.id}
             data-sub={sub || undefined}
             onClick={isLink && !disabled ? openLink : undefined}
-            className={`st-row relative flex min-h-14 flex-wrap items-center gap-x-6 py-2.5 pr-4 ${sub ? 'pl-10' : 'pl-4'}${isLink && !disabled ? ' st-t-fast cursor-pointer transition-colors hover:bg-[var(--st-fill)]' : ''}`}
+            className={`st-row relative flex min-h-14 flex-wrap items-center gap-x-4 gap-y-3 py-2.5 pr-4 ${sub ? 'pl-10' : 'pl-4'}${isLink && !disabled ? ' st-t-fast cursor-pointer transition-colors hover:bg-[var(--st-fill)]' : ''}`}
         >
             <RowNamingContext.Provider value={naming}>
                 {isLink && (
@@ -106,14 +106,14 @@ export const Row: React.FC<RowProps> = ({ option, label, notice, hint, note, sub
                     />
                 )}
                 {notice ? (
-                    <div className="relative flex min-w-0 flex-[1_1_140px] items-start gap-2 text-[13px] leading-5 text-[color:var(--st-t1)]">
+                    <div className="relative flex min-w-0 flex-[1_1_240px] items-start gap-2 text-[13px] leading-5 text-[color:var(--st-t1)]">
                         <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--st-warn)]" />
-                        <span>{notice}</span>
+                        <span className="min-w-0 [overflow-wrap:anywhere]">{notice}</span>
                     </div>
                 ) : text ? (
                     <div className="relative min-w-0 flex-[1_1_140px]">
                         <div className="flex items-center gap-1.5 text-sm leading-5 text-[color:var(--st-t1)]">
-                            <span id={naming.labelId} className={`min-w-0${disabled ? ' opacity-40' : ''}`}>{text}</span>
+                            <span id={naming.labelId} className={`min-w-0 [overflow-wrap:anywhere]${disabled ? ' opacity-40' : ''}`}>{text}</span>
                             {notHere && (
                                 <span className="shrink-0 rounded bg-[var(--st-fill)] px-1.5 text-[11px] leading-[18px] text-[color:var(--st-t2)]">
                                     {t('options.settingsDesktopOnly')}
@@ -133,7 +133,7 @@ export const Row: React.FC<RowProps> = ({ option, label, notice, hint, note, sub
                             )}
                         </div>
                         {hint && (
-                            <div id={naming.hintId} className={`mt-0.5 text-xs leading-[18px] text-[color:var(--st-t2)]${disabled ? ' opacity-40' : ''}`}>
+                            <div id={naming.hintId} className={`mt-0.5 text-xs leading-[18px] text-[color:var(--st-t2)] [overflow-wrap:anywhere]${disabled ? ' opacity-40' : ''}`}>
                                 {hint}
                             </div>
                         )}
@@ -141,7 +141,7 @@ export const Row: React.FC<RowProps> = ({ option, label, notice, hint, note, sub
                 ) : null}
                 {(children || isLink) && (
                     // kit.css takes this box away around a stacked slider (.st-slider-stacked).
-                    <div inert={disabled} className={`relative ml-auto flex max-w-full flex-wrap items-center justify-end gap-2${disabled ? ' opacity-40' : ''}`}>
+                    <div inert={disabled} className={`relative ml-auto flex min-w-0 max-w-full flex-wrap items-center justify-end gap-2${disabled ? ' opacity-40' : ''}`}>
                         {children}
                         {isLink && <ChevronRight size={16} className="shrink-0 text-[color:var(--st-t2)]" />}
                     </div>
