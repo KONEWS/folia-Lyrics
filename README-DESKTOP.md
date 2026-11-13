@@ -1,10 +1,17 @@
-# folia-Lyrics 0.5.2.1
+# folia-Lyrics 0.5.3
 
 Windows 歌词显示器，自身不播放音频。使用 Windows GSMTC 获取其他播放器公开的歌曲和进度，使用 WASAPI 默认输出设备的混合声音驱动原版歌词动效。
 
-GitHub 发布页：[0.5.2.1 发布页](https://github.com/KONEWS/folia-Lyrics/releases/tag/desktop-v0.5.2.1)。下载独立程序 `FoliaLyrics-0.5.2.1-win-x64.exe` 直接运行，发布页提供 `SHA256SUMS.txt` 用于核对文件。本地重新编译默认输出到 `release/0.5.2.1/win-x64/FoliaLyrics.exe`。
+GitHub 发布页：[0.5.3 发布页](https://github.com/KONEWS/folia-Lyrics/releases/tag/desktop-v0.5.3)。下载独立程序 `FoliaLyrics-0.5.3-win-x64.exe` 直接运行，发布页提供 `SHA256SUMS.txt` 用于核对文件。本地重新编译默认输出到 `release/0.5.3/win-x64/FoliaLyrics.exe`。
 
 0.5.2 同步上游歌词显示，新增町景与雾笺。歌词样式设置使用左右布局和静态缩略图，修复关闭译文后底部字幕残留，以及模型文件已附带却提示缺失的问题。
+
+## 0.5.3 更新
+
+- 界面、默认歌词和字幕改用随程序内置的 HarmonyOS Sans SC 可变字体，支持 100–900 字重，保留自定义字体设置。
+- 内置演示替换为《踊》（Ado，默认）和《星降る海》，包含原歌词、中文译文与时间轴，静音循环，不附带歌曲音频。
+- 修正窄窗口中的设置行和长按钮换行，文字与按钮分行时保留间距，单个开关保持在标签旁。
+- 快捷参数中的随机歌词动画、样式和背景开关统一为滑块，以颜色和滑块位置表示状态。
 
 ## 歌词样式设置窗口（0.5.2.1）
 
@@ -353,7 +360,7 @@ npm run typecheck:desktop
 npm run build:desktop
 npm run test:desktop
 node tools/package-web.mjs
-dotnet publish native/FoliaLyrics.csproj -c Release -r win-x64 --self-contained true -o release/0.5.2/win-x64
+dotnet publish native/FoliaLyrics.csproj -c Release -r win-x64 --self-contained true -o release/0.5.3/win-x64
 ```
 
 `build-windows.cmd` 从 `native/FoliaLyrics.csproj` 读取版本，输出到 `release/<版本>/win-x64/`。每次更新递增原生版本号后重新构建，即可得到独立的版本文件夹；手动执行上述发布命令时，也应将输出路径中的版本同步更新。

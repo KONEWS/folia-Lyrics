@@ -27,7 +27,7 @@ folia-Lyrics 基于 [Folia](https://github.com/chthollyphile/folia-major) 的歌
 
 面向 Windows 11 x64。原生亚克力效果需要 Windows 11 22H2（22621）或更新版本，并开启系统透明效果；不满足条件时，界面会使用回退效果。
 
-当前版本是 [0.5.2](https://github.com/KONEWS/folia-Lyrics/releases/tag/desktop-v0.5.2)。从 Releases 下载 `FoliaLyrics-0.5.2-win-x64.exe` 直接运行，再打开播放器播放一首歌。也可以先确认添加发现的音乐软件，再点击首页图标启动播放器。运行界面需要 Microsoft Edge WebView2 Runtime，程序自带 .NET 运行时。
+当前版本是 [0.5.3](https://github.com/KONEWS/folia-Lyrics/releases/tag/desktop-v0.5.3)。从 Releases 下载 `FoliaLyrics-0.5.3-win-x64.exe` 直接运行，再打开播放器播放一首歌。也可以先确认添加发现的音乐软件，再点击首页图标启动播放器。运行界面需要 Microsoft Edge WebView2 Runtime，程序自带 .NET 运行时。
 
 0.5.2 包含 16 种动态样式，新增町景与雾笺；歌词样式设置左侧为实时画面，右侧为紧凑的静态样式小图和参数。修复关闭译文后字幕残留，以及 HTDemucs 模型已附带却提示缺失的问题。发布页提供独立 EXE 和 SHA-256 校验文件；运行前请退出旧版。
 
