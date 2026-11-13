@@ -44,6 +44,19 @@ function connect() {
 }
 
 describe('desktop lyric replacement', () => {
+  it('exposes a disconnected import identity only after its delayed parse succeeds', async () => {
+    const held = deferred<LyricData>(), imported = packet('late import', { key: '', title: 'Imported title' });
+    parse.mockReturnValueOnce(held.promise);
+    const host = connect(); host.emit('session', EMPTY); host.emit('lyrics', imported); await settle();
+    expect(parse).toHaveBeenCalledTimes(1);
+    expect(host.status.value).toBe('parsing');
+    expect(host.info.value).toBeNull();
+    expect((host.lyrics.value as LyricData).lines).toHaveLength(0);
+    const parsed = data('imported line'); held.resolve(parsed); await settle();
+    expect(host.status.value).toBe('ready');
+    expect(host.info.value).toBe(imported);
+    expect(host.lyrics.value).toBe(parsed);
+  });
   it('keeps current lines and metadata while a replacement parses, deduplicates pending content, then commits both', async () => {
     const current = data('current'), next = data('next'); parse.mockResolvedValueOnce(current);
     const host = connect(); host.emit('lyrics', packet('initial')); await settle();

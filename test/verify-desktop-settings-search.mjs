@@ -43,7 +43,8 @@ try {
       musicApps: [{ slot: 2, name: '测试播放器', path: 'C:\\fake\\player.exe', icon: '' }] }));
   });
   await installDesktopBridgeMock(page); await installDesktopParserProbe(page);
-  await page.goto(url, { waitUntil: 'networkidle' });
+  // The 8s default above is for in-page assertions; the first dev-server page load gets its own longer budget.
+  await page.goto(url, { waitUntil: 'networkidle', timeout: 60000 });
   await page.waitForFunction(() => window.__foliaReadyAt !== null);
   const song = { key: 'test', title: '搜索验证歌曲', artist: '测试歌手', cover: '', source: '测试播放器', sessionId: 'search-session',
     position: 10, duration: 180, rate: 1, playing: false, hasTimeline: true, sources: [{ id: 'search-session', label: '测试播放器' }] };

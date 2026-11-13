@@ -47,6 +47,9 @@ export async function verifyAudioProgress(page, song, output) {
   await page.waitForFunction(duration=>document.querySelector('[role=progressbar]')?.getAttribute('aria-valuenow')===String(Math.round(duration)),song.duration);
   await emit('session',{...song,hasTimeline:false});
   await page.waitForFunction(()=>!document.querySelector('[role=progressbar]')?.hasAttribute('aria-valuenow'));
+  // The restore toggle auto-hides after five pointer-idle seconds in immersion; a real user wakes it by moving the mouse.
+  await page.mouse.move(100,100);
+  await page.getByRole('button',{name:'显示控制栏'}).waitFor({state:'visible'});
   await page.getByRole('button',{name:'显示控制栏'}).click();
   await emit('session',{...song,playing:false,position:36});
   assert.equal(await page.locator('audio,video').count(),0);

@@ -46,7 +46,8 @@ try {
   page.on('pageerror', error => errors.push(String(error)));
   await page.route('**/*', route => new URL(route.request().url()).origin === origin ? route.continue() : route.abort());
   await installDesktopBridgeMock(page);
-  await page.goto(url, { waitUntil: 'networkidle' });
+  // The first load compiles the desktop UI on demand, so give it longer than the default 30s.
+  await page.goto(url, { waitUntil: 'networkidle', timeout: 60000 });
   await page.locator('.waiting-screen h1').waitFor();
   const emit = (type, data) => page.evaluate(({ type, data }) => window.__foliaEmit(type, data), { type, data });
   await page.evaluate(() => window.__foliaSetMockPreferences({ autoImmersive: false }));
@@ -84,6 +85,8 @@ try {
   assert.deepEqual(await page.evaluate(() => window.__foliaCommands.filter(command => command.type === 'selectOnline')),
     [{ type: 'selectOnline', value: { id: candidates[10].key, songKey: session.key } }]);
   await emit('online', { ...online, selectedKey: candidates[10].key });
+  // The host message lands asynchronously; wait for the pressed state to move before reading it back.
+  await page.waitForFunction(title => document.querySelector('.online-result[aria-pressed="true"]')?.textContent?.includes(title), candidates[10].title);
   assert.match(await results.getByRole('button', { pressed: true }).innerText(), /候选版本 11/);
   await toggle.focus(); await page.keyboard.press('Enter'); await waitCount(5);
   assert.match(await results.locator('.online-candidates-selection').innerText(), /候选版本 11/);
