@@ -56,7 +56,7 @@ export function listFiles(root) {
             { cwd: root, encoding: 'utf8', maxBuffer: 64 << 20, timeout: 15_000 },
         )
             .split('\n')
-            .filter(Boolean);
+            .filter(file => Boolean(file) && fs.existsSync(path.join(root, file)));
         source = 'git';
         if (files.length === 0) throw new Error('git ls-files 返回空');
     } catch {

@@ -106,7 +106,7 @@ const AREA_RULES = [
     [/^src\/workers\//, 'workers'],
     [/^src\/i18n\//, 'i18n'],
     [/^(test|dev)\//, 'test/dev'],
-    [/^(electron|worker|api|api-ts|sync-server|shared)\//, 'backend/electron'],
+    [/^shared\//, '共享脚本'],
     [/^src\//, 'src (其他)'],
 ];
 

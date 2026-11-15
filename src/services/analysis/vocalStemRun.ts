@@ -1,4 +1,4 @@
-import { melSpectrogramOffThread } from '../automix/analysisOffThread';
+import { melSpectrogramOffThread } from './analysisOffThread';
 import { HTDEMUCS_GPU_SEGMENT } from './beatThisGpu';
 import { canRunDrumStem, resampleStem } from './drumHits';
 import { movingStemWindow, startStemReader, stemWholeFrom, type StemReader } from './stemPass';

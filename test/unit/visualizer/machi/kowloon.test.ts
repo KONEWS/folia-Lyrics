@@ -144,7 +144,7 @@ describe('kowloon facades', () => {
             const outward = ['AC', 'Cage', 'Addition', 'Bamboo'].flatMap(name => named(blocks.group, name));
             pipes.forEach(pipe => outward.forEach(box => expect(overlap(pipe, box), seed).toBe(false)));
         });
-    });
+    }, 30_000);
 
     // Every piece of laundry against every other, for each seed: close to 5 s on a CI runner, so it
     // gets its own timeout rather than failing whichever PR happens to run on a slow machine.

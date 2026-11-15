@@ -130,21 +130,12 @@ i18n
  * `languageChanged` plus once at startup means a `system` preference reaches the tray
  * too, instead of only manual switches made in Settings.
  */
-const pushLocaleToMainProcess = (value: string | null | undefined) => {
-  if (typeof window === 'undefined') {
-    return;
-  }
-
-  void window.electron?.setAppLocale?.(normalizeSupportedLanguage(value));
-};
 
 i18n.on('languageChanged', lng => {
   syncDocumentLanguage(lng);
-  pushLocaleToMainProcess(lng);
 });
 
 syncDocumentLanguage(i18n.resolvedLanguage ?? i18n.language);
-pushLocaleToMainProcess(i18n.resolvedLanguage ?? i18n.language);
 
 export const applyAppLanguagePreference = async (
   preference: AppLanguagePreference
@@ -160,9 +151,6 @@ export const applyAppLanguagePreference = async (
 
   const nextLanguage = preference === 'system' ? detectSystemLanguage() : preference;
   await i18n.changeLanguage(nextLanguage);
-  if (typeof window !== 'undefined') {
-    await window.electron?.setAppLocale?.(nextLanguage);
-  }
   return nextLanguage;
 };
 

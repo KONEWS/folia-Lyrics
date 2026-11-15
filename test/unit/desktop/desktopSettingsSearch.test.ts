@@ -23,14 +23,14 @@ const PANEL_FILES = [
   'backgrounds/nomand/NomandBackgroundSettingsCard.tsx', 'backgrounds/nomand/NomandBackgroundEffectSettings.tsx',
   'backgrounds/nomand/NomandDitheringSettings.tsx', 'backgrounds/nomand/NomandFlutedGlassSettings.tsx',
   'backgrounds/nomand/NomandPaperTextureSettings.tsx', 'backgrounds/nomand/NomandHalftoneDotsSettings.tsx',
-  'backgrounds/nomand/NomandLensDistortionSettings.tsx', 'backgrounds/url/UrlBackgroundSettingsCard.tsx',
+  'backgrounds/nomand/NomandLensDistortionSettings.tsx',
   'tempera/TemperaImageLayerDialog.tsx', 'tempera/TemperaImagePlacementEditor.tsx',
 ];
 
 describe('desktop settings search', () => {
   it('indexes every built-in mode and background before their panels are opened', () => {
     expect(new Set(index.filter(entry => entry.mode).map(entry => entry.mode))).toEqual(new Set(BUILTIN_VISUALIZER_MODES));
-    expect(new Set(index.filter(entry => entry.background).map(entry => entry.background))).toEqual(new Set(BUILTIN_VISUALIZER_BACKGROUND_MODES));
+    expect(new Set(index.filter(entry => entry.background).map(entry => entry.background))).toEqual(new Set(BUILTIN_VISUALIZER_BACKGROUND_MODES.filter(mode => mode !== 'url')));
     expect(new Set(index.map(entry => entry.key)).size).toBe(index.length);
     expect(index.filter(entry => /^(options|desktopVisual|ui|theme)\./.test(entry.label))).toEqual([]);
     expect(index.filter(entry => /[。！？]|\{\{/.test(entry.label))).toEqual([]);
@@ -67,7 +67,7 @@ describe('desktop settings search', () => {
     expect(index.find(entry => entry.key === 'subtitle.options.fontWeight')).toMatchObject({ fallback: '自动字重', fallbacks: ['字幕继承歌词字体'] });
     expect(index.find(entry => entry.key === 'visualizer.tempera.options.temperaPostProcessGrain')?.fallback).toBe('整体后处理滤镜');
     expect(index.find(entry => entry.key === 'background.nomand.options.nomandBackgroundFlutedGlassBlur')?.fallback).toBe('纹理玻璃');
-    expect(index.find(entry => entry.key === 'background.url.options.urlBackgroundNotePlaceholder')?.fallback).toBe(translate('options.urlBackgroundAdd'));
+    expect(index.some(entry => entry.background === 'url')).toBe(false);
     expect(index.find(entry => entry.key === 'background.monet.options.monetHalfPaneOffsetX')?.fallback).toBe(translate('options.monetBackgroundLayout'));
     expect(index.find(entry => entry.key === 'background.monet.options.monetBackgroundDriftStrength')?.fallback).toBe(translate('options.monetBackgroundDriftEnabled'));
     expect(index.find(entry => entry.key === 'visualizer.diorama.Soul.dioramaCustomStrength')).toMatchObject({
@@ -119,7 +119,7 @@ describe('desktop settings search', () => {
     expect(searchDesktopSettings(index, '云阶 快捷参数').some(entry => entry.mode === 'partita')).toBe(true);
     expect(searchDesktopSettings(index, '莫奈背景 quick controls').some(entry => entry.background === 'monet')).toBe(true);
     expect(index.find(entry => entry.key === 'subtitle.options.hidePlayerTranslationSubtitle')?.label).toBe(translate('options.hidePlayerTranslationSubtitle'));
-    expect(searchDesktopSettings(index, '视频背景 URL')[0]).toMatchObject({ key: 'background.options.videoLayerUrl', fallback: translate('options.videoLayerEnabled') });
+    expect(index.some(entry => entry.key === 'background.options.videoLayerUrl')).toBe(false);
     expect(index.find(entry => entry.key === 'background.options.videoLayerClearFile')).toMatchObject({ fallback: translate('options.videoLayerPickFile'), fallbacks: [translate('options.videoLayerEnabled')] });
     expect(searchDesktopSettings(index, '智能动感 选择音频')[0].key).toBe('common.desktopVisual.selectBeatAudio');
   });

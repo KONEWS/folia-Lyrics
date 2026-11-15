@@ -9,6 +9,9 @@
 # "exec /usr/local/bin/...: no such file or directory"。
 *.sh text eol=lf
 
+# Windows cmd.exe can truncate LF-only batch lines; check out batch scripts with CRLF.
+*.cmd text eol=crlf
+
 # Signed mods and fixtures: the signature covers exact bytes, so no line-ending conversion.
 mods/** -text
 test/fixtures/folium-signature/** -text

@@ -22,7 +22,7 @@ vi.mock('@/services/analysis/beatThis', async () => ({
     analyseBeatGrid,
     canRunBeatThis,
 }));
-vi.mock('@/services/automix/analysisOffThread', () => ({ melSpectrogramOffThread: vi.fn(async () => ({ data: new Float32Array(0), frames: 0 })) }));
+vi.mock('../../../src/services/analysis/analysisOffThread', () => ({ melSpectrogramOffThread: vi.fn(async () => ({ data: new Float32Array(0), frames: 0 })) }));
 
 const { readStoredBeatGrid, storeBeatGrid, getTrackBeatGrid, getTrackBeatAccents } = await import('@/services/analysis/beatGrid');
 

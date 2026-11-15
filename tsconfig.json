@@ -30,9 +30,16 @@
   "exclude": [
     "node_modules",
     "dist",
+    "dist-desktop",
     "release",
     "test-results",
-    "sync-server",
-    "original"
+    "native",
+    "test"
+  ],
+  "include": [
+    "src",
+    "vite.desktop.config.ts",
+    "vitest.config.ts",
+    "vitest.desktop.config.ts"
   ]
 }

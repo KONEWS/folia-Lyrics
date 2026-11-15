@@ -1,6 +1,4 @@
 import React, { memo } from 'react';
-import { useFoliumTunings } from '@/mods/folium/registries/tunings';
-import { useFoliumVisualizerSettings } from '@/mods/folium/registries/visualizers';
 import type { VisualizerMode } from '../../../types';
 import type { VisualizerBackgroundConfig } from '../backgrounds/definition';
 import { DEFAULT_VISUALIZER_BACKGROUND_MODE } from '../backgrounds/registry';
@@ -59,8 +57,6 @@ type LyricStylePictureProps = {
 export const LyricStylePicture: React.FC<LyricStylePictureProps> = memo(({ mode, ...state }) => {
     const { clock, theme, isDaylight, look, stage } = useLyricPreview();
     // What mods add to how this style draws: a mod style's own settings, and the multipliers other mods put on a built-in style.
-    const modSettings = useFoliumVisualizerSettings(mode);
-    const modTunings = useFoliumTunings(mode);
     const imageKey = stylePictureKey(
         {
             mode,
@@ -70,8 +66,8 @@ export const LyricStylePicture: React.FC<LyricStylePictureProps> = memo(({ mode,
             sample: clock.placeholder.id,
             fontScale: look.lyricsFontScale,
             tuning: (look.visualizerTunings as Record<string, unknown> | undefined)?.[mode],
-            modSettings,
-            modTunings,
+            modSettings: null,
+            modTunings: null,
         },
         look.cappellaCustomEmojiImages,
         look.cappellaCustomAvatarImages,

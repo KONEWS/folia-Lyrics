@@ -20,8 +20,6 @@ jobs:
     name: Desktop UI checks
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    env:
-      ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
 
     steps:
       - name: Check out Git repository
@@ -32,7 +30,7 @@ jobs:
         with:
           node-version: 24
 
-      # Keep script-free desktop dependencies separate from the upstream Electron test cache.
+      # Cache the standalone desktop dependencies.
       - name: Restore desktop dependencies
         id: desktop-dependencies
         uses: actions/cache@v4

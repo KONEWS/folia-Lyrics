@@ -1,10 +1,23 @@
-# folia-Lyrics 0.5.3
+# folia-Lyrics 0.5.5
 
 Windows 歌词显示器，自身不播放音频。使用 Windows GSMTC 获取其他播放器公开的歌曲和进度，使用 WASAPI 默认输出设备的混合声音驱动原版歌词动效。
 
-GitHub 发布页：[0.5.3 发布页](https://github.com/KONEWS/folia-Lyrics/releases/tag/desktop-v0.5.3)。下载独立程序 `FoliaLyrics-0.5.3-win-x64.exe` 直接运行，发布页提供 `SHA256SUMS.txt` 用于核对文件。本地重新编译默认输出到 `release/0.5.3/win-x64/FoliaLyrics.exe`。
+GitHub 发布页：[0.5.5 发布页](https://github.com/KONEWS/folia-Lyrics/releases/tag/desktop-v0.5.5)。独立程序为 `FoliaLyrics-0.5.5-win-x64.exe`，同目录提供 `SHA256SUMS.txt` 用于核对文件。本地重新编译默认输出到 `release/0.5.5/win-x64/FoliaLyrics.exe`。
 
-0.5.2 同步上游歌词显示，新增町景与雾笺。歌词样式设置使用左右布局和静态缩略图，修复关闭译文后底部字幕残留，以及模型文件已附带却提示缺失的问题。
+0.5.3 内置 HarmonyOS Sans SC 字体，更新演示歌词，修正窄窗口换行与快捷参数滑块。
+
+## 0.5.5 更新
+
+- 应用联网功能仅保留歌词搜索、下载和匹配，无需登录账户；移除上游登录、在线播放、云同步、更新、远程控制及扩展模块。
+- 视频背景仅使用本地文件，移除网页背景入口并忽略旧的远程背景配置；本地字体、模型、歌词样式和外部播放器控制继续可用。
+- 修复设置搜索打开错误面板、预览窗口抢焦点，以及缩放窗口中控件和键盘候选被遮挡的问题；可直接定位字体、智能动感及各样式参数。
+- 统一修复各设置页分段选项、页签指示线和图片选框的错位与跳变；窗口缩放、换行或滚动后保持对齐，切换时连续平移，开关滑块也恢复平滑移动。
+
+## 0.5.4 更新
+
+- 修复三处计算密集型单元测试（fume 字号随机布局、花火环境层纵向循环、九龙城墙排水管碰撞检测）在慢速机器上偶发超时的问题，各用例加入与计算量匹配的超时上限。
+- 歌词匹配和来源选项不再依赖账户登录状态；仅检查对应接口是否受当前运行环境支持，并移除匹配工具对账户状态的直接依赖。
+- 桌面运行时仅保留歌词搜索与下载联网；视频背景仅用本地文件，移除网页背景入口，拦截界面的外部资源请求，并关闭 WebView 网页信誉检查和自动崩溃上报。
 
 ## 0.5.3 更新
 
@@ -350,7 +363,15 @@ GitHub 发布页：[0.5.3 发布页](https://github.com/KONEWS/folia-Lyrics/rele
 - 接口可用性和歌词覆盖取决于第三方。本版不要求输入账号；截图中的汽水、Apple Music、Spotify 歌词源未接入。
 
 ## 工程边界
-此衍生工程使用独立的 .NET 桌面宿主。`MediaMonitor` 负责读取与绑定会话，`MediaTransport` 负责能力校验与请求串行化，`WindowsMediaControlTarget` 是 Windows API 适配器；`PlaybackControls.tsx` 仅发送控制请求并显示系统返回状态。`native/Online/OnlineLyrics.cs` 是多源门面，各 provider 负责网络与数据标准化；WebView 界面仅使用统一消息协议，原 Folia 的 Web/Electron Omni 模块保持原状。原版 QRC 解码器及歌词解析器复用在 `parseDesktopLyrics.ts`，渲染器只接收标准歌词数据。
+此衍生工程使用独立的 .NET 桌面宿主。`MediaMonitor` 负责读取与绑定会话，`MediaTransport` 负责能力校验与请求串行化，`WindowsMediaControlTarget` 是 Windows API 适配器；`PlaybackControls.tsx` 仅发送控制请求并显示系统返回状态。`native/Online/OnlineLyrics.cs` 是多源门面，各 provider 负责网络与数据标准化；WebView 界面仅使用统一消息协议，原 Folia 的 Web/Electron Omni、登录、在线播放、同步、更新和远程控制模块已从此分支删除。原版 QRC 解码器及歌词解析器复用在 `parseDesktopLyrics.ts`，渲染器只接收标准歌词数据。
+
+## 联网范围
+
+- 桌面宿主主动发送的 HTTP 请求仅用于 QQ、网易云、酷狗和 LRCLIB 的歌词搜索与下载，由 `native/Online/OnlineHttp.cs` 执行；原版的账号登录、在线音乐播放、云同步、更新、遥测和远程控制实现已移除。
+- `native/WindowNetwork.cs` 和 `desktop.html` 限制 WebView 只读取安装包资源、内存资源及用户选择的本地视频。`https://folia.local/` 和 `https://folia-video.local/` 是宿主提供的本地资源地址，不访问互联网。
+- 字体、笔顺数据和分析模型随包提供；音频分析在本机执行，封面从播放器的 Windows 媒体接口读取。旧配置中的远程视频地址不再使用，网页背景回退为普通背景，导入导出也不再携带网页背景地址列表。
+- 已关闭 WebView 的 SmartScreen 网页信誉检查和自动崩溃上传；崩溃转储保留在本机。Windows 与 WebView2 Runtime 的必需诊断和 Runtime 更新由系统管理，应用无法通过这些设置保证系统层零联网，见[微软 WebView2 数据与隐私说明](https://learn.microsoft.com/en-us/microsoft-edge/webview2/concepts/data-privacy)。
+- 本节约束发布程序的运行行为；开发时安装依赖、首次下载模型和构建工具仍需要联网。
 
 ## 重新编译
 安装 Node.js 24+ 与 .NET SDK 10，运行 build-windows.cmd。或执行：
@@ -360,7 +381,7 @@ npm run typecheck:desktop
 npm run build:desktop
 npm run test:desktop
 node tools/package-web.mjs
-dotnet publish native/FoliaLyrics.csproj -c Release -r win-x64 --self-contained true -o release/0.5.3/win-x64
+dotnet publish native/FoliaLyrics.csproj -c Release -r win-x64 --self-contained true -o release/0.5.5/win-x64
 ```
 
 `build-windows.cmd` 从 `native/FoliaLyrics.csproj` 读取版本，输出到 `release/<版本>/win-x64/`。每次更新递增原生版本号后重新构建，即可得到独立的版本文件夹；手动执行上述发布命令时，也应将输出路径中的版本同步更新。

@@ -12,6 +12,7 @@ import { useDesktopPanelSettingsStore } from '../stores/useDesktopPanelSettingsS
 import { applyTypographyPatch, applyVisualizerPatch, typographySetters, visualizerSetters, type DesktopTypographyPatch, type DesktopVisualizerPatch } from './desktopVisualFields';
 import { normalizeLyricRenderQuality } from '../utils/lyricRenderQuality';
 import { setStoredString } from '../stores/storagePrimitives';
+import { desktopBackgroundMode } from './desktopBackgrounds';
 
 // src/desktopLyrics/desktopVisualSettingsCodec.ts — original shortcode/JSON format with a desktop field whitelist; never import song colours or asset URLs.
 export type DesktopVisualImportResult = { ok: boolean; error?: string; mode?: VisualizerMode };
@@ -48,7 +49,7 @@ export function exportDesktopVisualConfig(format: 'json' | 'code', options: Opti
   const v = useVisualizerSettingsStore.getState(), t = useTypographySettingsStore.getState(), theme = useThemeSettingsStore.getState();
   const typography = Object.fromEntries(Object.keys(typographySetters).filter(key => key !== 'lyricsCustomFont').map(key => [key, t[key as keyof typeof t]]));
   const visualizer = Object.fromEntries(Object.keys(visualizerSetters).filter(key => !key.endsWith('Tuning') || key.endsWith('BackgroundTuning') || legacyTuningKeys.has(key))
-    .map(key => [key, v[key as keyof typeof v]]));
+    .map(key => [key, key === 'visualizerBackgroundMode' ? desktopBackgroundMode(v.visualizerBackgroundMode) : v[key as keyof typeof v]]));
   // Partial theme metadata is enough for the original codec; colour fields intentionally stay absent.
   const metadata = { name: 'Desktop typography', fontStyle: t.lyricsFontStyle, animationIntensity: options.animationIntensity };
   const config = { ...visualizer, ...typography, visualizerTunings: collectVisualizerTunings(v as unknown as Record<string, unknown>),
@@ -73,9 +74,9 @@ export function importDesktopVisualConfig(text: string, options: Options): Deskt
       if (key === 'lyricRenderQuality') { if (object(raw)) visualizer.lyricRenderQuality = normalizeLyricRenderQuality(raw); continue; }
       if (key === 'smartBeat') { if (object(raw)) visualizer.smartBeat = resolveSmartBeatSettings(raw, v.smartBeat); continue; }
       if (key === 'visualizerFrameRate') { if (isVisualizerFrameRate(raw)) visualizer.visualizerFrameRate = raw; continue; }
+      if (key === 'visualizerBackgroundMode' && raw === 'url') { visualizer.visualizerBackgroundMode = 'common'; continue; }
       if (key === 'visualizerBackgroundMode' && raw !== null && !hasVisualizerBackgroundMode(raw)) continue;
-      if (key === 'urlBackgroundSelectedId' && raw !== null && typeof raw !== 'string') continue;
-      const nullable = key === 'visualizerBackgroundMode' || key === 'urlBackgroundSelectedId';
+      const nullable = key === 'visualizerBackgroundMode';
       const value = raw === null && nullable ? null : sanitize(raw, v[key]);
       if (value !== undefined) (visualizer as Record<string, unknown>)[key] = value;
     }

@@ -57,6 +57,12 @@ const chunks = [{ data: new Float32Array(10 * 128), frames: 10 }];
 
 const fresh = async () => {
     vi.resetModules();
+    const { setAnalysisModelHost } = await import('@/services/analysis/analysisModelHost');
+    setAnalysisModelHost({
+        getPresent: async () => ({ beat_this: true, htdemucs_gpu: true }),
+        hasGpuWeights: () => true,
+        readGpuWeights: model => model === 'htdemucs' ? getHtdemucsGpuWeights() : getBeatThisGpuWeights(model),
+    });
     return import('@/services/analysis/beatThisGpu');
 };
 

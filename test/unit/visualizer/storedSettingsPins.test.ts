@@ -526,7 +526,7 @@ describe('what is written', () => {
         expect(plain.keys()).toEqual([]);
     });
 
-    it('for the chosen style, the chosen background, the opacities, the two switches of the common background and the web pages', async () => {
+    it('for the chosen style, the chosen background, the opacities, the two switches of the common background without web pages', async () => {
         const app = await start({});
         const act = (name: string, ...args: unknown[]) => (app.state()[name] as (...all: unknown[]) => void)(...args);
         const stored = () => Object.fromEntries(app.keys().map(key => [key, app.text(key)]));
@@ -544,18 +544,6 @@ describe('what is written', () => {
         step('handleToggleDisableVisualizerVignette', true);
         step('handleToggleDisableVisualizerGeometricBackground', true);
         step('handleToggleDisableVisualizerVignette', false);
-        step('handleAddUrlBackgroundItem', { id: 'one', url: 'example.com/a', note: ' First ' });
-        step('handleAddUrlBackgroundItem', { id: 'two', url: 'https://example.com/b', note: '' });
-        step('handleAddUrlBackgroundItem', { id: '', url: 'https://example.com/c' });
-        step('handleSetUrlBackgroundSelectedId', 'two');
-        step('handleUpdateUrlBackgroundItem', 'one', { note: 'Renamed' });
-        step('handleUpdateUrlBackgroundItem', 'one', { url: 'not a url ://' });
-        step('handleDeleteUrlBackgroundItem', 'two');
-        step('handleDeleteUrlBackgroundItem', 'one');
-        step('handleSetUrlBackgroundList', [{ id: 'x', url: 'https://example.com/x', note: 'X' }, { id: '', url: 'nope' }]);
-        step('handleSetUrlBackgroundSelectedId', 'x');
-        step('handleSetUrlBackgroundList', [{ id: 'y', url: 'https://example.com/y', note: 'Y' }]);
-        step('handleSetUrlBackgroundSelectedId', null);
         expect(steps).toMatchSnapshot();
         expect(app.held()).toMatchSnapshot();
     });

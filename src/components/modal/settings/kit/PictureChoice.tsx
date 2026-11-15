@@ -1,7 +1,7 @@
-import React, { useId } from 'react';
-import { motion } from 'framer-motion';
-import { kitTransition, useKitReducedMotion } from './motion';
+import React from 'react';
+import { useKitReducedMotion } from './motion';
 import { useRowAria } from './Row';
+import { useChoiceMark } from './useChoiceMark';
 
 // src/components/modal/settings/kit/PictureChoice.tsx
 // A choice between options that differ in look: each is a small picture with its name under it,
@@ -17,11 +17,11 @@ type PictureChoiceProps<T extends string> = {
 };
 
 export const PictureChoice = <T extends string>({ value, options, onChange, disabled }: PictureChoiceProps<T>): React.ReactElement => {
-    const markId = useId();
     const reduced = useKitReducedMotion();
+    const { rootRef, markRef } = useChoiceMark(value, options, reduced, 'button[aria-pressed=true] > [data-picture-frame]', 3);
 
     return (
-        <div role="group" {...useRowAria()} aria-disabled={disabled || undefined} className={`flex max-w-full flex-wrap justify-end gap-3 py-1${disabled ? ' pointer-events-none opacity-40' : ''}`}>
+        <div ref={rootRef} role="group" {...useRowAria()} aria-disabled={disabled || undefined} className={`relative flex max-w-full flex-wrap justify-end gap-3 py-1${disabled ? ' pointer-events-none opacity-40' : ''}`}>
             {options.map(option => {
                 const selected = option.value === value;
                 return (
@@ -35,23 +35,13 @@ export const PictureChoice = <T extends string>({ value, options, onChange, disa
                         }}
                         className="group flex min-w-24 max-w-[136px] flex-col items-center gap-1.5 rounded-lg"
                     >
-                        <span className="relative block h-16 w-24">
+                        <span data-picture-frame className="relative block h-16 w-24">
                             <span
                                 aria-hidden
                                 className={`st-t-fast absolute inset-0 overflow-hidden rounded-lg bg-[var(--st-pv)] shadow-[inset_0_0_0_1px_var(--st-line)] transition-opacity ${selected ? '' : 'opacity-70 group-hover:opacity-100'}`}
                             >
                                 {option.picture}
                             </span>
-                            {selected && (
-                                // One frame shared by the options: framer-motion moves it to the new
-                                // choice, and only when the choice changes.
-                                <motion.span
-                                    layoutId={markId}
-                                    layoutDependency={value}
-                                    transition={kitTransition('move', reduced)}
-                                    className="absolute -inset-[3px] rounded-[11px] shadow-[inset_0_0_0_2px_var(--st-accent)]"
-                                />
-                            )}
                         </span>
                         <span className={`st-t-fast max-w-full text-center text-xs leading-4 transition-colors ${selected ? 'text-[color:var(--st-t1)]' : 'text-[color:var(--st-t2)] group-hover:text-[color:var(--st-t1)]'}`}>
                             {option.label}
@@ -59,6 +49,8 @@ export const PictureChoice = <T extends string>({ value, options, onChange, disa
                     </button>
                 );
             })}
+            {/* One frame shared by the options slides locally without remounting in a new picture. */}
+            <span ref={markRef} aria-hidden data-picture-mark className="pointer-events-none absolute left-0 top-0 rounded-[11px] shadow-[inset_0_0_0_2px_var(--st-accent)]"/>
         </div>
     );
 };

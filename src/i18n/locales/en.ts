@@ -5460,7 +5460,7 @@ export default {
         "combineStyle": "Now change only the lyric style: the background you just picked stays. Any background works with any lyric style; only the Still style draws no background.",
         "subtitleShared": "Most lyric styles share this one subtitle line at the bottom. Monet, Pendolo and Still set translations inside their own layout and do not use it.",
         "subtitleContent": "Its settings are on the Subtitle page of the Lyrics Style window and apply to every style that uses it. The second row picks translation, romanization, both stacked, or none.",
-        "subtitleBlur": "Turn off “Blur non-translation lyrics” and the subtitle is no longer blurred.",
+        "subtitleBlur": "Turn off “Blur upcoming lyrics” and the subtitle is no longer blurred.",
         "subtitleFont": "Turn off “Subtitle Uses Lyrics Font” to give the subtitle its own font and weight. “Subtitle scale” sets its size on its own and is always available."
       },
       "visPlayground": {
@@ -5478,7 +5478,7 @@ export default {
         "perMode": "The Lyrics page holds the settings of the style you picked; change the style and this page changes with it.",
         "background": "The Background page works the same way: pick a background from this grid of pictures, then tune that background. It is a separate layer from the lyric style, so the two are chosen independently and any pair is allowed.",
         "subtitleContent": "The second row decides what the subtitle shows: the translation, the romanization, both stacked with the romanization on top, or none. Monet, Pendolo and Still show only the translation when both is chosen.",
-        "subtitleLegibility": "The three rows under it are about reading the subtitle over a moving picture: “Subtitle Opacity”, “Subtitle Background” and “Blur non-translation lyrics”.",
+        "subtitleLegibility": "The three rows under it are about reading the subtitle over a moving picture: “Subtitle Opacity”, “Subtitle Background” and “Blur upcoming lyrics”.",
         "subtitleFont": "The subtitle follows the lyric font by default. Turn that off and its own font and weight appear; “Subtitle scale” is always there."
       },
       "themePark": {
@@ -5879,6 +5879,7 @@ export default {
     "previewHint": "Preview sample lyrics, then apply the selected style to the current song",
     "videoTransparentNotice": "Video is hidden while the window background is transparent.",
     "videoLocalFileHint": "The video stays in its original location and is restored on restart. Select it again if it is moved or deleted.",
+    "videoLocalOnly": "Use a local video, played muted and synced to the song position.",
     "videoFileMissing": "The selected video could not be found. Please select it again.",
     "videoFileSaveFailed": "This selection could not be saved. The previous selection may return after restarting.",
     "videoFileReadFailed": "The video could not be read. Please select it again.",

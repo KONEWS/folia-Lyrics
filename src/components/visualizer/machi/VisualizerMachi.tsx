@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState, useSyncExtern
 import { useTranslation } from 'react-i18next';
 import type { Line, Theme } from '../../../types';
 import { loadLucideIcons } from '../../../services/lucideIconResolver';
-import { useAppViewStore } from '../../../stores/useAppViewStore';
 import { resolveThemeFontStack, resolveThemeFontWeight } from '../../../utils/fontStacks';
 import { getLineRenderEndTime } from '../../../utils/lyrics/renderHints';
 import type { VisualizerSharedProps } from '../definition';
@@ -79,8 +78,7 @@ const VisualizerMachi: React.FC<VisualizerMachiProps> = (props) => {
     const renderPinned = useLyricRenderQualityPin() !== null;
     const [contextEpoch, setContextEpoch] = useState(0);
     // 取景控制条：只在播放页上（预览不接拖拽，也没有地方存改动；画面在主页后面当背景时也不出）。
-    const onPlayerPage = useAppViewStore(state => state.view === 'player');
-    const cameraBarAvailable = onPlayerPage && !isPreviewMode && Boolean(onVisualizerTuningChange);
+    const cameraBarAvailable = !isPreviewMode && Boolean(onVisualizerTuningChange);
     const cameraBarOpen = useSyncExternalStore(subscribeMachiCameraBar, isMachiCameraBarOpen, isMachiCameraBarOpen) && cameraBarAvailable;
     const [shownScene, setShownScene] = useState<MachiSceneId | null>(null);
     // 取景控制条拖动中的改动（还没存）：画面用存下的 tuning 叠上它。

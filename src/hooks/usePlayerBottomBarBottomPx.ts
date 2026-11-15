@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useSpring, useTransform, type MotionValue } from 'framer-motion';
 import { playerBottomBarLiveOffset } from '../stores/motionSignals';
 import { usePlayerChromeSettingsStore } from '../stores/usePlayerChromeSettingsStore';
-import { useIsPlayerBottomBarHost, usePreviewBottomBarOffset } from '../components/floating-player/PlayerBottomBarLayoutContext';
+import { useIsPlayerBottomBarHost, usePreviewBottomBarOffset } from '../components/visualizer/PlayerBottomBarLayoutContext';
 import { useMediaQuery } from './useMediaQuery';
 import {
     PLAYER_BOTTOM_BAR_BASE_OFFSET_PX,

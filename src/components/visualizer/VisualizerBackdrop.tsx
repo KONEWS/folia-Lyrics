@@ -9,7 +9,6 @@ import VisualizerBackgroundTransition from './styleTransition/VisualizerBackgrou
 import type { LayerTransition } from './styleTransition/layerTransition';
 import { getSizedCoverUrl } from '../../utils/coverUrl';
 import { isMainAppSurface } from '../../utils/appSurface';
-import { FoliumStageLayerSlot } from '../../mods/folium/registries/stageLayers';
 
 // src/components/visualizer/VisualizerBackdrop.tsx
 // What a lyric style is drawn over: the background, and the video layer above it. VisualizerRenderer
@@ -119,9 +118,6 @@ interface VisualizerBackdropProps {
 const VisualizerBackdrop: React.FC<VisualizerBackdropProps> = ({ entry, props, transition, waits, children }) => {
     const [pointerArea, setPointerArea] = useState<HTMLDivElement | null>(null);
     const frame = useMemo<VisualizerBackdropFrame>(() => ({ pointerArea }), [pointerArea]);
-    // Folium stage layers exist on the real player page only, never in previews.
-    const showStageLayers = !props.isPreviewMode && !props.staticMode;
-    const stageProps = { theme: props.theme, isDaylight: props.isDaylight ?? false, paused: props.paused ?? false };
 
     return (
         <div ref={setPointerArea} className="relative w-full h-full overflow-hidden" style={{ opacity: props.visualizerOpacity ?? 1 }}>
@@ -134,13 +130,9 @@ const VisualizerBackdrop: React.FC<VisualizerBackdropProps> = ({ entry, props, t
                 transition={transition}
                 waits={waits}
             />
-            {showStageLayers && <FoliumStageLayerSlot slot="player.stage.back" {...stageProps} />}
             <VisualizerBackdropContext.Provider value={frame}>
                 {children}
             </VisualizerBackdropContext.Provider>
-            {showStageLayers && (
-                <FoliumStageLayerSlot slot="player.stage.front" {...stageProps} className="absolute inset-0 pointer-events-none z-20" />
-            )}
         </div>
     );
 };

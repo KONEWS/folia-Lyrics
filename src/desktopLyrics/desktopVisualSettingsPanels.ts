@@ -29,7 +29,6 @@ export function buildDesktopBackgroundActions(v: VisualizerSettingsState, a: Vis
     nomand: { onTuningChange: value => patch({ nomandBackgroundTuning: value }), onResetTuning: v.handleResetNomandBackgroundTuning },
     latent: { onTuningChange: value => patch({ latentBackgroundTuning: value }), onResetTuning: v.handleResetLatentBackgroundTuning },
     sora: { onTuningChange: value => patch({ soraBackgroundTuning: value }), onResetTuning: v.handleResetSoraBackgroundTuning },
-    url: { onAdd: v.handleAddUrlBackgroundItem, onUpdate: v.handleUpdateUrlBackgroundItem, onDelete: v.handleDeleteUrlBackgroundItem, onSelect: v.handleSetUrlBackgroundSelectedId },
   };
 }
 export function resetDesktopMode(mode: VisualizerMode) {

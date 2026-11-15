@@ -1,4 +1,4 @@
-import { melSpectrogramOffThread } from '../automix/analysisOffThread';
+import { melSpectrogramOffThread } from './analysisOffThread';
 import { getFromCache, saveToCache } from '../db';
 import { BEAT_THIS_FPS, BEAT_THIS_SAMPLE_RATE } from './beatThis';
 import {

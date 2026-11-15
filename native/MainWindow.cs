@@ -100,8 +100,9 @@ internal sealed partial class MainWindow : Form
     // WebView initialization stays on the UI context while asset extraction and library loading run alongside it.
     private async Task<CoreWebView2> InitializeBrowser()
     {
-        var environment = await CoreWebView2Environment.CreateAsync(null, Path.Combine(DataFiles.Root, "browser"));
+        var environment = await CoreWebView2Environment.CreateAsync(null, Path.Combine(DataFiles.Root, "browser"), CreateBrowserOptions());
         await web.EnsureCoreWebView2Async(environment);
+        InitializeNetwork(web.CoreWebView2);
         return web.CoreWebView2;
     }
     private async Task Poll()

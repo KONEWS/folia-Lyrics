@@ -35,7 +35,7 @@ vi.mock('@/services/analysis/trackAudio', () => ({
     })),
 }));
 const { melSpectrogram } = await import('@/services/analysis/beatThis');
-vi.mock('@/services/automix/analysisOffThread', () => ({
+vi.mock('../../../src/services/analysis/analysisOffThread', () => ({
     melSpectrogramOffThread: (signal: Float32Array) => melSpectrogram(signal),
 }));
 
@@ -56,8 +56,10 @@ class FakeOfflineAudioContext {
     }
 }
 vi.stubGlobal('OfflineAudioContext', FakeOfflineAudioContext);
-vi.stubGlobal('window', { electron: { getHtdemucsGpuWeights: () => undefined } });
+vi.stubGlobal('window', {});
 vi.stubGlobal('navigator', { gpu: {} });
+const { setAnalysisModelHost } = await import('@/services/analysis/analysisModelHost');
+setAnalysisModelHost({ getPresent: async () => ({ htdemucs_gpu: true }), hasGpuWeights: model => model === 'htdemucs', readGpuWeights: async () => null });
 
 const { getDrumHits, loadTrackDrumHits, setWantedDrumTrack } = await import('@/services/analysis/drumHits');
 const { DRUM_HITS_PREFIX, VOCAL_ENVELOPE_PREFIX } = await import('@/services/analysis/beatGridKeys');

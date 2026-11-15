@@ -11,8 +11,6 @@ import { PictureGrid, Tooltip } from '../../modal/settings/kit';
 import type { PictureState } from '../../modal/settings/kit/PictureGrid';
 import { kitTransition, useKitReducedMotion } from '../../modal/settings/kit/motion';
 import StudioWindow from '../../shared/StudioWindow';
-import { visualizersRegistry } from '@/mods/folium/registries/visualizers';
-import { useFoliumRegistryEntries } from '@/mods/runtime/registry';
 import { colorWithAlpha } from '../colorMix';
 import { type PreviewPlaceholderId } from '../PreviewPlaceholder';
 import { VISUALIZER_REGISTRY, getVisualizerModeLabel, getVisualizerRegistryEntry } from '../registry';
@@ -39,6 +37,7 @@ interface VisPlaygroundProps {
     compactStyleShelf?: boolean;
     stylePicture?: (mode: VisualizerMode, state: PictureState) => React.ReactNode;
     backgroundPicture?: (mode: VisualizerBackgroundMode, state: PictureState) => React.ReactNode;
+    availableBackgroundModes?: readonly VisualizerBackgroundMode[];
     uiScale?: number;
     headerActions?: React.ReactNode;
     headerSlot?: React.ReactNode;
@@ -140,7 +139,7 @@ const SHELF_COLUMNS = { wide: 7, narrow: 4 };
 
 const VisPlayground: React.FC<VisPlaygroundProps> = ({
     theme,
-    livePreviewSource, compactStyleShelf = false, stylePicture = drawLyricStyleChoice, backgroundPicture, uiScale, headerActions, headerSlot, globalSettings, backgroundSettings, onRandomModeSelected, loadFonts, editSequence,
+    livePreviewSource, compactStyleShelf = false, stylePicture = drawLyricStyleChoice, backgroundPicture, availableBackgroundModes, uiScale, headerActions, headerSlot, globalSettings, backgroundSettings, onRandomModeSelected, loadFonts, editSequence,
     isDaylight,
     visualizerMode,
     initialEditSection = 'visualizer',
@@ -300,9 +299,6 @@ const VisPlayground: React.FC<VisPlaygroundProps> = ({
         lyricsFontScale: clampFontScale(fontScale),
         ...styleAssets,
     }), [fontScale, styleAssets, tuningDrafts.savedTunings]);
-    // Mod styles come and go at runtime (Folium registries), so the shelf recomputes on registry
-    // changes, not only on language changes.
-    const foliumVisualizerEntries = useFoliumRegistryEntries(visualizersRegistry);
     const modeOptions = useMemo(() => (
         [
             ...VISUALIZER_REGISTRY.map(entry => ({
@@ -312,7 +308,7 @@ const VisPlayground: React.FC<VisPlaygroundProps> = ({
             { label: t('ui.visualizerRandom'), value: RANDOM_VISUALIZER_CHOICE },
         ]
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    ), [t, foliumVisualizerEntries]);
+    ), [t]);
     // The window's own split: under it the column lies under the stage and the shelf is narrow.
     const isWideWindow = useMediaQuery('(min-width: 1024px)');
     const reducedKitMotion = useKitReducedMotion();
@@ -601,6 +597,7 @@ const VisPlayground: React.FC<VisPlaygroundProps> = ({
     const column = (
         <VisPlaygroundSettingsPanel
             backgroundPicture={backgroundPicture}
+            availableBackgroundModes={availableBackgroundModes}
             globalSettings={globalSettings}
             backgroundSettings={backgroundSettings}
             activeSection={activeEditSection}

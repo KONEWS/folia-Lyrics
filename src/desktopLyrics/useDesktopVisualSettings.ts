@@ -6,7 +6,7 @@ import { useVisualizerAssetStore } from '../stores/useVisualizerAssetStore';
 import { useThemeSettingsStore } from '../stores/useThemeSettingsStore';
 import { useVisualizerTunings } from '../components/visualizer/useVisualizerTunings';
 import { useVisualizerBackgroundConfig } from '../components/visualizer/useVisualizerBackgroundConfig';
-import { buildVisualizerTheme } from '../components/app/presentation/buildVisualizerTheme';
+import { buildVisualizerTheme } from './desktopVisualizerTheme';
 import { useDesktopVisualAssets } from './useDesktopVisualAssets';
 import { useDesktopVisualDraft } from './useDesktopVisualDraft';
 import { applyTypographyPatch, type DesktopTypographyPatch, type DesktopVisualizerPatch } from './desktopVisualFields';
@@ -15,6 +15,7 @@ import { exportDesktopVisualConfig, importDesktopVisualConfig } from './desktopV
 import { DEFAULT_SETTINGS_TRANSPARENCY, useDesktopPanelSettingsStore } from '../stores/useDesktopPanelSettingsStore';
 import { desktopSubtitleVisibility } from './visualFeatures/desktopSubtitleVisibility';
 import { DEFAULT_LYRIC_RENDER_QUALITY } from '../utils/lyricRenderQuality';
+import { desktopBackgroundMode } from './desktopBackgrounds';
 
 // src/desktopLyrics/useDesktopVisualSettings.ts — original visual settings feed the desktop renderer without App playback state.
 type Options = { baseTheme: Theme; cover: string; transparent: boolean; translated: boolean; onTranslated: (value: boolean) => void };
@@ -58,7 +59,8 @@ export function useDesktopVisualSettings(input: Options) {
   }), [input.baseTheme, animationIntensity, typography.lyricsFontStyle, typography.lyricsFontWeight, typography.lyricsCustomFont,
     typography.lyricsFontFallbackFamilies, typography.subtitleFontInheritsLyrics, typography.subtitleFontStyle, typography.subtitleFontWeight,
     typography.subtitleFontFamily, typography.subtitleFontFallbackFamilies]);
-  const background = useMemo(() => ({ ...committedBackground, transparent: input.transparent || !backgroundEnabled }), [committedBackground, input.transparent, backgroundEnabled]);
+  const background = useMemo(() => ({ ...committedBackground, mode: desktopBackgroundMode(committedBackground.mode), url: undefined,
+    transparent: input.transparent || !backgroundEnabled }), [committedBackground, input.transparent, backgroundEnabled]);
   const rendererProps = useMemo(() => ({
     subtitleTheme: themes.visualizerSubtitleTheme, visualizerTunings: tunings, background, staticMode,
     visualizerOpacity: visualizer.visualizerOpacity, lyricsFontScale: typography.lyricsFontScale, subtitleFontScale: typography.subtitleFontScale,
@@ -85,7 +87,7 @@ export function useDesktopVisualSettings(input: Options) {
     disableGeometricBackground: draftVisualizer.disableVisualizerGeometricBackground, disableVignette: draftVisualizer.disableVisualizerVignette },
     monet: { tuning: draftVisualizer.monetBackgroundTuning }, nomand: { tuning: draftVisualizer.nomandBackgroundTuning },
     latent: { tuning: draftVisualizer.latentBackgroundTuning }, sora: { tuning: draftVisualizer.soraBackgroundTuning },
-    mode: draftVisualizer.visualizerBackgroundMode,
+    mode: desktopBackgroundMode(draftVisualizer.visualizerBackgroundMode),
   }), [background, draftVisualizer.backgroundOpacity, draftVisualizer.disableVisualizerGeometricBackground, draftVisualizer.disableVisualizerVignette,
     draftVisualizer.monetBackgroundTuning, draftVisualizer.nomandBackgroundTuning, draftVisualizer.latentBackgroundTuning, draftVisualizer.soraBackgroundTuning, draftVisualizer.visualizerBackgroundMode]);
   const backgroundActions = buildDesktopBackgroundActions(draftVisualizer, assets, edits.patchVisualizer);

@@ -36,7 +36,9 @@ export function revealDesktopSettingsControl(panel: HTMLElement, control: HTMLEl
   for (let viewport: HTMLElement | null = control.parentElement; viewport; viewport = viewport.parentElement) {
     if (viewport === panel || /auto|scroll/.test(getComputedStyle(viewport).overflowY)) {
       const bounds = viewport.getBoundingClientRect(), controlBounds = control.getBoundingClientRect();
-      viewport.scrollTop += controlBounds.top - bounds.top - viewport.clientTop - 12;
+      // Client rectangles include the window's visual scale; scrollTop remains in unscaled CSS pixels.
+      const scaleY = viewport.offsetHeight > 0 ? bounds.height / viewport.offsetHeight : 1;
+      viewport.scrollTop += (controlBounds.top - bounds.top) / (scaleY || 1) - viewport.clientTop - 12;
     }
     if (viewport === panel) break;
   }

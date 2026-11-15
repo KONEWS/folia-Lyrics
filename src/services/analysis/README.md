@@ -2,7 +2,7 @@
 
 曲目分析的公共底层。automix（`../automix/`）和节拍效果（`../beatFx/`，智能动感模式）都从这里读，beatFx 不依赖 automix。
 
-例外：这里还借用了 automix 下三个与 automix 本身无关的工具模块——`signalAnalysis`（梅尔滤波等信号处理）、`uiYield`（让出主线程）、`analysisOffThread`（频谱放到 worker 算）。它们都是无状态的纯计算（`analysisOffThread` 的 worker 还连带 `trackProfile`，同样无状态），不碰 automix 的队列、缓存或播放状态；以后要彻底分层，就把这几个搬进来。
+原 automix 下的纯计算 `signalAnalysis`、`uiYield`、`analysisOffThread` 已移入此目录；worker 只计算本地音频的梅尔频谱，不再进行在线音频读取或自动混音。
 
 | 文件 | 职责 |
 |---|---|

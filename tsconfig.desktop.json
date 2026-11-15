@@ -9,8 +9,7 @@
     "src/components/visualizer/backgrounds/*/tuning.ts",
     "src/components/visualizer/backgrounds/*/settings.ts",
     "src/i18n/virtualModules.d.ts",
-    "src/utils/lyrics/icuFolia/virtualModules.d.ts",
-    "src/components/command-palette/search/virtualModules.d.ts"
+    "src/utils/lyrics/icuFolia/virtualModules.d.ts"
   ],
   "exclude": [
     "node_modules",

@@ -1,6 +1,6 @@
 import { useCallback, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import type { MotionValue } from 'framer-motion';
-import { progressSince } from '../../../services/automix/handoffProgress';
+import { progressSince } from './handoffProgress';
 
 // src/components/visualizer/styleTransition/layerTransition.ts
 // What a lyric style switch and a background change share. A layer is one style or one background in

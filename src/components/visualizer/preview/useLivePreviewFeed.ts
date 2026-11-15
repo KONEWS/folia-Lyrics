@@ -1,39 +1,14 @@
 import { useEffect, useMemo, useSyncExternalStore, type RefObject } from 'react';
 import { audioBands, audioPower, currentTime, lyricCurrentTime } from '../../../stores/motionSignals';
-import {
-    selectDisplayCoverUrl,
-    selectDisplayDuration,
-    selectDisplayLyrics,
-    selectDisplaySong,
-    usePlaybackStore,
-} from '../../../stores/usePlaybackStore';
-import { createLivePreviewFeed, type LivePreviewContent, type LivePreviewSource } from './livePreviewFeed';
+import { createLivePreviewFeed, type LivePreviewSource } from './livePreviewFeed';
 import { observeMounts } from './stillClockPulse';
 
 // src/components/visualizer/preview/useLivePreviewFeed.ts
-// The live source of a lyric preview, bound to the player's stores: the song, lyrics, cover and
-// transport are the held picture the player itself draws (the usePlaybackStore display selectors),
-// the lyric clock and the audio levels its motion signals. Local playback and every stage source
-// write the same ones, so one feed covers them.
-
-export const readLivePreviewContent = (state = usePlaybackStore.getState()): LivePreviewContent | null => {
-    const lines = selectDisplayLyrics(state)?.lines;
-    if (!lines || lines.length === 0) return null;
-    const song = selectDisplaySong(state);
-    const duration = selectDisplayDuration(state);
-    return {
-        lines,
-        duration: Number.isFinite(duration) && duration > 0 ? duration : 0,
-        songTitle: song?.name,
-        coverUrl: selectDisplayCoverUrl(state),
-        currentLineIndex: state.currentLineIndex,
-        seed: `live-preview-${song?.id ?? 'none'}`,
-    };
-};
+// The desktop host supplies the live source; sample-only previews use a silent source with no player dependency.
 
 const playerSource: LivePreviewSource = {
-    read: () => readLivePreviewContent(),
-    subscribe: listener => usePlaybackStore.subscribe(() => listener()),
+    read: () => null,
+    subscribe: () => () => {},
     signals: { currentTime: lyricCurrentTime, audioPower, audioBands },
     playbackTime: currentTime,
 };

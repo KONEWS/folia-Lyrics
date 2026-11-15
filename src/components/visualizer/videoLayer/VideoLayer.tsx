@@ -1,9 +1,7 @@
 import React, { useContext, useEffect, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { PlayerState } from '../../../types';
 import { currentTime } from '../../../stores/motionSignals';
-import { selectDisplayPlayerState, selectDisplaySong, usePlaybackStore } from '../../../stores/usePlaybackStore';
-import { ensureVideoLayerFileRestored, useVideoLayerSettingsStore } from '../../../stores/useVideoLayerSettingsStore';
+import { useVideoLayerSettingsStore } from '../../../stores/useVideoLayerSettingsStore';
 import { VideoLayerPlaybackContext } from './videoLayerPlayback';
 
 // src/components/visualizer/videoLayer/VideoLayer.tsx
@@ -31,27 +29,20 @@ const VideoLayer: React.FC<VideoLayerProps> = ({ paused }) => {
     const pausedRef = useRef(paused || playback?.hidden);
     pausedRef.current = paused || playback?.hidden;
     const alignRef = useRef<() => void>(() => {});
-    const { enabled, url, opacity, fit, localFileUrl } = useVideoLayerSettingsStore(useShallow(state => ({
+    const { enabled, opacity, fit } = useVideoLayerSettingsStore(useShallow(state => ({
         enabled: state.videoLayerEnabled,
-        url: state.videoLayerUrl,
         opacity: state.videoLayerOpacity,
         fit: state.videoLayerFit,
-        localFileUrl: state.localFileUrl,
     })));
-    const source = playback ? playback.localFileUrl ?? playback.url : localFileUrl ?? (url || null);
+    const source = playback?.localFileUrl ?? null;
     const active = enabled && Boolean(source) && !playback?.suppressed;
-    const hosted = playback !== null;
-
-    useEffect(() => {
-        if (!hosted) ensureVideoLayerFileRestored();
-    }, [hosted]);
 
     useEffect(() => {
         const video = videoRef.current;
         if (!active || !video || !source) return;
         // StrictMode can replay this effect after its cleanup released the same DOM element.
         if (video.getAttribute('src') !== source) video.src = source;
-        const isPlaying = () => playbackRef.current?.playing ?? (selectDisplayPlayerState(usePlaybackStore.getState()) === PlayerState.PLAYING);
+        const isPlaying = () => playbackRef.current?.playing ?? false;
 
         const align = () => {
             // Held still while music plays (the shell's pause): the clock runs on, so following it would
@@ -75,10 +66,6 @@ const VideoLayer: React.FC<VideoLayerProps> = ({ paused }) => {
         video.addEventListener('loadedmetadata', onMetadata);
         if (video.readyState >= HTMLMediaElement.HAVE_METADATA) onMetadata();
 
-        const unsubscribeStore = hosted ? () => {} : usePlaybackStore.subscribe((state, previous) => {
-            if (selectDisplayPlayerState(state) !== selectDisplayPlayerState(previous)) followState();
-            if (selectDisplaySong(state) !== selectDisplaySong(previous)) align();
-        });
         let lastClock = clock.get();
         const unsubscribeClock = clock.on('change', (value) => {
             if (Math.abs(value - lastClock) > CLOCK_JUMP_SEC) align();
@@ -89,14 +76,13 @@ const VideoLayer: React.FC<VideoLayerProps> = ({ paused }) => {
         return () => {
             window.clearInterval(drift);
             unsubscribeClock();
-            unsubscribeStore();
             video.removeEventListener('loadedmetadata', onMetadata);
             video.pause();
             // Leaving a transparent/static surface must also release the decoder and pending media reads.
             video.removeAttribute('src');
             video.load();
         };
-    }, [active, source, clock, hosted]);
+    }, [active, source, clock]);
 
     // The shell's pause flag changes without touching the source; only play/pause needs to follow.
     useEffect(() => {
@@ -104,7 +90,7 @@ const VideoLayer: React.FC<VideoLayerProps> = ({ paused }) => {
         if (!active || !video) return;
         if (paused || playback?.hidden || (playback && !playback.playing)) {
             video.pause();
-        } else if (playback?.playing ?? (selectDisplayPlayerState(usePlaybackStore.getState()) === PlayerState.PLAYING)) {
+        } else if (playback?.playing ?? false) {
             alignRef.current();
             void video.play().catch(() => {});
         }

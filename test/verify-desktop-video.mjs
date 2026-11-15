@@ -4,7 +4,6 @@ import { resolve } from 'node:path';
 import { chromium } from 'playwright';
 import { installDesktopBridgeMock } from './desktop-bridge-mock.mjs';
 import { openBackgroundSettings, closeBackgroundSettings, openVisualSettings, closeVisualSettings, emitVisual } from './desktop-visual-fixture.mjs';
-import { selectDesktopOption } from './desktop-select.mjs';
 
 // Use the running desktop dev server and a generated silent clip; native streaming is tested by video-layer-webview.
 const url = process.env.FOLIA_TEST_URL;
@@ -37,6 +36,7 @@ try {
     await page.addInitScript(native => {
         localStorage.setItem('folia.desktop.mode.v1', 'classic');
         localStorage.setItem('static_mode', 'false');
+        localStorage.setItem('video_layer_url', 'https://video.test/sample.webm');
         sessionStorage.setItem('folia.test.mockPreferences', JSON.stringify({ autoImmersive: false, audioReactive: false }));
         const original = window.chrome.webview.postMessage;
         window.chrome.webview.postMessage = message => {
@@ -58,15 +58,17 @@ try {
     await page.locator('.waiting-screen').waitFor({ state: 'detached' });
     assert.equal(await page.locator('video').count(), 0);
     let panel = await openBackgroundSettings(page);
-    stage = 'video-url';
+    stage = 'local-video-only';
     await panel.getByRole('switch', { name: '在歌词后方显示视频', exact: true }).click();
-    const input = panel.getByRole('textbox', { name: '视频 URL', exact: true });
-    await input.fill(remote); await input.press('Enter');
+    assert.equal(await panel.getByRole('textbox', { name: '视频 URL', exact: true }).count(), 0);
+    assert.equal(await page.locator('video').count(), 0, 'a legacy remote URL must not mount a video');
+    assert.equal(mediaRequests.some(request => request.url === remote), false, 'legacy URLs must not make a request');
+    await panel.getByRole('button', { name: '选择视频', exact: true }).click();
     const video = page.locator('.desktop-stage video');
     await video.waitFor(); await page.waitForFunction(() => document.querySelector('video')?.readyState >= 2);
     assert(await video.evaluate(video => video.muted && video.paused && video.duration > 0));
     assert.equal(await page.locator('audio').count(), 0, 'desktop video must not initialize the app audio player');
-    checks.push('URL video mounts in the original backdrop, decodes muted and follows paused desktop playback');
+    checks.push('legacy remote URLs are ignored; a selected local video decodes muted and follows paused desktop playback');
     stage = 'opacity';
     await panel.getByRole('slider', { name: '不透明度', exact: true }).fill('0.75');
     await page.keyboard.press('Escape'); await page.getByRole('dialog', { name: '背景设置', exact: true }).waitFor({ state: 'detached' });
@@ -75,7 +77,10 @@ try {
     checks.push('opacity saves on input and survives immediate Escape dismissal');
     stage = 'playback';
     panel = await openBackgroundSettings(page);
-    await selectDesktopOption(page, '填充方式', { value: 'contain' });
+    await panel.getByRole('combobox', { name: '填充方式', exact: true }).click();
+    const fitMenu = page.getByRole('listbox', { name: '填充方式', exact: true });
+    await fitMenu.locator('[role="option"][data-value="contain"]').click();
+    await fitMenu.waitFor({ state: 'detached' });
     assert.equal(await video.evaluate(video => video.style.objectFit), 'contain');
     await closeBackgroundSettings(page);
     await session({ playing: true });
@@ -107,8 +112,9 @@ try {
     assert(await video.evaluate(video => video.muted), 'local video remains muted');
     assert.equal(await page.evaluate(() => localStorage.getItem('video_layer_url')), remote);
     await panel.getByRole('button', { name: '清除本地视频', exact: true }).click();
-    await page.waitForFunction(remote => document.querySelector('video')?.getAttribute('src') === remote, remote);
-    checks.push('native selection takes precedence over URL and clearing it restores the saved URL');
+    await video.waitFor({ state: 'detached' });
+    assert.equal(mediaRequests.some(request => request.url === remote), false);
+    checks.push('clearing the local file removes the video without restoring a saved remote URL');
     await panel.getByRole('switch', { name: '在歌词后方显示视频', exact: true }).click();
     await video.waitFor({ state: 'detached' });
     assert.deepEqual(errors, []);

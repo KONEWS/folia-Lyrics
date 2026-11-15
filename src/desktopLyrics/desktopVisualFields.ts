@@ -9,7 +9,7 @@ export const visualizerSetters = {
   backgroundOpacity: 'handleSetBackgroundOpacity', visualizerOpacity: 'handleSetVisualizerOpacity', visualizerFrameRate: 'handleSetVisualizerFrameRate',
   lyricRenderQuality: 'handleSetLyricRenderQuality',
   disableVisualizerVignette: 'handleToggleDisableVisualizerVignette', disableVisualizerGeometricBackground: 'handleToggleDisableVisualizerGeometricBackground',
-  visualizerBackgroundMode: 'handleSetVisualizerBackgroundMode', urlBackgroundList: 'handleSetUrlBackgroundList', urlBackgroundSelectedId: 'handleSetUrlBackgroundSelectedId',
+  visualizerBackgroundMode: 'handleSetVisualizerBackgroundMode',
   classicTuning: 'handleSetClassicTuning', cadenzaTuning: 'handleSetCadenzaTuning', partitaTuning: 'handleSetPartitaTuning',
   fumeTuning: 'handleSetFumeTuning', claddaghTuning: 'handleSetCladdaghTuning', cappellaTuning: 'handleSetCappellaTuning',
   tiltTuning: 'handleSetTiltTuning', dioramaTuning: 'handleSetDioramaTuning', monetTuning: 'handleSetMonetTuning',

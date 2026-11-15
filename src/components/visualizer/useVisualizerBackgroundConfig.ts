@@ -18,8 +18,6 @@ export const useVisualizerBackgroundConfig = (): VisualizerBackgroundConfig => {
         opacity: state.backgroundOpacity,
         disableGeometricBackground: state.disableVisualizerGeometricBackground,
         disableVignette: state.disableVisualizerVignette,
-        urlBackgroundList: state.urlBackgroundList,
-        urlBackgroundSelectedId: state.urlBackgroundSelectedId,
     })));
     // The backgrounds' tunings, under the store's field names: which there are, their declarations say.
     const tunings = useVisualizerSettingsStore(useShallow(state => Object.fromEntries(
@@ -39,9 +37,5 @@ export const useVisualizerBackgroundConfig = (): VisualizerBackgroundConfig => {
         },
         customImage: monetBackgroundImage,
         ...backgroundTuningConfig(tunings),
-        url: {
-            items: settings.urlBackgroundList,
-            selectedId: settings.urlBackgroundSelectedId,
-        },
     }), [settings, tunings, monetBackgroundImage, useCoverColorBg]);
 };

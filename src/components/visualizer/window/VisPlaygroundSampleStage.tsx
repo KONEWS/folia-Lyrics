@@ -4,7 +4,7 @@ import { stageStyle, useBoxSize } from '../preview/LivePicture';
 import { useWindowSize } from '../preview/LyricPreviewContext';
 import { frameStage, stageAboveBox, stageBelowBox } from '../preview/previewScale';
 import { HARMONY_TOP_PX, HarmonyTopContext } from '../VisualizerHarmonyOverlay';
-import { PreviewBottomBarOffsetContext } from '../../floating-player/PlayerBottomBarLayoutContext';
+import { PreviewBottomBarOffsetContext } from '../PlayerBottomBarLayoutContext';
 import {
     PLAYER_BOTTOM_BAR_BASE_OFFSET_PX,
     PLAYER_SUBTITLE_BOTTOM_PX,

@@ -86,7 +86,7 @@ export const toSafeRemoteUrl = (url: string | null | undefined): string | null |
 // Keeps KuGou's original HTTP media URL only in Electron; Web/PWA retains HTTPS normalization.
 export const toSafePlaybackUrl = (
     url: string | null | undefined,
-    isElectron = typeof window !== 'undefined' && Boolean(window.electron)
+    isElectron = false
 ): string | null | undefined => {
     if (!url || !isElectron) {
         return toSafeRemoteUrl(url);

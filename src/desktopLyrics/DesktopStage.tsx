@@ -4,7 +4,7 @@ import type { VisualizerSharedProps } from '../components/visualizer/definition'
 import VisualizerRenderer from '../components/visualizer/VisualizerRenderer';
 import { getVisualizerTuning } from '../components/visualizer/tuningRegistry';
 import { useVisualizerSettingsStore } from '../stores/useVisualizerSettingsStore';
-import { PlayerBottomBarLayoutContext } from '../components/floating-player/PlayerBottomBarLayoutContext';
+import { PlayerBottomBarLayoutContext } from '../components/visualizer/PlayerBottomBarLayoutContext';
 import VisualizerBoundary from './VisualizerBoundary';
 
 // src/desktopLyrics/DesktopStage.tsx — stable runtime props keep settings drafts outside the original renderer's React path.

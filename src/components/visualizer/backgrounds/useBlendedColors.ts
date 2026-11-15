@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { MotionValue } from 'framer-motion';
 import { mixColors } from '../colorMix';
-import { progressSince } from '../../../services/automix/handoffProgress';
+import { progressSince } from '../styleTransition/handoffProgress';
 
 // src/components/visualizer/backgrounds/useBlendedColors.ts
 // For a background that changes its colours in place rather than as a new copy (its entry has no

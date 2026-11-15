@@ -99,17 +99,11 @@ export const useThemeSettingsStore = create<ThemeSettingsState>((set, get) => ({
 
         setStoredBoolean('default_theme_daylight', enabled);
         set({ isDaylight: enabled });
-        if (typeof window !== 'undefined' && window.electron?.setNativeTheme) {
-            void window.electron.setNativeTheme('system');
-        }
     },
     setFollowSystemTheme: (enabled) => {
         setStoredBoolean(FOLLOW_SYSTEM_THEME_STORAGE_KEY, enabled);
         set({ followSystemTheme: enabled });
 
-        if (typeof window !== 'undefined' && window.electron?.setNativeTheme) {
-            void window.electron.setNativeTheme(enabled ? 'system' : (get().isDaylight ? 'light' : 'dark'));
-        }
 
         if (enabled) {
             const systemThemeIsDaylight = readSystemThemeIsDaylight();
@@ -125,9 +119,6 @@ export const useThemeSettingsStore = create<ThemeSettingsState>((set, get) => ({
         }
         setStoredBoolean('default_theme_daylight', enabled);
         set({ isDaylight: enabled, ...(wasFollowingSystem ? { followSystemTheme: false } : {}) });
-        if (typeof window !== 'undefined' && window.electron?.setNativeTheme) {
-            void window.electron.setNativeTheme(enabled ? 'light' : 'dark');
-        }
     },
 }));
 
@@ -149,14 +140,6 @@ export const selectThemeSettingsSnapshot = (state: ThemeSettingsState) => ({
     handleToggleDisableHomeDynamicBackground: state.handleToggleDisableHomeDynamicBackground,
 });
 
-// Seed Electron's native theme from the stored preference at startup. Lives here rather than in
-// useSettingsUiStore because it reads nothing but this domain.
-if (typeof window !== 'undefined' && window.electron?.setNativeTheme) {
-    const initialTheme = useThemeSettingsStore.getState();
-    void window.electron.setNativeTheme(
-        initialTheme.followSystemTheme ? 'system' : (initialTheme.isDaylight ? 'light' : 'dark'),
-    );
-}
 
 // Module-level handle for the assembly layer; an action needs no subscription.
 export const handleToggleCoverColorBg = (enable: boolean) => useThemeSettingsStore.getState().handleToggleCoverColorBg(enable);

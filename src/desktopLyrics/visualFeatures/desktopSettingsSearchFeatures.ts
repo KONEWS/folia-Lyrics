@@ -28,7 +28,7 @@ export function buildDesktopFeatureSearchEntries(labelFor: (key: string) => stri
     add('visualizer', 'options.randomVisualizerCurrentStyle', ['随机池', '当前随机样式', 'random current style'], RANDOM_TOGGLE, 'options.randomPool');
 
     const videoWords = ['视频背景', '视频层', 'video background', 'video layer'];
-    for (const key of ['videoLayerSettings', 'videoLayerEnabled', 'videoLayerLocalFile', 'videoLayerPickFile', 'videoLayerClearFile', 'videoLayerUrl', 'videoLayerOpacity', 'videoLayerFit']) {
+    for (const key of ['videoLayerSettings', 'videoLayerEnabled', 'videoLayerLocalFile', 'videoLayerPickFile', 'videoLayerClearFile', 'videoLayerOpacity', 'videoLayerFit']) {
         const entry = add('background', `options.${key}`, videoWords,
             ['videoLayerSettings', 'videoLayerEnabled'].includes(key) ? undefined : key === 'videoLayerClearFile' ? 'options.videoLayerPickFile' : 'options.videoLayerEnabled', 'options.videoLayerSettings');
         if (key === 'videoLayerClearFile') entry.fallbacks = [labelFor('options.videoLayerEnabled')];

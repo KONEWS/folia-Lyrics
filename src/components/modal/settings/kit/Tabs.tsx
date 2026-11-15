@@ -1,6 +1,6 @@
-import React, { useId, useLayoutEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { kitTransition, useKitReducedMotion } from './motion';
+import React, { useLayoutEffect, useRef } from 'react';
+import { useKitReducedMotion } from './motion';
+import { useChoiceMark } from './useChoiceMark';
 
 // src/components/modal/settings/kit/Tabs.tsx
 // A strip of text tabs, closed by a hairline. The chosen tab carries a line in the accent colour,
@@ -35,11 +35,9 @@ type TabsProps = {
 
 export const Tabs: React.FC<TabsProps> = ({ tabs, activeId, onSelect, action, contents, label, className = '' }) => {
     const reduced = useKitReducedMotion();
-    const stripRef = useRef<HTMLDivElement>(null);
+    const { rootRef: stripRef, markRef } = useChoiceMark(activeId, tabs, reduced, '[data-tab-mark-target]');
     const activeRef = useRef<HTMLButtonElement>(null);
-    const id = useId();
     // One line per set of tabs: it slides between the tabs of a set, not over from the last set's tab.
-    const markId = `${id}${tabs[0]?.id ?? ''}`;
     // Where Tab lands in a tab list: on the chosen tab, or on the first where none is chosen.
     const stopId = tabs.some(tab => tab.id === activeId) ? activeId : tabs[0]?.id;
 
@@ -58,23 +56,23 @@ export const Tabs: React.FC<TabsProps> = ({ tabs, activeId, onSelect, action, co
     // The two keys the strip uses stop here, so nothing behind it acts on them as well.
     const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
         const step = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
-        const at = Array.from(event.currentTarget.children).indexOf(document.activeElement as Element);
+        const buttons = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>(':scope > button'));
+        const at = buttons.indexOf(document.activeElement as HTMLButtonElement);
         if (!step || at < 0 || event.altKey || event.ctrlKey || event.metaKey) {
             return;
         }
         event.preventDefault();
         event.stopPropagation();
         const next = (at + step + tabs.length) % tabs.length;
-        (event.currentTarget.children[next] as HTMLElement).focus();
+        buttons[next]?.focus();
         onSelect(tabs[next].id);
     };
 
     return (
         <div className="flex border-b border-[var(--st-line)]">
-            {/* layoutScroll: the line is measured inside a strip that may be scrolled sideways. */}
-            <motion.div
+            {/* The line stays in the scrolling strip's local coordinates. */}
+            <div
                 ref={stripRef}
-                layoutScroll
                 role={contents ? undefined : 'tablist'}
                 aria-label={label}
                 onKeyDown={handleKeyDown}
@@ -98,20 +96,15 @@ export const Tabs: React.FC<TabsProps> = ({ tabs, activeId, onSelect, action, co
                             {tab.label}
                             {tab.dot && <span aria-hidden className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-[var(--st-warn)] align-middle" />}
                             {current && (
-                                // One line shared by the tabs: framer-motion moves it to the new one,
-                                // and only when the choice changes.
-                                <motion.span
-                                    layoutId={markId}
-                                    layoutDependency={activeId}
-                                    transition={kitTransition('move', reduced)}
-                                    className="absolute inset-x-1 bottom-0 h-0.5 bg-[var(--st-accent)]"
-                                    style={{ borderTopLeftRadius: 2, borderTopRightRadius: 2 }}
-                                />
+                                // This anchor gives the persistent line the chosen tab's exact bounds.
+                                <span aria-hidden data-tab-mark-target className="pointer-events-none absolute inset-x-1 bottom-0 h-0.5"/>
                             )}
                         </button>
                     );
                 })}
-            </motion.div>
+                <span ref={markRef} aria-hidden data-tab-mark className="pointer-events-none absolute left-0 top-0 bg-[var(--st-accent)]"
+                    style={{ borderTopLeftRadius: 2, borderTopRightRadius: 2 }}/>
+            </div>
             {/* On the line of the tabs, whatever padding the strip has above them. */}
             {action !== undefined && <div className="flex h-9 shrink-0 items-center self-end pl-3">{action}</div>}
         </div>

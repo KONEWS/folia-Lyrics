@@ -13,6 +13,8 @@ if (!expected) {
 }
 
 const problems = [];
+const packageVersion = JSON.parse(read('package.json')).version;
+if (packageVersion !== expected) problems.push(`package.json 版本是 ${packageVersion}，应为 ${expected}`);
 const readmeVersion = read('README-DESKTOP.md').match(new RegExp(`^#\\s+folia-Lyrics\\s+(${SEMVER})`, 'm'))?.[1];
 if (readmeVersion !== expected) problems.push(`README-DESKTOP.md 标题版本是 ${readmeVersion ?? '（缺失）'}，应为 ${expected}`);
 

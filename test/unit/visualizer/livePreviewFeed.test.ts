@@ -10,7 +10,6 @@ import {
     type LivePreviewSource,
 } from '@/components/visualizer/preview/livePreviewFeed';
 import { HELD_TIME_STEP } from '@/components/visualizer/preview/usePreviewClock';
-import { readLivePreviewContent } from '@/components/visualizer/preview/useLivePreviewFeed';
 
 // test/unit/visualizer/livePreviewFeed.test.ts
 // The live source of the lyric previews: follows the player while it runs, holds the picture of the
@@ -455,40 +454,5 @@ describe('time pulse', () => {
 
         pulse.start(() => 0);
         expect(pulse.running()).toBe(true);
-    });
-});
-
-describe('reading the player', () => {
-    const state = (overrides: Record<string, unknown> = {}) => ({
-        transitionDisplay: null,
-        currentSong: { id: 42, name: 'Song' },
-        cachedCoverUrl: 'https://example.test/cover.jpg',
-        lyrics: { lines: [{ startTime: 0, endTime: 1, fullText: 'la', words: [] }] },
-        duration: 215,
-        currentLineIndex: 0,
-        ...overrides,
-    }) as unknown as Parameters<typeof readLivePreviewContent>[0];
-
-    it('reads the song, lyrics, cover, length and line the player shows', () => {
-        expect(readLivePreviewContent(state())).toMatchObject({
-            songTitle: 'Song',
-            coverUrl: 'https://example.test/cover.jpg',
-            duration: 215,
-            currentLineIndex: 0,
-            seed: 'live-preview-42',
-        });
-    });
-
-    it('has nothing to read without lyric lines', () => {
-        expect(readLivePreviewContent(state({ lyrics: null }))).toBeNull();
-        expect(readLivePreviewContent(state({ lyrics: { lines: [] } }))).toBeNull();
-    });
-
-    it.each([0, -5, Number.NaN, Number.POSITIVE_INFINITY])('reads a length of %s as unknown (0)', (duration) => {
-        expect(readLivePreviewContent(state({ duration }))?.duration).toBe(0);
-    });
-
-    it('has one seed per song', () => {
-        expect(readLivePreviewContent(state({ currentSong: { id: 7, name: 'B' } }))?.seed).toBe('live-preview-7');
     });
 });

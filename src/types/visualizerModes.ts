@@ -38,7 +38,6 @@ export const BUILTIN_VISUALIZER_BACKGROUND_MODES = [
     'monet',
     'nomand',
     'sora',
-    'url',
 ] as const;
 
 export const DEFAULT_VISUALIZER_MODE: VisualizerMode = 'classic';

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildVisualizerTheme } from '@/components/app/presentation/buildVisualizerTheme';
+import { buildVisualizerTheme } from '../../../src/desktopLyrics/desktopVisualizerTheme';
 import type { CSSProperties } from 'react';
 import type { Theme } from '@/types';
 

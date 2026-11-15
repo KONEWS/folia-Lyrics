@@ -27,9 +27,9 @@ folia-Lyrics 基于 [Folia](https://github.com/chthollyphile/folia-major) 的歌
 
 面向 Windows 11 x64。原生亚克力效果需要 Windows 11 22H2（22621）或更新版本，并开启系统透明效果；不满足条件时，界面会使用回退效果。
 
-当前版本是 [0.5.3](https://github.com/KONEWS/folia-Lyrics/releases/tag/desktop-v0.5.3)。从 Releases 下载 `FoliaLyrics-0.5.3-win-x64.exe` 直接运行，再打开播放器播放一首歌。也可以先确认添加发现的音乐软件，再点击首页图标启动播放器。运行界面需要 Microsoft Edge WebView2 Runtime，程序自带 .NET 运行时。
+当前版本是 [0.5.5](https://github.com/KONEWS/folia-Lyrics/releases/tag/desktop-v0.5.5)，独立程序为 `FoliaLyrics-0.5.5-win-x64.exe`。运行程序后，再打开播放器播放一首歌。也可以先确认添加发现的音乐软件，再点击首页图标启动播放器。运行界面需要 Microsoft Edge WebView2 Runtime，程序自带 .NET 运行时。
 
-0.5.2 包含 16 种动态样式，新增町景与雾笺；歌词样式设置左侧为实时画面，右侧为紧凑的静态样式小图和参数。修复关闭译文后字幕残留，以及 HTDemucs 模型已附带却提示缺失的问题。发布页提供独立 EXE 和 SHA-256 校验文件；运行前请退出旧版。
+0.5.3 内置 HarmonyOS Sans SC 字体，更新演示歌词，修正窄窗口换行与快捷参数滑块。0.5.2 包含 16 种动态样式，新增町景与雾笺；歌词样式设置左侧为实时画面，右侧为紧凑的静态样式小图和参数。
 
 窗口没显示歌词时，先确认选中了正在播放的播放器，再尝试重新匹配或加载本地歌词。某些播放器没有公开媒体会话，或没有提供完整进度，这种情况下自动同步会受到限制。
 
@@ -61,7 +61,7 @@ build-windows.cmd
 脚本会按锁文件安装依赖、检查桌面版本和 TypeScript、运行桌面单测、构建界面并发布 Windows 宿主。完成后，程序位于：
 
 ```text
-release/0.5.2/win-x64/FoliaLyrics.exe
+release/0.5.5/win-x64/FoliaLyrics.exe
 ```
 
 输出目录中的版本来自 `native/FoliaLyrics.csproj`，每个版本独立保存；发布目录包含使用说明、许可证和 `SHA256SUMS.txt`。
@@ -72,6 +72,8 @@ release/0.5.2/win-x64/FoliaLyrics.exe
 npm ci --ignore-scripts --no-audit --no-fund
 npm exec vite -- --config vite.desktop.config.ts --open /desktop.html
 ```
+
+本分支已经移除上游的登录、在线音乐播放、云同步、更新、远程控制、扩展系统及 Web/Electron 部署，仅保留桌面程序和歌词匹配所需代码。
 
 浏览器预览可用于调整界面。真实的 Windows 媒体会话、文件对话框和原生亚克力效果需要在 EXE 中体验。
 
@@ -104,6 +106,6 @@ dotnet run --project test/transport-smoke/TransportSmoke.csproj
 
 这是从 [chthollyphile/folia-major](https://github.com/chthollyphile/folia-major) 派生的独立项目。感谢上游提供歌词渲染器和视觉效果；这个分支主要加入 Windows 桌面宿主、外部播放器连接、在线歌词匹配，以及围绕桌面使用的界面和操作。
 
-当前桌面宿主版本为 **0.5.2**，上游源码基线为 **v0.7.22**（`1f6d0f468f5bc81b23a8b40ad7ca96ccd4b1ecbe`）。歌词显示模块已单独同步到上游 2026-11-04 的主线（v0.7.25 之后，`67fbac76f8a839f97b5126d80be20234db9c1f15`），包含町景、雾笺、文字防重叠、RTL 排版、字幕行布局及画质设置。两套版本号独立，本项目不是上游官方发行版。
+当前桌面宿主版本为 **0.5.5**，上游源码基线为 **v0.7.22**（`1f6d0f468f5bc81b23a8b40ad7ca96ccd4b1ecbe`）。歌词显示模块已单独同步到上游 2026-11-04 的主线（v0.7.25 之后，`67fbac76f8a839f97b5126d80be20234db9c1f15`），包含町景、雾笺、文字防重叠、RTL 排版、字幕行布局及画质设置。两套版本号独立，本项目不是上游官方发行版。
 
 项目继续使用 [AGPL-3.0](LICENSE) 许可证。第三方许可证见 [licenses/](licenses/)，在线资源来源见 [ONLINE-SOURCES.md](ONLINE-SOURCES.md)。使用在线歌词、封面和音乐资源时，请遵守对应服务条款与版权要求。

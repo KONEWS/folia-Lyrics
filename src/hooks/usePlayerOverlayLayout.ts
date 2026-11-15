@@ -1,5 +1,5 @@
 import { useCallback, useLayoutEffect, useRef, type RefObject } from 'react';
-import type { FoliumLayoutRect, FoliumPlayerLayout, FoliumPlayerObstacle } from '../mods/folium/contract';
+import type { PlayerLayoutRect, PlayerLayout, PlayerObstacle } from '../types/playerOverlay';
 import { playerOverlayLayout } from '../services/playerOverlayLayout';
 import { isMainAppSurface } from '../utils/appSurface';
 import { EMPTY_PLAYER_INSETS } from '../utils/playerOverlayGeometry';
@@ -9,7 +9,7 @@ import { EMPTY_PLAYER_INSETS } from '../utils/playerOverlayGeometry';
 
 export const usePlayerOverlayRoot = (
     ref: RefObject<HTMLElement | null>, active: boolean,
-    insets: FoliumPlayerLayout['insets'] = EMPTY_PLAYER_INSETS,
+    insets: PlayerLayout['insets'] = EMPTY_PLAYER_INSETS,
 ) => {
     const { top, right, bottom, left } = insets;
     useLayoutEffect(() => {
@@ -20,7 +20,7 @@ export const usePlayerOverlayRoot = (
 
 export const usePlayerOverlayObstacle = (
     key: string,
-    role: FoliumPlayerObstacle['role'],
+    role: PlayerObstacle['role'],
     enabled = true,
 ) => {
     const elementRef = useRef<HTMLElement | null>(null);
@@ -48,8 +48,8 @@ export const usePlayerOverlayObstacle = (
 
 export const usePlayerOverlayReservation = (
     key: string,
-    role: FoliumPlayerObstacle['role'],
-    read: (bounds: FoliumLayoutRect) => FoliumLayoutRect,
+    role: PlayerObstacle['role'],
+    read: (bounds: PlayerLayoutRect) => PlayerLayoutRect,
     enabled = true,
     observedRef?: RefObject<HTMLElement | null>,
 ) => {

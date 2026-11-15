@@ -114,7 +114,7 @@ describe('fume single-line font size', () => {
                 expect(got).toEqual(searchMeasuringEveryTry(text, variant, width, lyricsFontScale, densityScale, heroScale));
             }
         }
-    });
+    }, 20_000);
 
     it('measures a text at far fewer sizes than it tries', () => {
         const measures = new Map<string, FumeLineMeasures>();

@@ -50,8 +50,12 @@ internal sealed partial class MainWindow : Form
     {
         var assets = Path.Combine(DataFiles.Root, "assets"); Directory.CreateDirectory(assets);
         File.WriteAllText(Path.Combine(assets, "index.html"), "<!doctype html><html><body>Isolated video test</body></html>");
-        var environment = await CoreWebView2Environment.CreateAsync(null, Path.Combine(DataFiles.Root, "browser"));
+        var options = CreateBrowserOptions();
+        Check(options.IsCustomCrashReportingEnabled && !options.AllowSingleSignOnUsingOSPrimaryAccount, "crash uploads and OS account sign-in are disabled");
+        var environment = await CoreWebView2Environment.CreateAsync(null, Path.Combine(DataFiles.Root, "browser"), options);
         await web.EnsureCoreWebView2Async(environment);
+        InitializeNetwork(web.CoreWebView2);
+        Check(!web.CoreWebView2.Settings.IsReputationCheckingRequired, "the local-only WebView disables online reputation checks");
         web.CoreWebView2.SetVirtualHostNameToFolderMapping("folia.local", assets, CoreWebView2HostResourceAccessKind.DenyCors);
         web.CoreWebView2.PermissionRequested += (_, args) => args.State = CoreWebView2PermissionState.Deny;
         InitializeVideoLayer(web.CoreWebView2);
@@ -59,6 +63,16 @@ internal sealed partial class MainWindow : Form
         var navigated = new TaskCompletionSource();
         web.NavigationCompleted += (_, _) => navigated.TrySetResult();
         web.Source = new Uri(AppOrigin + "index.html"); await navigated.Task.WaitAsync(TimeSpan.FromSeconds(20));
+        var blocked = new List<string>();
+        web.CoreWebView2.WebResourceRequested += (_, args) =>
+        {
+            if (args.Response?.StatusCode == 403) blocked.Add(args.Request.Uri);
+        };
+        await Evaluate("await fetch('https://network-policy.invalid/request',{mode:'no-cors'}).catch(()=>null);return true;");
+        await Evaluate("const v=document.createElement('video');v.src='https://network-policy.invalid/video.mp4';v.load();await new Promise(ok=>v.onerror=ok);return true;");
+        Check(blocked.Contains("https://network-policy.invalid/request") && blocked.Contains("https://network-policy.invalid/video.mp4"), "the production handler blocks external fetch and media requests before they leave WebView2");
+        foreach (var address in new[] { "https://folia.local.attacker.test/file", "https://folia.local:444/file", "http://folia.local/file", "https://user@folia.local/file", "https://folia-video.local/unserved.mp4", "file:///C:/Windows/win.ini", "wss://example.com/" })
+            Check(!DesktopNetworkPolicy.AllowsWebResource(address), "reject nonlocal resource: " + address);
         DataFiles.TrySave(VideoLayerFileStore.FileName, sample);
         await Command("videoLayerRestore");
         var source = lastMessage.GetProperty("source").GetString()!;

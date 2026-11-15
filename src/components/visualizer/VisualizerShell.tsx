@@ -6,11 +6,10 @@ import { AudioBands, Theme } from '../../types';
 import { resolveThemeFontStack, resolveThemeFontWeight } from '../../utils/fontStacks';
 import { type VisualizerSharedProps } from './definition';
 import { VisualizerBackdropContext, VisualizerBackdropLayers } from './VisualizerBackdrop';
-import { FoliumStageLayerSlot } from '../../mods/folium/registries/stageLayers';
 import { isMainAppSurface } from '../../utils/appSurface';
 import { usePlayerOverlayReservation } from '../../hooks/usePlayerOverlayLayout';
-import type { FoliumLayoutRect } from '../../mods/folium/contract';
-import { useIsPlayerBottomBarHost } from '../floating-player/PlayerBottomBarLayoutContext';
+import type { PlayerLayoutRect } from '../../types/playerOverlay';
+import { useIsPlayerBottomBarHost } from './PlayerBottomBarLayoutContext';
 
 // Shared outer shell for all visualizers.
 // This is where we keep background layering, font injection, and the hover-only back button
@@ -53,11 +52,11 @@ const PLAYER_CHROME_HOTSPOT_SIZE = 120;
 const PLAYER_PANEL_HOTSPOT_WIDTH = 240;
 const PLAYER_PANEL_HOTSPOT_HEIGHT = 200;
 const TOUCH_GUIDE_DISPLAY_MS = 1400;
-const backRevealArea = (bounds: FoliumLayoutRect): FoliumLayoutRect => ({
+const backRevealArea = (bounds: PlayerLayoutRect): PlayerLayoutRect => ({
     left: bounds.left, top: bounds.top,
     width: PLAYER_CHROME_HOTSPOT_SIZE, height: PLAYER_CHROME_HOTSPOT_SIZE,
 });
-const panelRevealArea = (bounds: FoliumLayoutRect): FoliumLayoutRect => ({
+const panelRevealArea = (bounds: PlayerLayoutRect): PlayerLayoutRect => ({
     left: bounds.left + bounds.width - PLAYER_PANEL_HOTSPOT_WIDTH,
     top: bounds.top + bounds.height - PLAYER_PANEL_HOTSPOT_HEIGHT,
     width: PLAYER_PANEL_HOTSPOT_WIDTH, height: PLAYER_PANEL_HOTSPOT_HEIGHT,
@@ -96,7 +95,6 @@ const VisualizerShell = forwardRef<HTMLDivElement, VisualizerShellProps>(({
     const resolvedIsPanelOpen = sharedProps?.isPanelOpen ?? false;
     const onPlayerPanelGuideHotspotChange = sharedProps?.onPlayerPanelGuideHotspotChange;
     const isBackButtonVisible = sharedProps?.alwaysShowBackButton || showBackButton;
-    const showStageLayers = !isInBackdrop && !sharedProps?.isPreviewMode && !resolvedStaticMode;
     // Static visuals still have live native controls and an app.overlay layer.
     const publishLayout = isPlayerPage && !sharedProps?.isPreviewMode && isMainAppSurface;
     const hasBackAction = Boolean(resolvedOnBack);
@@ -256,30 +254,11 @@ const VisualizerShell = forwardRef<HTMLDivElement, VisualizerShellProps>(({
                 />
             )}
 
-            {/* Folium stage layers exist on the real player page only, never in previews. Inside a
-                backdrop it draws them, so they stay when the style changes. */}
-            {showStageLayers && (
-                <FoliumStageLayerSlot
-                    slot="player.stage.back"
-                    theme={theme}
-                    isDaylight={resolvedIsDaylight}
-                    paused={resolvedPaused}
-                />
-            )}
 
             {/* Without a box of its own, so the style lays out as before; it gives the style back the
                 pointer that the shell's box lets through. */}
             {isInBackdrop ? <div style={{ display: 'contents', pointerEvents: 'auto' }}>{children}</div> : children}
 
-            {showStageLayers && (
-                <FoliumStageLayerSlot
-                    slot="player.stage.front"
-                    theme={theme}
-                    isDaylight={resolvedIsDaylight}
-                    paused={resolvedPaused}
-                    className="absolute inset-0 pointer-events-none z-20"
-                />
-            )}
         </div>
     );
 });

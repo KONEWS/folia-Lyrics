@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 // build/fetchModels.mjs
 // Puts the model weights in the repo's models/ - where a dev checkout reads them and where
-// electron-builder's extraResources takes them into the installer - and refuses to hand over a file
+// the desktop asset plugin takes them into the native package - and refuses to hand over a file
 // it cannot vouch for. Run by hand (`npm run models:fetch`) and by build/beforePack.cjs
 // (prepareBundledModels).
 //

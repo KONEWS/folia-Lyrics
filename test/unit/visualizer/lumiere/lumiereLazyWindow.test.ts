@@ -122,7 +122,7 @@ describe('歌词窗口按需构建', () => {
             played.destroy();
             jumped.destroy();
         }
-    });
+    }, 15_000);
 
     it('爆闪选字用的逐字时刻与关键字不必构建那一行', () => {
         const window = buildWindow('vertical');

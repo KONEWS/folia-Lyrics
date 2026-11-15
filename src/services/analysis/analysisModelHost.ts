@@ -12,21 +12,14 @@ export interface AnalysisModelHost {
     readGpuWeights: (model: AnalysisGpuModel) => Promise<AnalysisGpuWeights | null>;
 }
 
-const electronHost: AnalysisModelHost = {
-    getPresent: async () => typeof window !== 'undefined' ? await window.electron?.getAutomixModelsPresent?.() ?? null : null,
-    hasGpuWeights: model => typeof window !== 'undefined' && (model === 'htdemucs'
-        ? typeof window.electron?.getHtdemucsGpuWeights === 'function'
-        : typeof window.electron?.getBeatThisGpuWeights === 'function'),
-    readGpuWeights: async model => {
-        if (typeof window === 'undefined') return null;
-        return model === 'htdemucs'
-            ? await window.electron?.getHtdemucsGpuWeights?.() ?? null
-            : await window.electron?.getBeatThisGpuWeights?.(model) ?? null;
-    },
+const unavailableHost: AnalysisModelHost = {
+    getPresent: async () => null,
+    hasGpuWeights: () => false,
+    readGpuWeights: async () => null,
 };
 let installedHost: AnalysisModelHost | null = null;
 
 export const setAnalysisModelHost = (host: AnalysisModelHost | null): void => { installedHost = host; };
-export const getAnalysisModelHost = (): AnalysisModelHost => installedHost ?? electronHost;
+export const getAnalysisModelHost = (): AnalysisModelHost => installedHost ?? unavailableHost;
 export const hasAnalysisGpuWeights = (model: AnalysisGpuModel): boolean => getAnalysisModelHost().hasGpuWeights(model);
 export const readAnalysisGpuWeights = (model: AnalysisGpuModel): Promise<AnalysisGpuWeights | null> => getAnalysisModelHost().readGpuWeights(model);

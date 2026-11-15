@@ -9,7 +9,8 @@ const TOKENS = ['--glass-text', '--glass-muted', '--glass-line', '--glass-shadow
   '--desktop-control-height', '--desktop-control-border', '--desktop-control-selected-border',
   '--desktop-surface-radius', '--theme-primary-light', '--theme-primary', '--theme-primary-dark', '--theme-accent',
   '--theme-bg', '--theme-text', '--theme-muted', '--theme-glass-border', '--theme-glass-highlight', '--theme-active',
-  '--theme-active-border'] as const;
+  '--theme-active-border', '--st-dur-fast', '--st-dur-move', '--st-dur-unfold', '--st-dur-show',
+  '--st-ease-out', '--st-ease-standard', '--st-ease-in-out'] as const;
 
 export function useDesktopVisualDialogSkin(panel: RefObject<HTMLElement | null>, theme: Theme, closeLabel: string) {
   useLayoutEffect(() => {
@@ -22,8 +23,9 @@ export function useDesktopVisualDialogSkin(panel: RefObject<HTMLElement | null>,
     // Copy the same desktop tokens across portals; appearance classes change only at discrete state transitions.
     const syncSkin = () => {
       const computed = getComputedStyle(root);
+      const controls = getComputedStyle(panel.current ?? root);
       TOKENS.forEach(token => {
-        const value = computed.getPropertyValue(token);
+        const value = (token.startsWith('--st-') ? controls : computed).getPropertyValue(token);
         if (body.style.getPropertyValue(token) !== value) body.style.setProperty(token, value);
       });
       body.classList.add('desktop-visual-dialogs');
@@ -68,6 +70,7 @@ export function useDesktopVisualDialogSkin(panel: RefObject<HTMLElement | null>,
     observer.observe(body, { childList: true });
     const appearanceObserver = new MutationObserver(syncSkin);
     appearanceObserver.observe(root, { attributes: true, attributeFilter: ['class', 'style'] });
+    if (panel.current) appearanceObserver.observe(panel.current, { attributes: true, attributeFilter: ['style'] });
     return () => {
       observer.disconnect(); appearanceObserver.disconnect();
       previousClasses.forEach(([value, present]) => body.classList.toggle(value, present));

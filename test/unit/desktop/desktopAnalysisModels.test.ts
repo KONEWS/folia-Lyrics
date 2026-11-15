@@ -89,15 +89,15 @@ describe('desktop model availability', () => {
         expect(await createDesktopAnalysisModelHost(request).readGpuWeights('beat_this')).toBeNull();
     });
 
-    it('keeps the original Electron bridge as the default host', async () => {
+    it('requires the desktop host to supply bundled models', async () => {
         const weights = { weights: new Uint8Array(4), manifest: {} };
         const getBeatThisGpuWeights = vi.fn(async () => weights);
         vi.stubGlobal('window', { electron: { getBeatThisGpuWeights, getAutomixModelsPresent: async () => ({ beat_this: true }) } });
-        expect(hasAnalysisGpuWeights('beat_this')).toBe(true);
+        expect(hasAnalysisGpuWeights('beat_this')).toBe(false);
         expect(hasAnalysisGpuWeights('htdemucs')).toBe(false);
-        expect(await readAnalysisGpuWeights('beat_this')).toBe(weights);
-        expect(getBeatThisGpuWeights).toHaveBeenCalledWith('beat_this');
-        expect(await getAnalysisModelHost().getPresent()).toEqual({ beat_this: true });
+        expect(await readAnalysisGpuWeights('beat_this')).toBeNull();
+        expect(getBeatThisGpuWeights).not.toHaveBeenCalled();
+        expect(await getAnalysisModelHost().getPresent()).toBeNull();
     });
 
     it('ignores a late presence answer after switching hosts', async () => {

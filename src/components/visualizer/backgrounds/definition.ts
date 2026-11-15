@@ -5,7 +5,6 @@ import type {
     AudioBands,
     MonetBackgroundImage,
     Theme,
-    UrlBackgroundItem,
     VisualizerBackgroundMode,
 } from '../../../types';
 import type { VisualizerModeCommand } from '../definition';
@@ -36,10 +35,6 @@ export interface VisualizerBackgroundConfig {
     customImage?: MonetBackgroundImage | null;
     // A background's tuning lies here under the background's id, as a BackgroundTuningSlot: its
     // tuning.ts adds that member (declare module), so this file lists no background's tuning.
-    url?: {
-        items?: UrlBackgroundItem[];
-        selectedId?: string | null;
-    };
 }
 
 export interface VisualizerBackgroundActions {
@@ -57,12 +52,6 @@ export interface VisualizerBackgroundActions {
     };
     // The actions of a background's tuning lie here under the background's id, as a
     // BackgroundTuningActionSlot: its tuning.ts adds that member.
-    url?: {
-        onAdd?: (item: UrlBackgroundItem) => void;
-        onUpdate?: (id: string, patch: Partial<Omit<UrlBackgroundItem, 'id'>>) => void;
-        onDelete?: (id: string) => void;
-        onSelect?: (id: string | null) => void;
-    };
 }
 
 export interface VisualizerBackgroundRenderProps {

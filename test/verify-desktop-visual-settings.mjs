@@ -172,7 +172,7 @@ export async function verifyDesktopVisualSettings(page, song, output) {
     assert.equal(await backgroundDialog(page).getByRole('tablist').count(), 0); assert.equal(await visualDialog(page).count(), 0);
     assert.equal(await enable.getAttribute('aria-checked'), 'false'); await enable.click(); await waitVisual(page, { 'background.transparent': false });
     const backgroundBefore = await readVisual(page);
-    for (const value of ['common', 'latent', 'monet', 'nomand', 'sora', 'url']) {
+    for (const value of ['common', 'latent', 'monet', 'nomand', 'sora']) {
       await selectDesktopOption(page, '背景类型', { value }); await waitVisual(page, { 'background.mode': value });
       const card = bg.locator(`[data-background-settings="${value}"]`); await card.waitFor();
       assert(await card.locator('input,button').count() > 0, `${value}: the original background registry card has actual controls`);

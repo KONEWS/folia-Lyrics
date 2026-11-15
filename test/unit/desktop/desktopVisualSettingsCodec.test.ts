@@ -110,26 +110,35 @@ describe('desktop appearance codec', () => {
       expect(storage.getItem('custom_dual_theme')).toBeNull();
     }
   });
+  it.each(['json', 'code'] as const)('falls back from imported webpage backgrounds and excludes remote assets through %s', format => {
+    const options = makeOptions();
+    expect(importDesktopVisualConfig(encode(format, { visualizerBackgroundMode: 'url', urlBackgroundList: [{ id: 'remote', url: 'https://example.com/' }] }), options).ok).toBe(true);
+    expect(useVisualizerSettingsStore.getState().visualizerBackgroundMode).toBe('common');
+    const exported = decompressConfig(exportDesktopVisualConfig(format, options));
+    expect(exported).toMatchObject({ visualizerBackgroundMode: 'common' });
+    expect(exported).not.toHaveProperty('urlBackgroundList');
+  });
+
   it.each([true, false])('keeps standalone desktop background enabled=%s in the original JSON and shortcode codec', enabled => {
     expect(decompressConfig(compressConfig({ desktopBackgroundEnabled: enabled }))).toEqual({ desktopBackgroundEnabled: enabled });
     expect(decompressConfig(JSON.stringify({ desktopBackgroundEnabled: enabled }))).toEqual({ desktopBackgroundEnabled: enabled });
     expect(decompressConfig(JSON.stringify({ dbe: enabled }))).toEqual({ desktopBackgroundEnabled: enabled });
   });
 
-  it.each(['json', 'code'] as const)('clears saved fonts, empty fallbacks, weights, background mode and selected URL through %s', format => {
+  it.each(['json', 'code'] as const)('clears saved fonts, empty fallbacks, weights, background mode through %s', format => {
     const v = useVisualizerSettingsStore.getState(), t = useTypographySettingsStore.getState();
-    v.handleSetVisualizerBackgroundMode('latent'); v.handleSetUrlBackgroundSelectedId('old-image');
+    v.handleSetVisualizerBackgroundMode('latent');
     t.handleSetLyricsCustomFont({ source: 'system', family: 'Old Lyrics Font', label: 'Old Lyrics Font' });
     t.handleSetLyricsFontFallbackFamilies(['Fallback']); t.handleSetLyricsFontWeight(700);
     t.handleSetSubtitleFontFamily('Old Subtitle Font'); t.handleSetSubtitleFontFallbackFamilies(['Subtitle Fallback']); t.handleSetSubtitleFontWeight(600);
     const options = makeOptions();
     expect(importDesktopVisualConfig(encode(format, { lyricsCustomFontFamily: null, lyricsFontFallbackFamilies: [], lyricsFontWeight: null,
-      subtitleFontFamily: null, subtitleFontFallbackFamilies: [], subtitleFontWeight: null, visualizerBackgroundMode: null, urlBackgroundSelectedId: null,
+      subtitleFontFamily: null, subtitleFontFallbackFamilies: [], subtitleFontWeight: null, visualizerBackgroundMode: null,
       desktopBackgroundEnabled: false, staticMode: false }), options)).toEqual({ ok: true });
     expect(useTypographySettingsStore.getState()).toMatchObject({ lyricsCustomFont: null, lyricsFontFallbackFamilies: [], lyricsFontWeight: null,
       subtitleFontFamily: null, subtitleFontFallbackFamilies: [], subtitleFontWeight: null });
-    expect(useVisualizerSettingsStore.getState()).toMatchObject({ visualizerBackgroundMode: null, urlBackgroundSelectedId: null });
-    expect(storage.getItem('visualizer_background_mode')).toBeNull(); expect(storage.getItem('url_background_selected_id')).toBeNull();
+    expect(useVisualizerSettingsStore.getState()).toMatchObject({ visualizerBackgroundMode: null });
+    expect(storage.getItem('visualizer_background_mode')).toBeNull();
     expect(storage.getItem('lyrics_font_weight')).toBeNull(); expect(storage.getItem('subtitle_font_weight')).toBeNull();
     expect(options.setBackgroundEnabled).toHaveBeenCalledWith(false);
   });

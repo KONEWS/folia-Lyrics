@@ -19,8 +19,11 @@ export default function DesktopSettingsSearch({ onNavigate }: { onNavigate: (ent
     const viewport = list.current, option = viewport?.querySelector<HTMLElement>(`[data-search-option="${next}"]`);
     if (viewport && option) {
       const bounds = viewport.getBoundingClientRect(), item = option.getBoundingClientRect();
-      if (item.top < bounds.top) viewport.scrollTop += item.top - bounds.top;
-      else if (item.bottom > bounds.bottom) viewport.scrollTop += item.bottom - bounds.bottom;
+      const scaleY = viewport.offsetHeight > 0 ? bounds.height / viewport.offsetHeight : 1;
+      const scale = scaleY || 1;
+      const top = bounds.top + viewport.clientTop * scale, bottom = top + viewport.clientHeight * scale;
+      if (item.top < top) viewport.scrollTop += (item.top - top) / scale;
+      else if (item.bottom > bottom) viewport.scrollTop += (item.bottom - bottom) / scale;
     }
   };
   const keyboard = (event: KeyboardEvent<HTMLInputElement>) => {

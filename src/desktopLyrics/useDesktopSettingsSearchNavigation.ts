@@ -1,6 +1,6 @@
 import { useLayoutEffect, useState, type RefObject } from 'react';
 import i18n from '../i18n/config';
-import { normalizeSearchText } from '../components/command-palette/search/normalize';
+import { normalizeSearchText } from '../utils/settingsSearchText';
 import type { DesktopSettingsSearchRequest } from '../types/desktopSettingsSearch';
 import { revealDesktopSettingsControl } from './useDesktopSettingsNavigation';
 

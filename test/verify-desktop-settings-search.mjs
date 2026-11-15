@@ -74,10 +74,19 @@ try {
   };
   const index = await page.evaluate(async () => (await import('/src/desktopLyrics/desktopSettingsSearchIndex.ts')).buildDesktopSettingsSearchIndex());
   const entries = new Map(index.map(entry => [entry.key, entry]));
-  assert.equal(new Set(index.filter(entry => entry.mode).map(entry => entry.mode)).size, 15);
-  assert.equal(new Set(index.filter(entry => entry.background).map(entry => entry.background)).size, 6);
+  const builtins = await page.evaluate(async () => {
+    const modes = await import('/src/types/visualizerModes.ts');
+    return { styles: [...modes.BUILTIN_VISUALIZER_MODES], backgrounds: [...modes.BUILTIN_VISUALIZER_BACKGROUND_MODES] };
+  });
+  assert.deepEqual([...new Set(index.filter(entry => entry.mode).map(entry => entry.mode))].sort(), builtins.styles.sort());
+  assert.deepEqual([...new Set(index.filter(entry => entry.background).map(entry => entry.background))].sort(), builtins.backgrounds.sort());
   const open = async () => {
-    if (!await search().count()) { await page.locator('[data-settings-trigger]').click(); await search().waitFor(); }
+    if (!await search().count()) {
+      const studio = page.locator('[data-desktop-visual-studio]');
+      if (await studio.count()) await studio.getByRole('button', { name: '搜索全部设置', exact: true }).click();
+      else await page.locator('[data-settings-trigger]').click();
+      await search().waitFor();
+    }
   };
   const choose = async key => {
     const entry = entries.get(key); assert(entry, `indexed destination ${key}`);
@@ -127,12 +136,17 @@ try {
     return sample;
   };
   const attempt = async (name, action) => {
+    if (process.env.FOLIA_SEARCH_CHECK && !new RegExp(process.env.FOLIA_SEARCH_CHECK).test(name)) return;
     stage = name;
     try { await action(); checks.push(name); }
     catch (error) {
       const evidence = `${name.replace(/[^a-zA-Z0-9_-]+/g, '-')}.png`;
       await page.screenshot({ path: `${output}/${evidence}` }).catch(() => {});
-      failures.push({ name, error: String(error), evidence });
+      const focus = await page.evaluate(() => ({ active: document.activeElement?.outerHTML.slice(0, 1000),
+        targets: Array.from(document.querySelectorAll('.desktop-settings-search-target')).map(element => element.outerHTML.slice(0, 1000)),
+        studios: Array.from(document.querySelectorAll('[data-desktop-visual-studio]')).map(element => ({ inert: element.closest('[inert]')?.outerHTML.slice(0, 300), header: element.querySelector('header')?.outerHTML.slice(0, 2200) })),
+        options: document.querySelectorAll('[data-desktop-visual-settings]').length }));
+      failures.push({ name, error: String(error), evidence, focus });
       console.error(`FAIL ${name}: ${String(error).split('\n')[0]}`);
       await page.keyboard.press('Escape').catch(() => {});
       await page.keyboard.press('Escape').catch(() => {});
@@ -169,7 +183,7 @@ try {
     ['visualizer.desktopVisual.previewTitle', { text: '样式预览' }],
     ['visualizer.options.randomPool', { aria: '每首歌随机歌词动画', hint: '每首歌随机歌词动画' }],
     ['visualizer.options.randomVisualizerReroll', { aria: '每首歌随机歌词动画', hint: '每首歌随机歌词动画' }],
-    ['background.options.videoLayerUrl', { aria: '在歌词后方显示视频', hint: '在歌词后方显示视频' }],
+    ['background.options.videoLayerPickFile', { aria: '在歌词后方显示视频', hint: '在歌词后方显示视频' }],
     ['background.options.videoLayerClearFile', { aria: '在歌词后方显示视频', hint: '在歌词后方显示视频' }],
     ['common.options.smartBeatCached', { text: '只用已分析' }],
     ['common.desktopVisual.selectBeatAudio', { text: '选择本曲音频并分析' }],
@@ -184,8 +198,10 @@ try {
     ['classic', 'classicWordRotation'], ['cadenza'], ['partita', 'partitaGuideLines'], ['fume', 'fumeCameraSpeed'],
     ['claddagh', 'claddaghRadiusScale'], ['cappella', 'cappellaAvatarSource'], ['tilt', 'tiltSplitProbability'],
     ['diorama', 'dioramaCameraSpeed'], ['pendolo', 'pendoloWheelCenterX'], ['monet', 'monetFontScale'],
-    ['sonnet', 'sonnetTextureResolution'], ['tempera', 'temperaTextureResolution'], ['lumiere', 'lumiereLightIntensity'], ['hanabi', 'hanabiSparkAmount'], ['still'],
+    ['sonnet', 'sonnetTextureResolution'], ['tempera', 'temperaTextureResolution'], ['lumiere', 'lumiereLightIntensity'], ['hanabi', 'hanabiSparkAmount'],
+    ['machi', 'machiCameraSection'], ['nebbia', 'nebbiaStrokeWidth'], ['still'],
   ];
+  assert.deepEqual(modes.map(([mode]) => mode).sort(), builtins.styles.sort());
   for (const [mode, parameter] of modes) await attempt(`mode-${mode}`, async () => {
     const key = parameter ? `visualizer.${mode}.options.${parameter}` : `visualizer.${mode}`;
     await landing(key, parameter ? { mode } : {});
@@ -229,7 +245,7 @@ try {
   for (const [background, parameter, expected] of [
     ['common', 'previewCoverBackgroundOpacity', { hint: '添加封面色彩' }], ['monet', 'monetBackgroundBlur', { type: 'range' }],
     ['nomand', 'nomandBackgroundFlutedGlassBlur', { hint: '纹理玻璃' }],
-    ['latent', 'latentDitheringSize', { type: 'range' }], ['url', 'urlBackgroundAdd', { text: '添加' }], ['sora', 'soraBlank', { text: '空白' }],
+    ['latent', 'latentDitheringSize', { type: 'range' }], ['sora', 'soraBlank', { text: '空白' }],
   ]) await attempt(`background-${background}`, async () => {
     await landing(`background.${background}.options.${parameter}`, { background, ...expected });
     assert.equal((await readVisual(page)).background.mode, 'common');
@@ -237,7 +253,6 @@ try {
   await attempt('hidden-monet-custom-color', () => landing('background.monet.options.monetBackgroundWashCustomColor', { background: 'monet', hint: '水洗色彩' }));
   await attempt('hidden-monet-layout-offset', () => landing('background.monet.options.monetHalfPaneOffsetX', { background: 'monet', hint: '布局模式' }));
   await attempt('hidden-monet-drift-strength', () => landing('background.monet.options.monetBackgroundDriftStrength', { background: 'monet', hint: '缓慢漂移' }));
-  await attempt('hidden-url-note', () => landing('background.url.options.urlBackgroundNotePlaceholder', { background: 'url', hint: '添加' }));
   await attempt('latent-context-and-breadcrumb', async () => {
     await open(); await search().fill('基础速度');
     const dithering = results().locator('[data-search-key="background.latent.Dithering.latentBaseSpeed"]');

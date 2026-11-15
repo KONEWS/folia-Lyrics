@@ -1,6 +1,6 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { animate, motion, useMotionValue, type MotionValue } from 'framer-motion';
-import { progressSince } from '../../../services/automix/handoffProgress';
+import { progressSince } from '../styleTransition/handoffProgress';
 import {
     dropLeavingMonetPortraitLayers,
     endMonetPortraitHandoff,

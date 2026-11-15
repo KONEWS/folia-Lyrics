@@ -38,7 +38,7 @@ export async function closeVisualSettings(page) {
 export async function openBackgroundSettings(page) {
   if (await visualDialog(page).count()) await closeVisualSettings(page);
   if (!await backgroundDialog(page).count()) {
-    await page.getByRole('button', { name: '背景设置', exact: true }).click();
+    if (!await page.locator('[data-desktop-visual-studio]').count()) await page.locator('[data-background-settings-trigger]').click();
     await page.locator('[data-desktop-visual-studio]').getByRole('button', { name: '桌面选项', exact: true }).click();
     await backgroundDialog(page).waitFor();
   }

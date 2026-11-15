@@ -1,16 +1,16 @@
-import type { FoliumLayoutRect, FoliumPlayerLayout, FoliumPlayerObstacle } from '../mods/folium/contract';
+import type { PlayerLayoutRect, PlayerLayout, PlayerObstacle } from '../types/playerOverlay';
 
 // src/utils/playerOverlayGeometry.ts
 // Public layout snapshots contain CSS pixels, clipped to the player's viewport bounds.
 
 /** Native instance identity stays inside the host, even when two controls share a public role. */
-export interface NativePlayerObstacle extends FoliumPlayerObstacle {
+export interface NativePlayerObstacle extends PlayerObstacle {
     readonly key: string;
 }
 
-export const EMPTY_PLAYER_INSETS: FoliumPlayerLayout['insets'] = Object.freeze({ top: 0, right: 0, bottom: 0, left: 0 });
+export const EMPTY_PLAYER_INSETS: PlayerLayout['insets'] = Object.freeze({ top: 0, right: 0, bottom: 0, left: 0 });
 
-export const clipPlayerLayoutRect = (rect: FoliumLayoutRect, bounds: FoliumLayoutRect): FoliumLayoutRect | null => {
+export const clipPlayerLayoutRect = (rect: PlayerLayoutRect, bounds: PlayerLayoutRect): PlayerLayoutRect | null => {
     if (![rect.left, rect.top, rect.width, rect.height].every(Number.isFinite)) return null;
     const left = Math.max(bounds.left, rect.left);
     const top = Math.max(bounds.top, rect.top);
@@ -21,11 +21,11 @@ export const clipPlayerLayoutRect = (rect: FoliumLayoutRect, bounds: FoliumLayou
 };
 
 export const freezePlayerLayout = (
-    bounds: FoliumLayoutRect,
+    bounds: PlayerLayoutRect,
     obstacles: readonly NativePlayerObstacle[],
-    insets: FoliumPlayerLayout['insets'] = EMPTY_PLAYER_INSETS,
-): FoliumPlayerLayout => {
-    const byKey = new Map<string, FoliumPlayerObstacle>();
+    insets: PlayerLayout['insets'] = EMPTY_PLAYER_INSETS,
+): PlayerLayout => {
+    const byKey = new Map<string, PlayerObstacle>();
     for (const obstacle of obstacles) {
         const rect = clipPlayerLayoutRect(obstacle.rect, bounds);
         if (!rect) continue;
@@ -47,10 +47,10 @@ export const freezePlayerLayout = (
     });
 };
 
-export const samePlayerLayout = (left: FoliumPlayerLayout | null, right: FoliumPlayerLayout | null): boolean => {
+export const samePlayerLayout = (left: PlayerLayout | null, right: PlayerLayout | null): boolean => {
     if (left === right) return true;
     if (!left || !right || left.obstacles.length !== right.obstacles.length) return false;
-    const sameRect = (a: FoliumLayoutRect, b: FoliumLayoutRect) => (
+    const sameRect = (a: PlayerLayoutRect, b: PlayerLayoutRect) => (
         a.left === b.left && a.top === b.top && a.width === b.width && a.height === b.height
     );
     return sameRect(left.bounds, right.bounds)

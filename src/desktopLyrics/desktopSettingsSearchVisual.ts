@@ -79,7 +79,6 @@ export const DESKTOP_BACKGROUND_SEARCH_CATALOG: BackgroundCatalog[] = [
     latentDisplayMode latentColorSource latentDynamicOnlyInPlayer latentEnhancedBeatResponse nomandBackgroundOverlay
     nomandBackgroundOverlayOpacity latentDitheringGroup latentDitheringSize
     latentDitheringOpacity latentMeshGroup latentMeshDistortion latentMeshSwirl`) },
-  { background: 'url', labelKey: 'options.visualizerBackgroundModeUrl', keys: options(`urlBackgroundSettings urlBackgroundAdd urlBackgroundNotePlaceholder`) },
   { background: 'sora', labelKey: 'options.visualizerBackgroundModeSora', keys: options(`soraBackgroundSettings soraBlank`) },
 ];
 
@@ -99,7 +98,6 @@ export function desktopVisualSearchCondition(labelKey: string, mode?: Visualizer
   if (background === 'monet' && labelKey === 'options.monetBackgroundWashCustomColor') return { fallbackKey: 'options.monetBackgroundWashColorMode' };
   if (background === 'monet' && labelKey === 'options.monetHalfPaneOffsetX') return { fallbackKey: 'options.monetBackgroundLayout' };
   if (background === 'monet' && labelKey === 'options.monetBackgroundDriftStrength') return { fallbackKey: 'options.monetBackgroundDriftEnabled' };
-  if (background === 'url' && labelKey === 'options.urlBackgroundNotePlaceholder') return { fallbackKey: 'options.urlBackgroundAdd' };
   if (background === 'nomand') {
     for (const effect of ['FlutedGlass', 'PaperTexture', 'HalftoneDots', 'LensDistortion'])
       if (labelKey.startsWith(`options.nomandBackground${effect}`)) return { fallbackKey: `options.nomandBackgroundEffect${effect}` };

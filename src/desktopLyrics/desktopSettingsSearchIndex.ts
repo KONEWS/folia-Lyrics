@@ -1,5 +1,5 @@
 import zhCN from '../i18n/locales/zh-CN';
-import { normalizeSearchText, splitWords } from '../components/command-palette/search/normalize';
+import { normalizeSearchText, splitWords } from '../utils/settingsSearchText';
 import type { DesktopSettingsSearchEntry } from '../types/desktopSettingsSearch';
 import { buildDesktopMainSearchEntries, DESKTOP_COMMON_SEARCH_KEYS, DESKTOP_SUBTITLE_SEARCH_KEYS } from './desktopSettingsSearchMain';
 import { DESKTOP_BACKGROUND_SEARCH_CATALOG, DESKTOP_MODE_SEARCH_CATALOG, desktopVisualSearchCondition } from './desktopSettingsSearchVisual';

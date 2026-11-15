@@ -2,6 +2,8 @@
 
 本文件记录 0.2.0 的实现依据。第三方服务可能随时调整，并非永久可用承诺。
 
+2026-11-15 源码清理后，四个运行时来源统一由 `native/Online/OnlineLyrics.cs` 调用同目录的 provider，HTTP 传输只在 `OnlineHttp.cs`。上游平台客户端依赖和联网 provider 已删除，下列上游路径与依赖名称仅作历史实现依据；独立保留的纯 QRC 解码器仍位于 `src/utils/lyrics/providers/qrcDecrypt.ts`。
+
 | 来源 | 入口 | 本次观察 |
 | --- | --- | --- |
 | QQ 音乐 | u.y.qq.com/cgi-bin/musicu.fcg；DoSearchForQQMusicLite / GetPlayLyricInfo | Reborn 搜索成功；QRC、译文、罗马音和逐行回退返回；原版 Folia 解码和逐字解析通过 |

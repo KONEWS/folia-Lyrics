@@ -10,6 +10,8 @@
     <Compile Include="../../native/VideoLayerFileStore.cs" Link="VideoLayerFileStore.cs"/>
     <Compile Include="../../native/VideoLayerReadStream.cs" Link="VideoLayerReadStream.cs"/>
     <Compile Include="../../native/AtomicJsonFile.cs" Link="AtomicJsonFile.cs"/>
+    <Compile Include="../../native/DesktopNetworkPolicy.cs" Link="DesktopNetworkPolicy.cs"/>
+    <Compile Include="../../native/WindowNetwork.cs" Link="WindowNetwork.cs"/>
   </ItemGroup>
   <Target Name="RemoveUnusedWpfWebView" BeforeTargets="ResolveAssemblyReferences"><ItemGroup>
     <Reference Remove="@(Reference)" Condition="$([System.String]::Copy('%(Reference.Identity)').EndsWith('Microsoft.Web.WebView2.Wpf.dll'))"/>

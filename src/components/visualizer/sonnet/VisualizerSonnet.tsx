@@ -11,7 +11,6 @@ import { useVisualizerPixiHost } from '../pixi/pixiRuntimeHost';
 import { useLyricRenderQuality } from '../renderQuality/useLyricRenderQuality';
 import { useVisualizerRuntime } from '../runtime';
 import { useVisualizerSongCommit } from '../songHandover';
-import { useFoliumTunings } from '@/mods/folium/registries/tunings';
 import { useVisualizerSettingsStore } from '../../../stores/useVisualizerSettingsStore';
 import { smartBeatActive } from '../../../services/beatFx/beatEffects';
 import VisualizerShell from '../VisualizerShell';
@@ -58,10 +57,6 @@ const VisualizerSonnet: React.FC<VisualizerSharedProps> = (props) => {
     } = props;
     const transparentBackground = background?.transparent ?? false;
     const { t } = useTranslation();
-    // Mod-driven per-frame multipliers (K3Panel etc.). Read once per render; the
-    // runtime hot-swaps them via setModulation so the Pixi context is never rebuilt.
-    // Keys are the Folium tunables declared in ./entry.tsx.
-    const modulation = useFoliumTunings('sonnet');
     const hostRef = useRef<HTMLDivElement>(null);
     const pausedRef = useRef(paused);
     pausedRef.current = paused;
@@ -182,7 +177,6 @@ const VisualizerSonnet: React.FC<VisualizerSharedProps> = (props) => {
                 songArtist: metadata.artist,
                 songAlbum: metadata.album,
                 signal,
-                modulation,
             });
             runtime.setSongMetadata(latestSongMetadataRef.current);
             // The tuning may have moved on while Pixi was importing or initializing.
@@ -218,9 +212,6 @@ const VisualizerSonnet: React.FC<VisualizerSharedProps> = (props) => {
         runtimeRef.current?.setSmartBeatEnabled(smartBeatEnabled);
     }, [smartBeatEnabled]);
 
-    useEffect(() => {
-        runtimeRef.current?.setModulation(modulation);
-    }, [modulation]);
 
     useEffect(() => currentTime.on('change', () => {
         if (paused) runtimeRef.current?.renderOnce();

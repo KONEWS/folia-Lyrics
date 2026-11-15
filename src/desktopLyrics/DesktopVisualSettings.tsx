@@ -27,6 +27,7 @@ import DesktopStylePreview from './visualFeatures/DesktopStylePreview';
 import DesktopVideoSettings from './visualFeatures/video/DesktopVideoSettings';
 import { DesktopBeatEffects, DesktopBeatSettings } from './visualFeatures/beat/DesktopBeatSettings';
 import { Tabs } from '../components/modal/settings/kit';
+import { kitMotionTokens, useKitReducedMotion } from '../components/modal/settings/kit/motion';
 import './visualFeatures/desktopVisualOptions.css';
 
 // src/desktopLyrics/DesktopVisualSettings.tsx — one desktop settings surface, with the live original renderer behind it.
@@ -40,14 +41,38 @@ export type DesktopVisualSettingsProps = { livePreviewSource?: LivePreviewSource
   searchNavigation?: DesktopSettingsSearchRequest; onSearchNavigate: (entry: DesktopSettingsSearchEntry) => void; onClearSearchNavigation: () => void };
 
 export default function DesktopVisualSettings(props: DesktopVisualSettingsProps) {
-  const [optionsOpen, setOptionsOpen] = useState(false);
+  const [optionsSection, setOptionsSection] = useState<DesktopVisualSection | null>(props.searchNavigation ? props.initialSection ?? 'common' : null);
   const optionsOpener = useRef<HTMLElement | null>(null);
-  return <SettingsKitThemeContext.Provider value={{ isDaylight: false, theme: props.model.mergedTheme }}><DesktopVisualLanguage><DesktopVisualStudio {...props} onOpenOptions={() => { optionsOpener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; setOptionsOpen(true); }}/>{optionsOpen ? <UnifiedVisualControlsContext.Provider value><DesktopVisualSettingsSurface {...props} initialSection={props.initialSection === 'background' ? 'background' : 'common'} returnFocus={optionsOpener.current} onClose={() => setOptionsOpen(false)}/></UnifiedVisualControlsContext.Provider> : null}</DesktopVisualLanguage></SettingsKitThemeContext.Provider>;
+  // Search targets belong to the complete desktop options, not the studio's smaller preview controls.
+  const navigateSearch = (entry: DesktopSettingsSearchEntry) => {
+    if (entry.section !== 'main') setOptionsSection(entry.section);
+    props.onSearchNavigate(entry);
+  };
+  const openOptions = () => {
+    optionsOpener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setOptionsSection(props.initialSection === 'background' ? 'background' : 'common');
+  };
+  const closeOptions = () => {
+    props.onClearSearchNavigation();
+    setOptionsSection(null);
+  };
+  return <SettingsKitThemeContext.Provider value={{ isDaylight: false, theme: props.model.mergedTheme }}>
+    <DesktopVisualLanguage>
+      <div inert={optionsSection !== null}>
+        <DesktopVisualStudio {...props} searchNavigation={undefined} onSearchNavigate={navigateSearch} onOpenOptions={openOptions}/>
+      </div>
+      {optionsSection !== null ? <UnifiedVisualControlsContext.Provider value>
+        <DesktopVisualSettingsSurface {...props} initialSection={optionsSection} onSearchNavigate={navigateSearch}
+          returnFocus={optionsOpener.current ?? props.returnFocus} onClose={closeOptions}/>
+      </UnifiedVisualControlsContext.Provider> : null}
+    </DesktopVisualLanguage>
+  </SettingsKitThemeContext.Provider>;
 }
 
 export function DesktopVisualSettingsSurface({ mode, onMode, model, onClose, initialSection = 'visualizer', navigationSequence, onSegmentation, canSegment, returnFocus,
   searchNavigation, onSearchNavigate, onClearSearchNavigation }: DesktopVisualSettingsProps) {
   const t = useVisualTranslation();
+  const reduced = useKitReducedMotion();
   const id = useId();
   const panel = useRef<HTMLElement>(null);
   const content = useRef<HTMLDivElement>(null);
@@ -100,7 +125,7 @@ export function DesktopVisualSettingsSurface({ mode, onMode, model, onClose, ini
     if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
     else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
   };
-  return <aside ref={panel} style={settingsTokens(false, model.mergedTheme)} role="dialog" aria-modal="true" aria-label={title} data-desktop-visual-settings
+  return <aside ref={panel} style={{ ...settingsTokens(false, model.mergedTheme), ...kitMotionTokens(reduced) }} role="dialog" aria-modal="true" aria-label={title} data-desktop-visual-settings
     className={`st-window desktop-visual-settings desktop-visual-options${backgroundOnly ? ' desktop-background-settings' : ''}`} onKeyDown={keyboard}
     onKeyDownCapture={event => { if (event.target instanceof HTMLInputElement && event.target.type === 'range' && SLIDER_KEYS.has(event.key)) model.beginSlider(); }}
     onKeyUpCapture={event => { if (event.target instanceof HTMLInputElement && event.target.type === 'range' && SLIDER_KEYS.has(event.key)) model.commitSlider(); }}

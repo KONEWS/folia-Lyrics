@@ -1,5 +1,5 @@
 import { getFromCache, saveToCache } from '../db';
-import { melSpectrogramOffThread } from '../automix/analysisOffThread';
+import { melSpectrogramOffThread } from './analysisOffThread';
 import { analyseBeatGrid, canRunBeatThis, type BeatGrid } from './beatThis';
 import { raiseGpuUrgency, runPercussiveEnergyGpu } from './beatThisGpu';
 import type { Urgency } from './scheduler';

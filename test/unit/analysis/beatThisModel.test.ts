@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { setAnalysisModelHost } from '@/services/analysis/analysisModelHost';
 
 // test/unit/analysis/beatThisModel.test.ts
 // Beat This! final0, which automix and the beat FX both run: the GPU first, the CPU only for a caller
@@ -19,23 +20,27 @@ describe('the final0 model', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         host.window = { electron: { getBeatThisGpuWeights: vi.fn(), runBeatThis } };
+        vi.stubGlobal('navigator', { gpu: {} });
+        setAnalysisModelHost({ getPresent: async () => ({ beat_this: true }), hasGpuWeights: () => true, readGpuWeights: async () => null });
     });
 
     afterEach(() => {
         delete host.window;
+        setAnalysisModelHost(null);
+        vi.unstubAllGlobals();
     });
 
-    it('runs where the desktop bridge is and the weights are', () => {
+    it('runs where the local model host, WebGPU and weights are available', () => {
         modelCanRun.mockReturnValue(true);
         expect(canRunBeatThis()).toBe(true);
         modelCanRun.mockReturnValue(false);
         expect(canRunBeatThis()).toBe(false);
         modelCanRun.mockReturnValue(true);
-        host.window = {};
+        setAnalysisModelHost(null);
         expect(canRunBeatThis()).toBe(false);
     });
 
-    it('asks the GPU only, unless the caller allows the CPU', async () => {
+    it('asks the local GPU without invoking a CPU host', async () => {
         modelCanRun.mockReturnValue(true);
         runBeatThisGpu.mockResolvedValue(null);
         expect(await analyseBeatGrid(mel)).toBeNull();
@@ -56,13 +61,13 @@ describe('the final0 model', () => {
         expect(grid?.percussive).toBe(energy);
     });
 
-    it('goes the GPU first, then the CPU when allowed', async () => {
+    it('returns a failed GPU result without invoking the removed CPU host', async () => {
         modelCanRun.mockReturnValue(true);
         runBeatThisGpu.mockResolvedValue(null);
         runBeatThis.mockResolvedValue(null);
         await analyseBeatGrid(mel, { cpuFallback: true });
         expect(runBeatThisGpu).toHaveBeenCalledWith(expect.any(Array), 'beat_this', undefined, { urgency: 'background' });
-        expect(runBeatThis).toHaveBeenCalledTimes(1);
+        expect(runBeatThis).not.toHaveBeenCalled();
         expect(noteModelFailed).toHaveBeenCalledWith('beat_this');
     });
 });

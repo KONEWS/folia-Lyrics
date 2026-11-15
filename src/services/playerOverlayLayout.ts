@@ -1,20 +1,20 @@
-import type { FoliumLayoutRect, FoliumPlayerLayout } from '../mods/folium/contract';
+import type { PlayerLayoutRect, PlayerLayout } from '../types/playerOverlay';
 import { EMPTY_PLAYER_INSETS, freezePlayerLayout, samePlayerLayout, type NativePlayerObstacle } from '../utils/playerOverlayGeometry';
 
 // src/services/playerOverlayLayout.ts
 // Native components register their own refs; mods only receive immutable geometry.
 
-type ObstacleReader = (bounds: FoliumLayoutRect) => NativePlayerObstacle | null;
+type ObstacleReader = (bounds: PlayerLayoutRect) => NativePlayerObstacle | null;
 type Entry = { element: Element | null; read: ObstacleReader };
 export interface PlayerLayoutSource {
-    get(): FoliumPlayerLayout | null;
+    get(): PlayerLayout | null;
     subscribe(listener: () => void): () => void;
 }
 
 export const createPlayerOverlayLayout = () => {
     let root: Element | null = null;
     let measuredRoot: Element | null = null;
-    let snapshot: FoliumPlayerLayout | null = null;
+    let snapshot: PlayerLayout | null = null;
     let insets = EMPTY_PLAYER_INSETS;
     let timer: ReturnType<typeof setTimeout> | undefined;
     let observer: ResizeObserver | undefined;
@@ -86,7 +86,7 @@ export const createPlayerOverlayLayout = () => {
     return {
         source,
         invalidate,
-        registerRoot: (element: Element, safeInsets: FoliumPlayerLayout['insets'] = EMPTY_PLAYER_INSETS) => {
+        registerRoot: (element: Element, safeInsets: PlayerLayout['insets'] = EMPTY_PLAYER_INSETS) => {
             root = element;
             insets = { ...safeInsets };
             observeEntries();

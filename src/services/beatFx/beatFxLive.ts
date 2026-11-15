@@ -1,6 +1,6 @@
 import { beatImpact, downbeatImpact } from '../../stores/motionSignals';
 import { createBeatFxClockState, stepBeatFxClock, type BeatFxEvent } from './clock';
-import type { BeatFxSourceKind } from './beatFxSource';
+export type BeatFxSourceKind = 'beat_this' | 'none';
 
 // src/services/beatFx/beatFxLive.ts
 // The one live beat clock: fed the current track's beat list, stepped once per frame from the

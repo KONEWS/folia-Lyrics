@@ -3,8 +3,8 @@ import type { Urgency } from './scheduler';
 
 import { modelCanRun, noteModelFailed } from './modelAvailability';
 import { hasAnalysisGpuWeights } from './analysisModelHost';
-import { fft } from '../automix/signalAnalysis';
-import { YIELD_BUDGET_MS, yieldToUi } from '../automix/uiYield';
+import { fft } from './signalAnalysis';
+import { YIELD_BUDGET_MS, yieldToUi } from './uiYield';
 
 // src/services/analysis/beatThis.ts
 // The two halves of the Beat This! contract that are plain arithmetic: the mel spectrogram it
@@ -463,9 +463,8 @@ export const gridFromBeats = (
  */
 export const canRunBeatThis = (): boolean => {
     if (typeof window === 'undefined') return false;
-    const cpu = typeof window.electron?.runBeatThis === 'function';
     const gpu = hasAnalysisGpuWeights('beat_this') && typeof navigator !== 'undefined' && 'gpu' in navigator;
-    return (cpu || gpu) && modelCanRun('beat_this');
+    return gpu && modelCanRun('beat_this');
 };
 
 /**
@@ -502,8 +501,6 @@ export const analyseBeatGrid = async (
     } = {},
 ): Promise<AnalysedBeatGrid | null> => {
     if (!canRunBeatThis()) return null;
-    const run = cpuFallback && typeof window !== 'undefined' ? window.electron?.runBeatThis : undefined;
-    if (cpuFallback && typeof run !== 'function') return null;
 
     const chunks = splitForModel(mel);
     if (!chunks.length) return null;
@@ -511,7 +508,7 @@ export const analyseBeatGrid = async (
     // The renderer's own GPU first (beatThisGpu.ts); it answers null for whatever it cannot take - no
     // export on disk, no usable device, a failed run - and those go to the CPU, if this caller allows it.
     const request = chunks.map(({ data, frames }) => ({ data, frames }));
-    const logits = await runBeatThisGpu(request, 'beat_this', percussive ? mel : undefined, { urgency, key }) ?? (run ? await run(request) : null);
+    const logits = await runBeatThisGpu(request, 'beat_this', percussive ? mel : undefined, { urgency, key });
     if (!logits || logits.beat.length !== chunks.length) {
         // Nothing usable came back. Not remembered as a failure - the same empty answer arrives when
         // the weights were just deleted or the worker was restarted under this request - so this only

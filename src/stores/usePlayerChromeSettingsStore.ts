@@ -114,9 +114,6 @@ export const usePlayerChromeSettingsStore = create<PlayerChromeSettingsState>((s
     handleTogglePlayerPageNativeBlur: (enable) => {
         setStoredBoolean('enable_player_page_native_blur', enable);
         set({ enablePlayerPageNativeBlur: enable });
-        if (window.electron?.saveSettings) {
-            void window.electron.saveSettings('enable_player_page_native_blur', enable);
-        }
     },
     handleToggleAutoHidePlayerChrome: (enabled: boolean) => {
         localStorage.setItem('auto_hide_player_chrome', enabled ? 'true' : 'false');

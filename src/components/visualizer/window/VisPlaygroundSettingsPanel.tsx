@@ -10,10 +10,6 @@ import { FontTiles, type FontChoice } from './FontTiles';
 import SubtitleOverlayRowsSetting from './SubtitleOverlayRowsSetting';
 import type { StyleDraft } from './useTuningDrafts';
 import type { VisualizerTuningSettings } from '../tuningDefinition';
-import { FoliumTuningCards, tuningsRegistry } from '@/mods/folium/registries/tunings';
-import { backgroundsRegistry } from '@/mods/folium/registries/backgrounds';
-import { useFoliumRegistryEntries } from '@/mods/runtime/registry';
-import { useMissingFoliumSelections } from '@/mods/runtime/missingEntries';
 import { type PreviewPlaceholderId } from '../PreviewPlaceholder';
 import type { VisualizerBackgroundActions, VisualizerBackgroundConfig } from '../backgrounds/definition';
 import {
@@ -43,6 +39,7 @@ interface PresetOption<T> {
 
 interface VisPlaygroundSettingsPanelProps {
     backgroundPicture?: (mode: VisualizerBackgroundMode, state: PictureState) => React.ReactNode;
+    availableBackgroundModes?: readonly VisualizerBackgroundMode[];
     globalSettings?: React.ReactNode;
     backgroundSettings?: React.ReactNode;
     activeSection: VisPlaygroundEditSection;
@@ -219,11 +216,6 @@ const VisPlaygroundSettingsPanel: React.FC<VisPlaygroundSettingsPanelProps> = (p
         if (subtitleFontWeight !== null) setSubtitleFontWeightSliderValue(subtitleFontWeight);
     }, [subtitleFontWeight]);
 
-    // Mod backgrounds and tunings come and go at runtime (Folium registries), so what is listed
-    // here recomputes on registry changes, not only on language changes.
-    const foliumBackgroundEntries = useFoliumRegistryEntries(backgroundsRegistry);
-    const hasModTunings = useFoliumRegistryEntries(tuningsRegistry).some(entry => entry.def.target === visualizerMode);
-    const missingFoliumSelections = useMissingFoliumSelections();
     const randomEnabled = useVisualizerSettingsStore(state => state.randomVisualizerModePerSong);
     const randomPool = useRandomPool();
 
@@ -231,18 +223,12 @@ const VisPlaygroundSettingsPanel: React.FC<VisPlaygroundSettingsPanelProps> = (p
     const resolvedBackgroundMode = backgroundConfig?.mode ?? DEFAULT_VISUALIZER_BACKGROUND_MODE;
     const backgroundEntry = getVisualizerBackgroundRegistryEntry(resolvedBackgroundMode);
     const backgroundModeOptions = useMemo(() => (
-        VISUALIZER_BACKGROUND_REGISTRY.map(entry => ({
+        VISUALIZER_BACKGROUND_REGISTRY.filter(entry => !props.availableBackgroundModes || props.availableBackgroundModes.includes(entry.mode)).map(entry => ({
             value: entry.mode,
             label: getVisualizerBackgroundModeLabel(entry.mode, t),
         }))
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    ), [t, foliumBackgroundEntries]);
-    const missingNotice = (kind: 'visualizer' | 'background') => {
-        const missing = missingFoliumSelections.find(entry => entry.kind === kind);
-        return missing ? t('options.foliumMissingSelection').replace('{{modId}}', missing.modId) : null;
-    };
-    const missingStyleNotice = missingNotice('visualizer');
-    const missingBackgroundNotice = missingNotice('background');
+    ), [t, props.availableBackgroundModes]);
     const fontScaleMarks = useMemo(() => toMarks(fontScaleOptions), [fontScaleOptions]);
     const fontWeightMarks = useMemo(() => toMarks(fontWeightOptions), [fontWeightOptions]);
 
@@ -296,11 +282,6 @@ const VisPlaygroundSettingsPanel: React.FC<VisPlaygroundSettingsPanelProps> = (p
 
                     {activeSection === 'visualizer' && !randomEnabled && (
                         <>
-                            {missingStyleNotice && (
-                                <Group def={STYLE_NOTICE_GROUP} bare>
-                                    <Row notice={missingStyleNotice} />
-                                </Group>
-                            )}
                             {/* The style's own options: kit groups, stacked as they come. */}
                             <div key={visualizerMode} className="st-page-in">
                                 {/* Its 智能动感模式 effects, each named, switched and scaled on its own. */}
@@ -312,18 +293,7 @@ const VisPlaygroundSettingsPanel: React.FC<VisPlaygroundSettingsPanelProps> = (p
                                     onOpenSmartBeat={() => onSectionChange('global')}
                                 />
                                 {stylePanel}
-                                {/* Folium tunings other mods registered for this mode (registries.tunings): cards of the mods' own make. */}
-                                <div className="mt-7 space-y-4 empty:hidden">
-                                    <FoliumTuningCards
-                                        mode={visualizerMode}
-                                        theme={theme}
-                                        isDaylight={isDaylight}
-                                        controlCardBg={controlCardBg}
-                                        rangeInputClass={rangeInputClass}
-                                        description={t('options.foliumTuningDesc')}
-                                    />
-                                </div>
-                                {!stylePanel && !hasModTunings && (
+                                {!stylePanel && (
                                     <p className="py-14 text-center text-[13px] text-[color:var(--st-t3)]">{t('options.lyricStyleNoOptions')}</p>
                                 )}
                             </div>
@@ -336,10 +306,9 @@ const VisPlaygroundSettingsPanel: React.FC<VisPlaygroundSettingsPanelProps> = (p
                     {activeSection === 'background' && (
                         <>
                             {props.backgroundSettings}
-                            {(enablePlayerPageNativeBlur || missingBackgroundNotice) && (
+                            {enablePlayerPageNativeBlur && (
                                 <Group def={BACKGROUND_NOTICE_GROUP} bare>
                                     {enablePlayerPageNativeBlur && <Row notice={t('options.nativeBlurBackgroundNotice')} />}
-                                    {missingBackgroundNotice && <Row notice={missingBackgroundNotice} />}
                                 </Group>
                             )}
                             <Group def={BACKGROUND_KIND_GROUP}>

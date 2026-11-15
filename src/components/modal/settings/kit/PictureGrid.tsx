@@ -1,7 +1,7 @@
-import React, { memo, useId, useLayoutEffect, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
-import { kitTransition, useKitReducedMotion } from './motion';
+import React, { memo, useLayoutEffect, useRef, useState } from 'react';
+import { useKitReducedMotion } from './motion';
 import { usePicturesInView } from './usePicturesInView';
+import { useChoiceMark } from './useChoiceMark';
 
 // src/components/modal/settings/kit/PictureGrid.tsx
 // A choice among many options that differ in look: pictures in a fixed number of columns, each
@@ -60,12 +60,10 @@ type TileProps<T extends string> = PictureState & {
     picture: (value: T, state: PictureState) => React.ReactNode;
     /** Tab lands here. */
     tabStop: boolean;
-    markId: string;
-    reduced: boolean;
 };
 
 /** One picture with its name. It draws again only when its own state changes, not with every other tile. */
-const Tile = memo(<T extends string>({ value, label, picture, tabStop, markId, reduced, ...state }: TileProps<T>) => (
+const Tile = memo(<T extends string>({ value, label, picture, tabStop, ...state }: TileProps<T>) => (
     <button
         type="button"
         role="radio"
@@ -74,20 +72,11 @@ const Tile = memo(<T extends string>({ value, label, picture, tabStop, markId, r
         tabIndex={tabStop ? 0 : -1}
         className="group flex min-w-0 flex-col rounded-lg text-xs leading-[18px]"
     >
-        <span className="relative block aspect-[16/10] w-full">
+        <span data-picture-frame className="relative block aspect-[16/10] w-full">
             <span aria-hidden className="st-t-fast absolute inset-0 overflow-hidden rounded-lg bg-[var(--st-pv)] transition-transform group-active:scale-[0.97]">
                 {picture(value, state)}
                 <span className="pointer-events-none absolute inset-0 rounded-lg shadow-[inset_0_0_0_1px_var(--st-line)]" />
             </span>
-            {state.chosen && (
-                // One ring shared by the pictures: framer-motion moves it to the new choice.
-                <motion.span
-                    layoutId={markId}
-                    layoutDependency={value}
-                    transition={kitTransition('move', reduced)}
-                    className="absolute -inset-[3px] rounded-[11px] shadow-[inset_0_0_0_2px_var(--st-accent)]"
-                />
-            )}
         </span>
         <span className={`st-t-fast mt-1.5 block w-full truncate text-center transition-colors ${state.chosen ? 'font-semibold text-[color:var(--st-t1)]' : 'text-[color:var(--st-t2)] group-hover:text-[color:var(--st-t1)]'}`}>
             {label}
@@ -96,9 +85,8 @@ const Tile = memo(<T extends string>({ value, label, picture, tabStop, markId, r
 )) as <T extends string>(props: TileProps<T>) => React.ReactElement;
 
 export const PictureGrid = <T extends string>({ value, options, picture, columns, onChange, label, maxHeight, arrowKeys = 'choose', className = '' }: PictureGridProps<T>): React.ReactElement => {
-    const markId = useId();
     const reduced = useKitReducedMotion();
-    const rootRef = useRef<HTMLDivElement>(null);
+    const { rootRef, markRef } = useChoiceMark(value, options, reduced, 'button[aria-checked=true] > [data-picture-frame]', 3);
     const [pointed, setPointed] = useState<string | null>(null);
     const [more, setMore] = useState(false);
     // Where the keys only move the focus: the picture that has it, while the focus is in the grid.
@@ -185,9 +173,8 @@ export const PictureGrid = <T extends string>({ value, options, picture, columns
 
     return (
         // layoutScroll: the ring is measured inside a grid that may be scrolled.
-        <motion.div
+        <div
             ref={rootRef}
-            layoutScroll
             role="radiogroup"
             aria-label={label}
             onClick={(event) => {
@@ -224,11 +211,11 @@ export const PictureGrid = <T extends string>({ value, options, picture, columns
                     chosen={index === chosenAt}
                     active={option.value === pointed}
                     tabStop={index === tabStopAt}
-                    markId={markId}
-                    reduced={reduced}
                 />
             ))}
-        </motion.div>
+            {/* One ring shared by the pictures moves in the grid's own scrolling coordinates. */}
+            <span ref={markRef} aria-hidden data-picture-mark className="pointer-events-none absolute left-0 top-0 rounded-[11px] shadow-[inset_0_0_0_2px_var(--st-accent)]"/>
+        </div>
     );
 };
 

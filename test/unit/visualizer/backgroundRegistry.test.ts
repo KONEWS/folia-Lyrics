@@ -17,7 +17,6 @@ describe('visualizer background registry', () => {
             'monet',
             'nomand',
             'latent',
-            'url',
             'sora',
         ]);
     });

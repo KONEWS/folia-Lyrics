@@ -4,13 +4,14 @@ import { resolveVisualizerBackgroundMode } from '../stores/visualizerSettingsPer
 import { useVisualTranslation, VisualCard, VisualToggle } from './DesktopVisualControls';
 import DesktopSelect from './DesktopSelect';
 import type { DesktopVisualSettingsModel } from './useDesktopVisualSettings';
+import { DESKTOP_BACKGROUND_MODES, desktopBackgroundMode } from './desktopBackgrounds';
 
 // src/desktopLyrics/DesktopVisualBackground.tsx — mounts original background cards with desktop transparency precedence.
 export default function DesktopVisualBackground({ model, mode, editingBackground, onSelection }: { model: DesktopVisualSettingsModel; mode: VisualizerMode;
   editingBackground?: VisualizerBackgroundMode; onSelection?: () => void }) {
   const t = useVisualTranslation();
   const resolved = resolveVisualizerBackgroundMode(model.backgroundConfig.mode, mode);
-  const edited = editingBackground ?? resolved;
+  const edited = desktopBackgroundMode(editingBackground) ?? resolved;
   const entry = getVisualizerBackgroundRegistryEntry(edited);
   return <>
     <VisualCard>
@@ -18,7 +19,7 @@ export default function DesktopVisualBackground({ model, mode, editingBackground
       <p className="desktop-visual-hint">{t(model.backgroundSuppressed ? 'desktopVisual.backgroundSuppressed' : 'desktopVisual.backgroundHint')}</p>
       <label className="desktop-visual-field desktop-background-type"><span>{t('options.visualizerBackgroundMode')}</span><DesktopSelect label={t('options.visualizerBackgroundMode')}
         value={resolved} onChange={value => { onSelection?.(); model.backgroundActions.onModeChange?.(value as typeof resolved); }}
-        options={VISUALIZER_BACKGROUND_REGISTRY.map(item => ({ value: item.mode, label: getVisualizerBackgroundModeLabel(item.mode, t) }))}/></label>
+        options={VISUALIZER_BACKGROUND_REGISTRY.filter(item => DESKTOP_BACKGROUND_MODES.includes(item.mode)).map(item => ({ value: item.mode, label: getVisualizerBackgroundModeLabel(item.mode, t) }))}/></label>
       {entry.resetSettings ? <button type="button" className="desktop-visual-reset" onClick={() => entry.resetSettings?.(model.backgroundActions)}>{t('ui.default')}</button> : null}
     </VisualCard>
     <div className="desktop-visual-original-panel" data-background-settings={edited}>

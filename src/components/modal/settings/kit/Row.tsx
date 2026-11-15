@@ -20,7 +20,7 @@ type RowNaming = {
 const RowNamingContext = createContext<RowNaming>({});
 
 /** Whether this is the desktop app: the test the settings window and the views before the kit use. */
-const isDesktopApp = () => typeof window !== 'undefined' && Boolean(window.electron);
+const isDesktopApp = () => typeof window !== 'undefined' && window.location.pathname.endsWith('/desktop.html');
 
 /** What names a control: the label of the row it sits in, wherever in the row it sits. */
 export const useRowNaming = (): RowNaming => useContext(RowNamingContext);

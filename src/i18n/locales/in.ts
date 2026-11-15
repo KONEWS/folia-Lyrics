@@ -11,6 +11,7 @@ export default {
     "previewHint": "Pratinjau lirik contoh, lalu terapkan gaya yang dipilih ke lagu saat ini",
     "videoTransparentNotice": "Video disembunyikan saat latar jendela transparan.",
     "videoLocalFileHint": "Video tetap di lokasi aslinya dan dipulihkan saat aplikasi dimulai ulang. Pilih kembali jika dipindahkan atau dihapus.",
+    "videoLocalOnly": "Gunakan video lokal, diputar tanpa suara dan mengikuti posisi lagu.",
     "videoFileMissing": "Video yang dipilih tidak ditemukan. Silakan pilih kembali.",
     "videoFileSaveFailed": "Pilihan ini tidak dapat disimpan. Pilihan sebelumnya mungkin dipulihkan saat aplikasi dimulai ulang.",
     "videoFileReadFailed": "Video tidak dapat dibaca. Silakan pilih kembali.",
@@ -5320,7 +5321,7 @@ export default {
         "combineStyle": "Sekarang ganti gaya liriknya saja: latar yang baru dipilih tetap. Latar apa pun cocok dengan gaya lirik apa pun; hanya gaya Still yang tidak menggambar latar.",
         "subtitleShared": "Sebagian besar gaya lirik berbagi satu baris subtitel di bawah ini. Monet, Pendolo, dan Still menaruh terjemahan di tata letaknya sendiri dan tidak memakainya.",
         "subtitleContent": "Pengaturannya ada di halaman Subtitle pada jendela Gaya Lirik dan berlaku untuk semua gaya yang memakainya. Baris kedua memilih terjemahan, romanisasi, keduanya bertumpuk, atau tidak ada.",
-        "subtitleBlur": "Matikan “Buramkan lirik non-terjemahan”, dan subtitel tidak lagi buram.",
+        "subtitleBlur": "Matikan “Buramkan lirik berikutnya”, dan subtitel tidak lagi buram.",
         "subtitleFont": "Matikan “Subtitle Menggunakan Font Lirik” untuk memberi subtitel font dan ketebalan sendiri. “Skala subtitle” mengatur ukurannya sendiri dan selalu tersedia."
       },
       "visPlayground": {
@@ -5338,7 +5339,7 @@ export default {
         "perMode": "Halaman Lirik berisi pengaturan milik gaya yang kamu pilih; ganti gayanya dan halaman ini ikut berganti.",
         "background": "Halaman Latar bekerja dengan cara yang sama: pilih latar dari kisi gambar ini, lalu setel latar itu. Ia lapisan terpisah dari gaya lirik, jadi keduanya dipilih sendiri-sendiri dan pasangan mana pun boleh.",
         "subtitleContent": "Baris kedua menentukan isi subtitle: terjemahan, romanisasi, keduanya dengan romanisasi di atas, atau tidak ada. Monet, Pendolo, dan Still hanya menampilkan terjemahan saat memilih keduanya.",
-        "subtitleLegibility": "Tiga baris di bawahnya soal keterbacaan subtitle di atas gambar yang bergerak: “Opasitas Subtitle”, “Latar Belakang Subtitle”, dan “Buramkan lirik non-terjemahan”.",
+        "subtitleLegibility": "Tiga baris di bawahnya soal keterbacaan subtitle di atas gambar yang bergerak: “Opasitas Subtitle”, “Latar Belakang Subtitle”, dan “Buramkan lirik berikutnya”.",
         "subtitleFont": "Secara bawaan subtitle mengikuti fon lirik. Matikan itu dan fon serta ketebalannya sendiri muncul; “Skala subtitle” selalu ada."
       },
       "themePark": {

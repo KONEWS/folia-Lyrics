@@ -11,6 +11,7 @@ import { loadDesktopSystemFonts } from './desktopSystemFonts';
 import DesktopVisualFeedback from '../DesktopVisualFeedback';
 import DesktopVideoSettings from './video/DesktopVideoSettings';
 import { drawDesktopStylePicture, drawDesktopBackgroundPicture } from './DesktopStylePicture';
+import { DESKTOP_BACKGROUND_MODES, desktopBackgroundMode } from '../desktopBackgrounds';
 
 // The desktop host supplies data and actions; the upstream studio owns the layout, preview and controls.
 export default function DesktopVisualStudio({ model, mode, onMode, onClose, initialSection = 'visualizer', searchNavigation, navigationSequence,
@@ -34,8 +35,9 @@ export default function DesktopVisualStudio({ model, mode, onMode, onClose, init
         <VisPlayground theme={model.mergedTheme} isDaylight={false} visualizerMode={searchNavigation?.entry.mode ?? (model.staticMode ? 'still' : mode)}
             initialEditSection={initialSection} editSequence={navigationSequence} livePreviewSource={livePreviewSource} loadFonts={loadDesktopSystemFonts}
             compactStyleShelf stylePicture={drawDesktopStylePicture} backgroundPicture={drawDesktopBackgroundPicture} uiScale={0.94}
+            availableBackgroundModes={DESKTOP_BACKGROUND_MODES}
             headerActions={<>
-                <Button variant="quiet" onClick={() => setSearchOpen(value => !value)} aria-label={t('desktopLyrics.settingsSearch.label')}><Search size={16}/></Button>
+                <Button variant="quiet" icon={Search} tip={t('desktopLyrics.settingsSearch.label')} onClick={() => setSearchOpen(value => !value)}/>
                 <Button variant="quiet" onClick={onOpenOptions}>{t('desktopVisual.desktopOptions')}</Button>
             </>}
             headerSlot={searchOpen ? <DesktopSettingsSearch onNavigate={entry => { setSearchOpen(false); model.commitSlider(); onSearchNavigate(entry); }}/> : <>{hint ? <span role="status">{hint}</span> : null}<DesktopVisualFeedback/></>}
@@ -43,7 +45,7 @@ export default function DesktopVisualStudio({ model, mode, onMode, onClose, init
             backgroundSettings={<><Group def={{ id: 'desktop-background', titleKey: 'desktopVisual.backgroundTitle' }}>
                 <Row label={t('desktopVisual.originalBackground')}><Toggle checked={model.backgroundEnabled} onChange={model.setBackgroundEnabled}/></Row>
             </Group><DesktopVideoSettings transparent={model.transparent}/></>}
-            globalSettings={<DesktopBeatSettings/>} backgroundConfig={searchNavigation?.entry.background ? { ...model.backgroundConfig, mode: searchNavigation.entry.background } : model.backgroundConfig} backgroundActions={model.backgroundActions}
+            globalSettings={<DesktopBeatSettings/>} backgroundConfig={searchNavigation?.entry.background ? { ...model.backgroundConfig, mode: desktopBackgroundMode(searchNavigation.entry.background) } : model.backgroundConfig} backgroundActions={model.backgroundActions}
             visualizerOpacity={model.visualizer.visualizerOpacity} staticMode={model.staticMode}
             fontStyle={typography.lyricsFontStyle} fontScale={typography.lyricsFontScale} fontWeight={typography.lyricsFontWeight}
             customFontFamily={typography.lyricsCustomFont?.family ?? null} customFontLabel={typography.lyricsCustomFont?.label ?? null}
