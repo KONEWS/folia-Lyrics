@@ -130,22 +130,30 @@ try {
     await lazyPage.route('**/src/desktopLyrics/DesktopVisualSettings.tsx*', async route => { await held; await route.continue(); });
     await lazyPage.goto(url, { waitUntil: 'domcontentloaded' }); await lazyPage.locator('.waiting-screen h1').waitFor();
     await lazyPage.evaluate(() => window.__foliaEmit('openSettings', { target: { id: 'background-settings' } }));
-    assert.equal(await lazyPage.locator('.desktop-background-settings').count(), 0);
+    const studio = lazyPage.locator('[data-desktop-visual-studio]');
+    assert.equal(await studio.count(), 0);
     if (cancel) await lazyPage.keyboard.press('Escape');
     release(); await lazyPage.waitForLoadState('networkidle');
-    if (cancel) assert.equal(await lazyPage.locator('.control-panel').count(), 0, 'cancelled lazy destination never reopens');
+    if (cancel) {
+      assert.equal(await lazyPage.locator('.control-panel').count(), 0, 'cancelled lazy destination never reopens');
+      assert.equal(await studio.count(), 0, 'cancelled lazy studio never mounts');
+    }
     else {
-      await lazyPage.locator('.desktop-background-settings').waitFor();
-      assert.equal(await lazyPage.locator('[data-visual-section="background"]').count(), 1);
+      await studio.getByRole('dialog', { name: '歌词样式', exact: true }).waitFor();
+      assert.equal(await studio.getByRole('tab', { name: '背景', exact: true }).getAttribute('aria-selected'), 'true');
+      await studio.getByRole('radiogroup', { name: '背景类型', exact: true }).waitFor();
       await lazyPage.keyboard.press('Escape');
       assert.equal(await lazyPage.locator('[data-background-settings-trigger]').evaluate(element => element === document.activeElement), true);
       await lazyPage.evaluate(() => window.__foliaEmit('openSettings', { target: { id: 'visual-settings' } }));
-      await lazyPage.locator('[data-visual-section="visualizer"]').waitFor();
-      await lazyPage.getByRole('tab').first().click(); await lazyPage.locator('[data-visual-section="common"]').waitFor();
-      await lazyPage.locator('.desktop-visual-settings').evaluate(element => { element.dataset.navigationIdentity = 'same-visual-panel'; });
+      await studio.getByRole('dialog', { name: '歌词样式', exact: true }).waitFor();
+      const visualizerTab = studio.getByRole('tab', { name: '歌词动画', exact: true });
+      assert.equal(await visualizerTab.getAttribute('aria-selected'), 'true');
+      await studio.getByRole('tab', { name: '字体', exact: true }).click();
+      assert.equal(await studio.getByRole('tab', { name: '字体', exact: true }).getAttribute('aria-selected'), 'true');
+      await studio.evaluate(element => { element.dataset.navigationIdentity = 'same-visual-panel'; });
       await lazyPage.evaluate(() => window.__foliaEmit('openSettings', { target: { id: 'visual-settings' } }));
-      await lazyPage.locator('[data-visual-section="visualizer"]').waitFor();
-      assert.equal(await lazyPage.locator('.desktop-visual-settings').getAttribute('data-navigation-identity'), 'same-visual-panel');
+      await lazyPage.waitForFunction(() => document.querySelector('[data-desktop-visual-studio] [role=tab][aria-selected=true]')?.textContent === '歌词动画');
+      assert.equal(await studio.getAttribute('data-navigation-identity'), 'same-visual-panel');
     }
     await lazyPage.close();
   }

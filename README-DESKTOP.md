@@ -1,10 +1,14 @@
-# folia-Lyrics 0.5.5
+# folia-Lyrics 0.5.5.1
 
 Windows 歌词显示器，自身不播放音频。使用 Windows GSMTC 获取其他播放器公开的歌曲和进度，使用 WASAPI 默认输出设备的混合声音驱动原版歌词动效。
 
-GitHub 发布页：[0.5.5 发布页](https://github.com/KONEWS/folia-Lyrics/releases/tag/desktop-v0.5.5)。独立程序为 `FoliaLyrics-0.5.5-win-x64.exe`，同目录提供 `SHA256SUMS.txt` 用于核对文件。本地重新编译默认输出到 `release/0.5.5/win-x64/FoliaLyrics.exe`。
+GitHub 发布页：[0.5.5.1 发布页](https://github.com/KONEWS/folia-Lyrics/releases/tag/desktop-v0.5.5.1)。独立程序为 `FoliaLyrics-0.5.5.1-win-x64.exe`，同目录提供 `SHA256SUMS.txt` 用于核对文件。本地重新编译默认输出到 `release/0.5.5.1/win-x64/FoliaLyrics.exe`。
 
 0.5.3 内置 HarmonyOS Sans SC 字体，更新演示歌词，修正窄窗口换行与快捷参数滑块。
+
+## 0.5.5.1 更新
+
+- 统一分段选项的外框和按钮高度，选中块上下齐平，修复贴顶、底部留空的问题；文字垂直居中，保留平移动画和键盘焦点提示。
 
 ## 0.5.5 更新
 
@@ -381,7 +385,7 @@ npm run typecheck:desktop
 npm run build:desktop
 npm run test:desktop
 node tools/package-web.mjs
-dotnet publish native/FoliaLyrics.csproj -c Release -r win-x64 --self-contained true -o release/0.5.5/win-x64
+dotnet publish native/FoliaLyrics.csproj -c Release -r win-x64 --self-contained true -o release/0.5.5.1/win-x64
 ```
 
 `build-windows.cmd` 从 `native/FoliaLyrics.csproj` 读取版本，输出到 `release/<版本>/win-x64/`。每次更新递增原生版本号后重新构建，即可得到独立的版本文件夹；手动执行上述发布命令时，也应将输出路径中的版本同步更新。

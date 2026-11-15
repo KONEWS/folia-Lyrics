@@ -18,7 +18,7 @@ internal sealed class OnlineHttp : IDisposable
         client.DefaultRequestHeaders.UserAgent.ParseAdd($"folia-Lyrics/{AppVersion()} (+https://github.com/KONEWS/folia-Lyrics; standalone-derivative)");
     }
     // 版本号取自程序集（即 FoliaLyrics.csproj 的 <Version>），User-Agent 不会再落后于发布版本。
-    private static string AppVersion() => typeof(OnlineHttp).Assembly.GetName().Version is { } v ? $"{v.Major}.{v.Minor}.{v.Build}" : "0";
+    private static string AppVersion() => typeof(OnlineHttp).Assembly.GetName().Version is { } v ? v.ToString(v.Revision > 0 ? 4 : 3) : "0";
     public static string Url(string endpoint, params (string, object)[] parameters) => endpoint + "?" + string.Join('&', parameters.Select(p =>
         Uri.EscapeDataString(p.Item1) + "=" + Uri.EscapeDataString(Convert.ToString(p.Item2, CultureInfo.InvariantCulture) ?? "")));
     public Task<JsonDocument> Get(string url, CancellationToken token, string? referer = null) => Request(url, token, referer, null);

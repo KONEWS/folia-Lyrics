@@ -14,7 +14,7 @@ internal sealed partial class MainWindow
             var provider = onlineState.SelectedKey?.Split(':')[0] ?? "";
             var state = new DesktopDiagnosticState
             {
-                Version = version is null ? "未知" : $"{version.Major}.{version.Minor}.{version.Build}",
+                Version = version is null ? "未知" : version.ToString(version.Revision > 0 ? 4 : 3),
                 WebView = web.CoreWebView2?.Environment.BrowserVersionString ?? "未连接",
                 Platform = $"{Environment.OSVersion.VersionString} ({RuntimeInformation.ProcessArchitecture})",
                 Player = song?.Source ?? "", Connected = !string.IsNullOrEmpty(song?.Key), Playing = song?.Playing == true,

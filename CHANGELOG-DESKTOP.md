@@ -1,5 +1,11 @@
 # folia-Lyrics 桌面变更记录
 
+## 0.5.5.1（2026-11-15）
+
+GitHub 发布标签：`desktop-v0.5.5.1`；独立程序：`FoliaLyrics-0.5.5.1-win-x64.exe`；校验文件：`SHA256SUMS.txt`。
+
+- 统一分段选项的外框和按钮高度，选中块上下齐平，修复贴顶、底部留空的问题；文字垂直居中，平移动画及键盘焦点提示保留。
+
 ## 0.5.5（2026-11-15）
 
 GitHub 发布标签：`desktop-v0.5.5`；独立程序：`FoliaLyrics-0.5.5-win-x64.exe`；校验文件：`SHA256SUMS.txt`。

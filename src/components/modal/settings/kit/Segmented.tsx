@@ -31,7 +31,7 @@ export const Segmented = <T extends string>({ value, options, onChange, fill, di
             role="group"
             {...useRowAria()}
             aria-disabled={disabled || undefined}
-            className={`relative ${fill ? 'flex w-full' : 'inline-flex max-w-full flex-wrap'} min-h-8 rounded-lg bg-[var(--st-fill)] p-0.5${disabled ? ' pointer-events-none opacity-40' : ''}`}
+            className={`relative ${fill ? 'flex w-full' : 'inline-flex max-w-full flex-wrap'} min-h-8 items-stretch overflow-hidden rounded-lg bg-[var(--st-fill)] p-0 ${disabled ? 'pointer-events-none opacity-40' : ''}`}
         >
             {/* One persistent mark slides inside this choice; it never remounts under another button. */}
             <span ref={markRef} aria-hidden data-segmented-mark className="pointer-events-none absolute left-0 top-0 bg-[var(--st-raise)]"
@@ -47,7 +47,7 @@ export const Segmented = <T extends string>({ value, options, onChange, fill, di
                         onClick={() => {
                             if (!selected) onChange(option.value);
                         }}
-                        className={`st-t-fast relative h-7 whitespace-nowrap rounded-md bg-transparent! text-[13px] transition-colors disabled:cursor-not-allowed ${fill ? 'min-w-0 flex-1 px-1.5' : 'px-3'}${option.disabled ? ' opacity-40' : ''} ${selected ? 'text-[color:var(--st-t1)]' : 'text-[color:var(--st-t2)] enabled:hover:text-[color:var(--st-t1)]'}`}
+                        className={`st-focus-inside st-t-fast relative inline-flex h-8 items-center justify-center whitespace-nowrap rounded-md bg-transparent! text-[13px] transition-colors disabled:cursor-not-allowed ${fill ? 'min-w-0 flex-1 px-1.5' : 'px-3'}${option.disabled ? ' opacity-40' : ''} ${selected ? 'text-[color:var(--st-t1)]' : 'text-[color:var(--st-t2)] enabled:hover:text-[color:var(--st-t1)]'}`}
                     >
                         {option.icon
                             ? <span className="relative inline-flex min-w-0 items-center gap-1.5">{option.icon}<span className="truncate">{option.label}</span></span>
