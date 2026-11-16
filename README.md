@@ -29,6 +29,10 @@ folia-Lyrics 基于 [Folia](https://github.com/chthollyphile/folia-major) 的歌
 
 当前版本是 [0.5.7](https://github.com/KONEWS/folia-Lyrics/releases/tag/desktop-v0.5.7)，独立程序为 `FoliaLyrics-0.5.7-win-x64.exe`。运行程序后，再打开播放器播放一首歌。也可以先确认添加发现的音乐软件，再点击首页图标启动播放器。运行界面需要 Microsoft Edge WebView2 Runtime，程序自带 .NET 运行时。
 
+直接下载：[Windows x64 EXE](https://github.com/KONEWS/folia-Lyrics/releases/download/desktop-v0.5.7/FoliaLyrics-0.5.7-win-x64.exe) · [SHA-256 校验文件](https://github.com/KONEWS/folia-Lyrics/releases/download/desktop-v0.5.7/SHA256SUMS.txt)。
+
+0.5.7 新增隐喻样式和「湮灭对撞」节拍效果，改进封面取色及行级 TTML 扫字，并修复图片子窗口按 Esc 时连带关闭设置窗口的问题。新样式支持搜索、随机候选和视觉配置备份。
+
 0.5.3 内置 HarmonyOS Sans SC 字体，更新演示歌词，修正窄窗口换行与快捷参数滑块。0.5.2 包含 16 种动态样式，新增町景与雾笺；歌词样式设置左侧为实时画面，右侧为紧凑的静态样式小图和参数。
 
 窗口没显示歌词时，先确认选中了正在播放的播放器，再尝试重新匹配或加载本地歌词。某些播放器没有公开媒体会话，或没有提供完整进度，这种情况下自动同步会受到限制。
