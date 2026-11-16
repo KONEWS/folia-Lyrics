@@ -2,7 +2,7 @@
 
 让你喜欢的播放器，配上一个好看的桌面歌词窗口。
 
-folia-Lyrics 基于 [Folia](https://github.com/chthollyphile/folia-major) 的歌词渲染器，当前源码包含 16 种动态歌词样式，包括花火 Hanabi、町景 Machi 和雾笺 Nebbia，另有静止样式。你照常用椒盐音乐、网易云音乐、QQ 音乐、foobar2000 或浏览器听歌，它通过 Windows 媒体会话读取歌曲和播放进度，把歌词放在独立窗口里。
+folia-Lyrics 基于 [Folia](https://github.com/chthollyphile/folia-major) 的歌词渲染器，0.5.7 包含 17 种动态歌词样式，包括花火 Hanabi、町景 Machi、雾笺 Nebbia 和隐喻 Metaphor，另有静止样式。你照常用椒盐音乐、网易云音乐、QQ 音乐、foobar2000 或浏览器听歌，它通过 Windows 媒体会话读取歌曲和播放进度，把歌词放在独立窗口里。
 
 **它本身不播放音乐。** 暂停、继续和切歌会交给当前绑定的播放器执行；播放器能否被识别、进度是否准确，取决于它向 Windows 提供的媒体会话信息。
 
@@ -14,7 +14,7 @@ folia-Lyrics 基于 [Folia](https://github.com/chthollyphile/folia-major) 的歌
 
 0.5.0 沿用 0.4.40 的播放器来源切换与歌词更新改进：从首页或设置启动音乐软件后会自动跟随该应用，切换时保留有效画面并丢弃过期读取；同曲歌词替换成功后再整体更新，快速切歌时也能平稳衔接。启动播放器时歌词窗口会临时前置，商店应用图标更清晰，标题栏可直接打开播放器列表。暂停时的进度同步和连接错误提示也更加稳定。
 
-此前版本还加入了全屏沉浸控件、播放器快捷启动、统一设置面板、歌词时间校准，以及降低后台声音采集和空闲动画开销等改进。各版本详情见[桌面变更记录](CHANGELOG-DESKTOP.md)。
+此前版本还加入了全屏沉浸控件、播放器快捷启动、统一设置面板、歌词时间校准，以及降低后台声音采集和空闲动画开销等改进。各版本详情见[桌面变更记录](https://github.com/KONEWS/folia-Lyrics/blob/desktop-v0.5.7/CHANGELOG-DESKTOP.md)。
 
 歌词会优先从本地查找，没有本地歌词时优先在线匹配 QQ 音乐，再使用酷狗、网易云和 LRCLIB 回退。没找到合适的版本时，可以手动选择搜索结果，或加载自己的歌词文件。
 
@@ -27,7 +27,11 @@ folia-Lyrics 基于 [Folia](https://github.com/chthollyphile/folia-major) 的歌
 
 面向 Windows 11 x64。原生亚克力效果需要 Windows 11 22H2（22621）或更新版本，并开启系统透明效果；不满足条件时，界面会使用回退效果。
 
-当前版本是 [0.5.5.1](https://github.com/KONEWS/folia-Lyrics/releases/tag/desktop-v0.5.5.1)，独立程序为 `FoliaLyrics-0.5.5.1-win-x64.exe`。运行程序后，再打开播放器播放一首歌。也可以先确认添加发现的音乐软件，再点击首页图标启动播放器。运行界面需要 Microsoft Edge WebView2 Runtime，程序自带 .NET 运行时。
+当前版本是 [0.5.7](https://github.com/KONEWS/folia-Lyrics/releases/tag/desktop-v0.5.7)，独立程序为 `FoliaLyrics-0.5.7-win-x64.exe`。运行程序后，再打开播放器播放一首歌。也可以先确认添加发现的音乐软件，再点击首页图标启动播放器。运行界面需要 Microsoft Edge WebView2 Runtime，程序自带 .NET 运行时。
+
+直接下载：[Windows x64 EXE](https://github.com/KONEWS/folia-Lyrics/releases/download/desktop-v0.5.7/FoliaLyrics-0.5.7-win-x64.exe) · [SHA-256 校验文件](https://github.com/KONEWS/folia-Lyrics/releases/download/desktop-v0.5.7/SHA256SUMS.txt)。
+
+0.5.7 新增隐喻样式和「湮灭对撞」节拍效果，改进封面取色及行级 TTML 扫字，并修复图片子窗口按 Esc 时连带关闭设置窗口的问题。新样式支持搜索、随机候选和视觉配置备份。
 
 0.5.3 内置 HarmonyOS Sans SC 字体，更新演示歌词，修正窄窗口换行与快捷参数滑块。0.5.2 包含 16 种动态样式，新增町景与雾笺；歌词样式设置左侧为实时画面，右侧为紧凑的静态样式小图和参数。
 
@@ -52,6 +56,13 @@ folia-Lyrics 基于 [Folia](https://github.com/chthollyphile/folia-major) 的歌
 
 2026-10-25 预览版补齐了随机歌词样式与候选池、快捷参数、带示例歌词的样式预览、本机字体选择、视频背景和智能动感。视频保持静音并跟随播放进度；透明窗口中暂不显示视频。智能动感需要先选择与当前播放版本相同的完整音频，使用随构建附带的上游模型进行本地 WebGPU 分析；分析结果保存在本机，可在“只用已分析”模式复用。首次构建会下载并校验约 133 MB 的模型文件，发布包已经包含模型。
 
+0.5.7 的完整源码见 [发布标签](https://github.com/KONEWS/folia-Lyrics/tree/desktop-v0.5.7)。默认 `main` 分支目前较旧；如需构建 0.5.7，请先在源码目录切换到该标签：
+
+```bash
+git fetch origin --tags
+git checkout desktop-v0.5.7
+```
+
 准备 Node.js 24+ 和 .NET SDK 10，然后在完整源码目录运行：
 
 ```bat
@@ -61,7 +72,7 @@ build-windows.cmd
 脚本会按锁文件安装依赖、检查桌面版本和 TypeScript、运行桌面单测、构建界面并发布 Windows 宿主。完成后，程序位于：
 
 ```text
-release/0.5.5.1/win-x64/FoliaLyrics.exe
+release/0.5.7/win-x64/FoliaLyrics.exe
 ```
 
 输出目录中的版本来自 `native/FoliaLyrics.csproj`，每个版本独立保存；发布目录包含使用说明、许可证和 `SHA256SUMS.txt`。
@@ -90,7 +101,7 @@ npm run test:desktop:ui
 dotnet run --project test/transport-smoke/TransportSmoke.csproj
 ```
 
-各版本的验证范围和已知限制记录在 [VALIDATION.md](VALIDATION.md)。浏览器测试使用模拟 WebView，真实播放器控制和 Windows 窗口行为仍需要实机确认。
+各版本的验证范围和已知限制记录在 [VALIDATION.md](https://github.com/KONEWS/folia-Lyrics/blob/desktop-v0.5.7/VALIDATION.md)。浏览器测试使用模拟 WebView，真实播放器控制和 Windows 窗口行为仍需要实机确认。
 
 | 目录 | 内容 |
 | --- | --- |
@@ -100,12 +111,12 @@ dotnet run --project test/transport-smoke/TransportSmoke.csproj
 | `test` | 前端、传输层和渲染器测试 |
 | `public/fonts` | 桌面端使用的离线字体 |
 
-更多桌面功能和版本变化见 [README-DESKTOP.md](README-DESKTOP.md) 与 [CHANGELOG-DESKTOP.md](CHANGELOG-DESKTOP.md)。
+更多桌面功能和版本变化见 [README-DESKTOP.md](https://github.com/KONEWS/folia-Lyrics/blob/desktop-v0.5.7/README-DESKTOP.md) 与 [CHANGELOG-DESKTOP.md](https://github.com/KONEWS/folia-Lyrics/blob/desktop-v0.5.7/CHANGELOG-DESKTOP.md)。
 
 ## 关于这个分支
 
 这是从 [chthollyphile/folia-major](https://github.com/chthollyphile/folia-major) 派生的独立项目。感谢上游提供歌词渲染器和视觉效果；这个分支主要加入 Windows 桌面宿主、外部播放器连接、在线歌词匹配，以及围绕桌面使用的界面和操作。
 
-当前桌面宿主源码版本为 **0.5.5.1**，上游源码基线为 **v0.7.22**（`1f6d0f468f5bc81b23a8b40ad7ca96ccd4b1ecbe`）。歌词显示模块已单独同步到上游 2026-11-04 的主线（v0.7.25 之后，`67fbac76f8a839f97b5126d80be20234db9c1f15`），包含町景、雾笺、文字防重叠、RTL 排版、字幕行布局及画质设置。两套版本号独立，本项目不是上游官方发行版。
+0.5.7 发布标签对应的桌面宿主源码版本为 **0.5.7**。歌词显示模块已同步到上游 2026-11-17 的主线（v0.7.29 之后，`cdb08291ddb7c91463ea626b58f1f55ec3d986c8`），新增隐喻样式、封面主题取色与行级 TTML 修复，并保留 Windows 桌面宿主、本地性能与歌词匹配边界。两套版本号独立，本项目不是上游官方发行版。
 
 项目继续使用 [AGPL-3.0](LICENSE) 许可证。第三方许可证见 [licenses/](licenses/)，在线资源来源见 [ONLINE-SOURCES.md](ONLINE-SOURCES.md)。使用在线歌词、封面和音乐资源时，请遵守对应服务条款与版权要求。
