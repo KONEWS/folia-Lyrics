@@ -14,7 +14,7 @@
 - 新增内置影厅及选座、厅灯、幕布与画质设置；新增包内模型驱动的静音性能检测。两者均本地运行，不增加播放音频或联网权限。
 - 字幕多行首行可选译文／罗马音，可关闭后续歌词回退。修复 TTML 缺少行 key 时丢词，以及 emoji 估计时间轴；Windows GPU 分析按实际 GPU 时间调度。
 - 新参数接入搜索、JSON 与短码；修复设置搜索重复折叠及布局未完成时定位的问题，恢复 GitHub 失败检查对应的浏览器行为。
-- 联网仍只保留歌词搜索、下载和匹配；生成 Windows x64 本地测试包，尚未发布到 GitHub。详细取舍见 `docs/UPSTREAM-SYNC.md`。
+- 联网仍只保留歌词搜索、下载和匹配；Windows x64 程序已发布到 [GitHub Release](https://github.com/KONEWS/folia-Lyrics/releases/tag/desktop-v0.5.6)。详细取舍见 `docs/UPSTREAM-SYNC.md`。
 
 ## 0.5.5.2（2026-11-15）
 
