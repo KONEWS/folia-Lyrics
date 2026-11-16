@@ -36,6 +36,8 @@ export default function DesktopVisualStudio({ model, mode, onMode, onClose, init
         `[data-visual-section="${searchNavigation?.entry.section ?? initialSection}"]`);
     const close = () => { model.commitSlider(); onClose(); };
     const keyboard = (event: KeyboardEvent<HTMLDivElement>) => {
+        // React bubbles body-portal keys through this parent before the child dialog's document handler.
+        if (!(event.target instanceof Node) || !event.currentTarget.contains(event.target)) return;
         if (event.key === 'Escape' && !event.defaultPrevented) {
             event.preventDefault(); event.stopPropagation();
             close();

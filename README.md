@@ -2,7 +2,7 @@
 
 让你喜欢的播放器，配上一个好看的桌面歌词窗口。
 
-folia-Lyrics 基于 [Folia](https://github.com/chthollyphile/folia-major) 的歌词渲染器，当前源码包含 16 种动态歌词样式，包括花火 Hanabi、町景 Machi 和雾笺 Nebbia，另有静止样式。你照常用椒盐音乐、网易云音乐、QQ 音乐、foobar2000 或浏览器听歌，它通过 Windows 媒体会话读取歌曲和播放进度，把歌词放在独立窗口里。
+folia-Lyrics 基于 [Folia](https://github.com/chthollyphile/folia-major) 的歌词渲染器，当前源码包含 17 种动态歌词样式，包括花火 Hanabi、町景 Machi、雾笺 Nebbia 和隐喻 Metaphor，另有静止样式。你照常用椒盐音乐、网易云音乐、QQ 音乐、foobar2000 或浏览器听歌，它通过 Windows 媒体会话读取歌曲和播放进度，把歌词放在独立窗口里。
 
 **它本身不播放音乐。** 暂停、继续和切歌会交给当前绑定的播放器执行；播放器能否被识别、进度是否准确，取决于它向 Windows 提供的媒体会话信息。
 
@@ -27,7 +27,7 @@ folia-Lyrics 基于 [Folia](https://github.com/chthollyphile/folia-major) 的歌
 
 面向 Windows 11 x64。原生亚克力效果需要 Windows 11 22H2（22621）或更新版本，并开启系统透明效果；不满足条件时，界面会使用回退效果。
 
-当前版本是 [0.5.6](https://github.com/KONEWS/folia-Lyrics/releases/tag/desktop-v0.5.6)，独立程序为 `FoliaLyrics-0.5.6-win-x64.exe`。运行程序后，再打开播放器播放一首歌。也可以先确认添加发现的音乐软件，再点击首页图标启动播放器。运行界面需要 Microsoft Edge WebView2 Runtime，程序自带 .NET 运行时。
+当前版本是 [0.5.7](https://github.com/KONEWS/folia-Lyrics/releases/tag/desktop-v0.5.7)，独立程序为 `FoliaLyrics-0.5.7-win-x64.exe`。运行程序后，再打开播放器播放一首歌。也可以先确认添加发现的音乐软件，再点击首页图标启动播放器。运行界面需要 Microsoft Edge WebView2 Runtime，程序自带 .NET 运行时。
 
 0.5.3 内置 HarmonyOS Sans SC 字体，更新演示歌词，修正窄窗口换行与快捷参数滑块。0.5.2 包含 16 种动态样式，新增町景与雾笺；歌词样式设置左侧为实时画面，右侧为紧凑的静态样式小图和参数。
 
@@ -61,7 +61,7 @@ build-windows.cmd
 脚本会按锁文件安装依赖、检查桌面版本和 TypeScript、运行桌面单测、构建界面并发布 Windows 宿主。完成后，程序位于：
 
 ```text
-release/0.5.6/win-x64/FoliaLyrics.exe
+release/0.5.7/win-x64/FoliaLyrics.exe
 ```
 
 输出目录中的版本来自 `native/FoliaLyrics.csproj`，每个版本独立保存；发布目录包含使用说明、许可证和 `SHA256SUMS.txt`。
@@ -106,6 +106,6 @@ dotnet run --project test/transport-smoke/TransportSmoke.csproj
 
 这是从 [chthollyphile/folia-major](https://github.com/chthollyphile/folia-major) 派生的独立项目。感谢上游提供歌词渲染器和视觉效果；这个分支主要加入 Windows 桌面宿主、外部播放器连接、在线歌词匹配，以及围绕桌面使用的界面和操作。
 
-当前桌面宿主源码版本为 **0.5.6**。歌词显示模块已同步到上游 2026-11-16 的主线（v0.7.28 之后，`a755f88a3592e9d5944e1a560b4bb87333aba000`），并保留 Windows 桌面宿主、本地性能与歌词匹配边界。两套版本号独立，本项目不是上游官方发行版。
+当前桌面宿主源码版本为 **0.5.7**。歌词显示模块已同步到上游 2026-11-17 的主线（v0.7.29 之后，`cdb08291ddb7c91463ea626b58f1f55ec3d986c8`），新增隐喻样式、封面主题取色与行级 TTML 修复，并保留 Windows 桌面宿主、本地性能与歌词匹配边界。两套版本号独立，本项目不是上游官方发行版。
 
 项目继续使用 [AGPL-3.0](LICENSE) 许可证。第三方许可证见 [licenses/](licenses/)，在线资源来源见 [ONLINE-SOURCES.md](ONLINE-SOURCES.md)。使用在线歌词、封面和音乐资源时，请遵守对应服务条款与版权要求。

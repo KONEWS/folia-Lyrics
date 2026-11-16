@@ -2,22 +2,22 @@ import type { TypographySettingsState } from '../stores/useTypographySettingsSto
 import { useTypographySettingsStore } from '../stores/useTypographySettingsStore';
 import type { VisualizerSettingsState } from '../stores/useVisualizerSettingsStore';
 import { useVisualizerSettingsStore } from '../stores/useVisualizerSettingsStore';
+import { getStoredVisualizerTunings } from '../components/visualizer/tuningRegistry';
 
 // src/desktopLyrics/desktopVisualFields.ts — one allowed field-to-original-setter table for desktop edits and imports.
+type TuningKey = Extract<keyof VisualizerSettingsState, `${string}Tuning`>;
+// Follow the same declarations that build the store, so a newly registered style is editable and portable.
+const tuningSetters = Object.fromEntries(
+  getStoredVisualizerTunings().map(tuning => [tuning.settingsKey, tuning.settingsSetterKey]),
+) as { [K in TuningKey]: keyof VisualizerSettingsState };
 export const visualizerSetters = {
   randomVisualizerModePerSong: 'handleToggleRandomVisualizerModePerSong', randomVisualizerModes: 'handleSetRandomVisualizerModes',
   backgroundOpacity: 'handleSetBackgroundOpacity', visualizerOpacity: 'handleSetVisualizerOpacity', visualizerFrameRate: 'handleSetVisualizerFrameRate',
   lyricRenderQuality: 'handleSetLyricRenderQuality',
   disableVisualizerVignette: 'handleToggleDisableVisualizerVignette', disableVisualizerGeometricBackground: 'handleToggleDisableVisualizerGeometricBackground',
   visualizerBackgroundMode: 'handleSetVisualizerBackgroundMode',
-  classicTuning: 'handleSetClassicTuning', cadenzaTuning: 'handleSetCadenzaTuning', partitaTuning: 'handleSetPartitaTuning',
-  fumeTuning: 'handleSetFumeTuning', claddaghTuning: 'handleSetCladdaghTuning', cappellaTuning: 'handleSetCappellaTuning',
-  tiltTuning: 'handleSetTiltTuning', dioramaTuning: 'handleSetDioramaTuning', monetTuning: 'handleSetMonetTuning',
-  pendoloTuning: 'handleSetPendoloTuning', sonnetTuning: 'handleSetSonnetTuning', temperaTuning: 'handleSetTemperaTuning', lumiereTuning: 'handleSetLumiereTuning', hanabiTuning: 'handleSetHanabiTuning',
+  ...tuningSetters,
   smartBeat: 'handleSetSmartBeat',
-  machiTuning: 'handleSetMachiTuning', nebbiaTuning: 'handleSetNebbiaTuning',
-  monetBackgroundTuning: 'handleSetMonetBackgroundTuning', nomandBackgroundTuning: 'handleSetNomandBackgroundTuning',
-  latentBackgroundTuning: 'handleSetLatentBackgroundTuning', soraBackgroundTuning: 'handleSetSoraBackgroundTuning',
 } as const satisfies Partial<Record<keyof VisualizerSettingsState, keyof VisualizerSettingsState>>;
 export const typographySetters = {
   lyricsFontStyle: 'handleSetLyricsFontStyle', lyricsFontScale: 'handleSetLyricsFontScale', lyricsFontWeight: 'handleSetLyricsFontWeight',

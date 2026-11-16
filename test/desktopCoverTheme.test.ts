@@ -2,8 +2,8 @@ import { describe, expect, it, vi, afterEach } from 'vitest';
 import { buildCoverTheme, canRefreshCoverTheme, refreshCoverTheme } from '../src/desktopLyrics/coverTheme';
 import { DEFAULT_THEME } from '../src/services/baseThemes';
 import { DESKTOP_DEFAULT_THEME } from '../src/desktopLyrics/desktopTheme';
-import { getContrastRatio, getHueDistance, hexToHsl } from '../src/utils/themeColorMath';
-import { extractRepresentativeColors } from '../src/utils/colorExtractor';
+import { getContrastRatio, getHueDistance, hexToHsl, hexToOklch } from '../src/utils/themeColorMath';
+import { extractColors, extractThemeColorsFromPixels } from '../src/utils/colorExtractor';
 import { generateBuiltinDualTheme } from '../src/utils/builtinTheme/generateBuiltinDualTheme';
 import { extractRepresentativeColorsFromPixels } from '../src/utils/colorPalette';
 
@@ -36,7 +36,9 @@ describe('desktop cover themes', () => {
     ]);
     const colors = extractRepresentativeColorsFromPixels(image, 5);
     expect(colors).toEqual(['#eeeff1', '#e5c99c', '#223f8e']);
-    const theme = buildCoverTheme(colors);
+    const themeColors = extractThemeColorsFromPixels(image, 5);
+    expect(themeColors[0]).toBe('#e5c99c');
+    const theme = buildCoverTheme(themeColors);
     expect(getHueDistance(hexToHsl(theme.accentColor)!.h, hexToHsl('#e5c99c')!.h)).toBeLessThan(2);
     expect(getContrastRatio(theme.accentColor, theme.backgroundColor)).toBeGreaterThanOrEqual(3.2);
   });
@@ -44,6 +46,24 @@ describe('desktop cover themes', () => {
     const red = buildCoverTheme(['#dc5432']), blue = buildCoverTheme(['#246edc']);
     expect(red.backgroundColor).not.toBe(blue.backgroundColor);
     expect(buildCoverTheme(['#dc5432'])).toEqual(red);
+  });
+  it('keeps grey-brown artwork calmer than vivid artwork while preserving their own hues', () => {
+    const muted = '#8f8470', vivid = '#e0402a';
+    let mutedChroma = 0, vividChroma = 0;
+    for (const cover of [muted, vivid]) {
+      expect(canRefreshCoverTheme([cover])).toBe(true);
+      expect(getHueDistance(hexToHsl(buildCoverTheme([cover]).accentColor)!.h, hexToHsl(cover)!.h)).toBeLessThan(2);
+    }
+    for (let choice = 1; choice <= 9; choice++) {
+      for (const cover of [muted, vivid]) {
+        const theme = generateBuiltinDualTheme({ coverColors: [cover], random: () => choice / 10, preserveCoverHue: true }).dark;
+        expect(getHueDistance(hexToHsl(theme.accentColor)!.h, hexToHsl(cover)!.h)).toBeLessThan(2);
+        expect(getContrastRatio(theme.accentColor, theme.backgroundColor)).toBeGreaterThanOrEqual(3.2);
+        if (cover === muted) mutedChroma += hexToOklch(theme.accentColor)!.C;
+        else vividChroma += hexToOklch(theme.accentColor)!.C;
+      }
+    }
+    expect(mutedChroma).toBeLessThan(vividChroma * .8);
   });
   it('uses the default only for missing or malformed covers', () => {
     for (const colors of [[], ['invalid']]) expect(buildCoverTheme(colors)).toBe(DESKTOP_DEFAULT_THEME);
@@ -60,8 +80,10 @@ describe('desktop cover themes', () => {
     const random = () => { seed = seed * 16807 % 2147483647; return seed / 2147483647; };
     for (const colors of [['#dc5432'], ['#246edc', '#dc5432'], ['#4b594c']]) {
       let previous = buildCoverTheme(colors);
-      // Compare the complete generated palette; dark, near-neutral RGB quantization can shift measured HSL hue.
-      expect(refreshCoverTheme(colors, previous, () => .9)).toEqual(generateBuiltinDualTheme({ coverColors: colors, random: () => .9, preserveCoverHue: true }).dark);
+      // A repeated perceptual brightness choice may need the bounded fallback to visibly change depth.
+      const constantRefresh = refreshCoverTheme(colors, previous, () => .9);
+      expect(Math.max(getContrastRatio(constantRefresh.accentColor, previous.accentColor), getContrastRatio(constantRefresh.backgroundColor, previous.backgroundColor))).toBeGreaterThanOrEqual(1.12);
+      expect(getHueDistance(hexToHsl(constantRefresh.accentColor)!.h, hexToHsl(colors[0])!.h)).toBeLessThan(2);
       for (let index = 0; index < 20; index++) {
         const next = refreshCoverTheme(colors, previous, random);
         expect(Math.max(getContrastRatio(next.accentColor, previous.accentColor), getContrastRatio(next.backgroundColor, previous.backgroundColor))).toBeGreaterThanOrEqual(1.12);
@@ -93,6 +115,6 @@ describe('desktop cover themes', () => {
       set src(_value: string) { queueMicrotask(() => this.onload?.()); }
     });
     vi.stubGlobal('document', { createElement: () => ({ getContext: () => ({ drawImage: () => {}, getImageData: () => { throw new Error('SecurityError'); } }) }) });
-    expect(await extractRepresentativeColors('https://unreadable.example/cover.png')).toEqual([]);
+    expect(await extractColors('https://unreadable.example/cover.png')).toEqual([]);
   });
 });

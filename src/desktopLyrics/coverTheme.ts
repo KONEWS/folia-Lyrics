@@ -28,6 +28,6 @@ export function refreshCoverTheme(colors: string[], previous: Theme, random = Ma
   };
   for (let attempt = 0; attempt < 8; attempt++) if (candidate(random)) return best;
   // A constant random stream can repeat the same brightness; these bounded choices still produce a visible refresh.
-  for (const choice of [.1, .9, .75]) if (candidate(() => choice)) return best;
+  for (const choice of [.1, .9, .75, 0, 1]) if (candidate(() => choice)) return best;
   return best;
 }

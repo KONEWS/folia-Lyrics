@@ -48,6 +48,7 @@ export async function verifyDesktopVisualSettings(page, song, output) {
     await visualFrame(page);
   };
   try {
+    // Start from isolated settings; the application's static-mode controls remain part of this flow.
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.evaluate(() => {
       localStorage.setItem('folia.desktop.mode.v1', 'classic'); localStorage.removeItem('folia.desktop.backgroundEnabled.v1');
@@ -64,7 +65,7 @@ export async function verifyDesktopVisualSettings(page, song, output) {
     await desktopSelect(page, '歌词样式').focus(); await page.keyboard.press('ArrowDown');
     const menu = page.locator('.desktop-top-menu'); await menu.waitFor();
     assert.equal(await menu.getAttribute('role'), 'group');
-    assert.equal(await menu.getByRole('listbox', { name: '歌词样式', exact: true }).getByRole('option').count(), 17);
+    assert.equal(await menu.getByRole('listbox', { name: '歌词样式', exact: true }).getByRole('option').count(), 18);
     assert.equal(await menu.getByRole('option').filter({ hasText: '静止' }).count(), 0);
     const footer = menu.getByRole('button', { name: '更多设置', exact: false });
     assert.equal(await footer.getAttribute('role'), null); assert.equal(await footer.count(), 1);
@@ -82,7 +83,8 @@ export async function verifyDesktopVisualSettings(page, song, output) {
     stage = 'registry-cards';
     const panel = await setTab('visualizer'), grid = styleShelf();
     const modes = await grid.locator('[role="radio"][data-value]:not([data-value="still"]):not([data-value="__random__"])').evaluateAll(elements => elements.map(element => ({ value: element.dataset.value, label: element.textContent.trim() })));
-    assert.equal(modes.length, 16); assert(!modes.some(mode => mode.value === 'still'));
+    assert.equal(modes.length, 17); assert(!modes.some(mode => mode.value === 'still'));
+    assert.equal(modes.filter(mode => mode.value === 'metaphor' && mode.label === '隐喻').length, 1);
     assert.equal(await grid.locator('[role="radio"][data-value="still"]').count(), 1);
     let withPanel = 0, withoutPanel = 0;
     for (const mode of [...modes, { value: 'still', label: '静止' }]) {
@@ -97,22 +99,40 @@ export async function verifyDesktopVisualSettings(page, song, output) {
       if (none) { withoutPanel++; assert.equal(await originalPanel.locator('input,button').count(), 0); }
       else { withPanel++; assert(await originalPanel.locator('input,button').count() > 0, `${mode.value}: the real registry panel exposes its own controls`); }
       assert.equal(await grid.locator(`[role="radio"][data-value="${mode.value}"]`).getAttribute('aria-checked'), 'true');
-      const canSegment = ['classic', 'partita', 'sonnet', 'tempera', 'lumiere', 'nebbia', 'hanabi'].includes(mode.value);
+      const canSegment = ['classic', 'partita', 'sonnet', 'tempera', 'lumiere', 'nebbia', 'hanabi', 'metaphor'].includes(mode.value);
       const grouping = await setTab('global');
       assert.equal(await grouping.getByRole('button', { name: '本曲歌词分词', exact: true }).isDisabled(), !canSegment);
       await setTab('visualizer');
       samples.push({ context: 'registry-card', ...mode, dedicatedPanel: !none, canSegment });
     }
-    assert.equal(withPanel, 16); assert.equal(withoutPanel, 1);
+    assert.equal(withPanel, 17); assert.equal(withoutPanel, 1);
     assert.equal(await desktopSelect(page, '歌词样式').getAttribute('data-value'), 'still');
     await closeVisualSettings(page);
     const stillMenu = await openDesktopMenu(page, '歌词样式');
-    assert.equal(await stillMenu.getByRole('option').count(), 17); assert.equal(await stillMenu.locator('[data-value="still"]').count(), 0);
+    assert.equal(await stillMenu.getByRole('option').count(), 18); assert.equal(await stillMenu.locator('[data-value="still"]').count(), 0);
     await page.keyboard.press('Escape'); await stillMenu.waitFor({ state: 'detached' });
     await setTab('visualizer');
+    await chooseStyle('metaphor');
+    const metaphorPanel = panel.locator('[data-visualizer-settings="metaphor"]');
+    const metaphorBefore = (await readVisual(page)).visualizerTunings.metaphor;
+    const metaphorStored = await page.evaluate(() => localStorage.getItem('metaphor_tuning'));
+    const cutPace = await dragVisualRange(page, metaphorPanel.getByRole('slider', { name: '切换快慢', exact: true }), 0.8, async draft => {
+      assert.notEqual(draft, metaphorBefore.cutPace);
+      assert.deepEqual((await readVisual(page)).visualizerTunings.metaphor, metaphorBefore);
+      assert.equal(await page.evaluate(() => localStorage.getItem('metaphor_tuning')), metaphorStored);
+    });
+    await waitVisual(page, { 'visualizerTunings.metaphor.cutPace': cutPace });
+    assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('metaphor_tuning')).cutPace), cutPace);
+    const keywordColors = metaphorPanel.getByRole('switch', { name: '关键字着色', exact: true });
+    const keywordColorsBefore = await keywordColors.getAttribute('aria-checked') === 'true';
+    await keywordColors.click(); await waitVisual(page, { 'visualizerTunings.metaphor.keywordColors': !keywordColorsBefore });
+    assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('metaphor_tuning')).keywordColors), !keywordColorsBefore);
+    await visualDialog(page).getByRole('button', { name: '默认', exact: true }).click();
+    await waitVisual(page, { 'visualizerTunings.metaphor.cutPace': 1, 'visualizerTunings.metaphor.keywordColors': false });
+    checks.push('Metaphor slider drafts preserve committed settings until release; its scalar, keyword-color switch and reset reach the renderer and original storage key');
     await chooseStyle('classic');
-    checks.push('all 16 upstream dynamic modes and separate still mode mount with their real 16 dedicated cards and one explicit no-card state');
-    console.log('PASS visual settings: 16 dynamic modes / separate still / 16 original cards');
+    checks.push('all 17 upstream dynamic modes and separate still mode mount with their real 17 dedicated cards and one explicit no-card state');
+    console.log('PASS visual settings: 17 dynamic modes / separate still / 17 original cards');
     stage = 'monet-live-spectrum'; checks.push(...await verifyDesktopMonetAudio(page, output, samples));
     await setTab('visualizer'); await chooseStyle('classic');
 
@@ -145,11 +165,21 @@ export async function verifyDesktopVisualSettings(page, song, output) {
     });
     await waitVisual(page, { lyricsFontScale: scaleValue });
     assert.equal(await page.evaluate(() => Number(localStorage.getItem('lyrics_font_scale'))), scaleValue);
-    await scale.focus(); await page.keyboard.down('ArrowLeft'); await page.keyboard.down('ArrowLeft'); await visualFrame(page);
-    const keyboardScale = Number(await scale.inputValue()); assert.notEqual(keyboardScale, scaleValue);
-    assert.equal((await readVisual(page)).lyricsFontScale, scaleValue);
-    assert.equal(await page.evaluate(() => Number(localStorage.getItem('lyrics_font_scale'))), scaleValue);
-    await page.keyboard.up('ArrowLeft'); await waitVisual(page, { lyricsFontScale: keyboardScale }); scaleValue = keyboardScale;
+    // Shared studio sliders hold pointer drags as drafts; each keyboard step is a discrete committed edit.
+    await scale.focus();
+    const scaleStep = Number(await scale.getAttribute('step'));
+    for (let count = 1; count <= 2; count++) {
+      await page.keyboard.down('ArrowLeft');
+      const expected = Number((scaleValue - scaleStep * count).toFixed(6));
+      await waitVisual(page, { lyricsFontScale: expected });
+      assert.equal(Number(await scale.inputValue()), expected, 'each keyboard press moves exactly one slider step');
+      assert.equal(await page.evaluate(() => Number(localStorage.getItem('lyrics_font_scale'))), expected);
+    }
+    const keyboardScale = Number((scaleValue - scaleStep * 2).toFixed(6));
+    await page.keyboard.up('ArrowLeft'); await visualFrame(page);
+    assert.equal((await readVisual(page)).lyricsFontScale, keyboardScale, 'releasing the key does not add another edit');
+    assert.equal(await page.evaluate(() => Number(localStorage.getItem('lyrics_font_scale'))), keyboardScale);
+    scaleValue = keyboardScale;
     const opacityValue = await dragVisualRange(page, common.getByRole('slider', { name: '整体透明度', exact: true }), 0.6);
     await waitVisual(page, { visualizerOpacity: opacityValue });
     const commonChanged = await record('common-committed');
@@ -157,7 +187,7 @@ export async function verifyDesktopVisualSettings(page, song, output) {
     assert(await page.evaluate(() => { const props = window.__foliaReadVisualizerProps(); return props.currentTime === window.__foliaVisualOriginalClock && props.lines === window.__foliaVisualOriginalLines; }));
     assert.equal(commonChanged.clock, originalClock);
     await page.screenshot({ path: `${output}/visual-settings-common-committed.png` });
-    checks.push('intensity, font, size and opacity reach original props; held pointer/keyboard slider drafts commit on release while preserving song colors, lyric references and clock');
+    checks.push('intensity, font, size and opacity reach original props; pointer slider drafts commit on release and keyboard steps commit individually while preserving song colors, lyric references and clock');
 
     stage = 'tuning';
     const tuning = (await setTab('visualizer')).locator('[data-visualizer-settings="classic"]');
@@ -171,8 +201,15 @@ export async function verifyDesktopVisualSettings(page, song, output) {
 
     stage = 'subtitle';
     const subtitle = await setTab('subtitle');
-    await subtitle.getByRole('combobox', { name: /^副字幕内容/ }).click();
-    await page.getByRole('listbox', { name: '副字幕内容', exact: true }).getByRole('option', { name: '罗马音', exact: true }).click();
+    const subtitleContent = subtitle.getByRole('combobox', { name: /^副字幕内容/ });
+    // Compact menus close when an ancestor scrolls; keyboard selection avoids pointer auto-scroll moving the anchor.
+    await subtitleContent.scrollIntoViewIfNeeded(); await visualFrame(page);
+    await subtitleContent.press('ArrowDown');
+    const subtitleMenu = page.getByRole('listbox', { name: '副字幕内容', exact: true });
+    await subtitleMenu.waitFor();
+    await subtitleContent.press('Home'); await subtitleContent.press('ArrowDown');
+    assert.equal(await subtitleMenu.getByRole('option', { name: '罗马音', exact: true }).getAttribute('data-active'), 'true');
+    await subtitleContent.press('Enter'); await subtitleMenu.waitFor({ state: 'detached' });
     await waitVisual(page, { subtitleContentMode: 'romanization' });
     const subtitleOpacity = await dragVisualRange(page, subtitle.getByRole('slider', { name: '字幕透明度', exact: true }), 0.5);
     await waitVisual(page, { subtitleOverlayOpacity: subtitleOpacity });
@@ -246,11 +283,11 @@ export async function verifyDesktopVisualSettings(page, song, output) {
     await importText(JSON.stringify({ ...clearFonts, visualizerMode: 'still' })); await waitVisual(page, { mode: 'still' });
     await closeVisualSettings(page);
     const staticMenu = await openDesktopMenu(page, '歌词样式');
-    assert.equal(await staticMenu.getByRole('option').count(), 17); assert.equal(await staticMenu.locator('[data-value="still"]').count(), 0);
+    assert.equal(await staticMenu.getByRole('option').count(), 18); assert.equal(await staticMenu.locator('[data-value="still"]').count(), 0);
     await page.keyboard.press('Escape'); await staticMenu.waitFor({ state: 'detached' });
     await openVisualSettings(page, 'common');
     await importText(json); await waitVisual(page, { mode: 'classic', 'theme.fontFamily': 'Microsoft YaHei' }); await closeVisualSettings(page);
-    checks.push('false background, null system-font families and empty fallback stacks clear old values in JSON and shortcode; importing still preserves the separate static mode and the 16 dynamic styles plus random topbar option');
+    checks.push('false background, null system-font families and empty fallback stacks clear old values in JSON and shortcode; importing still preserves the separate static mode and the 17 dynamic styles plus random topbar option');
 
     stage = 'compact-dialog';
     await page.setViewportSize({ width: 450, height: 300 });
@@ -294,10 +331,10 @@ async function verifyStudio(page, output, checks) {
     const studio = page.locator('[data-desktop-visual-studio]');
     await studio.getByRole('dialog', { name: '歌词样式', exact: true }).waitFor();
     assert.deepEqual(await studio.getByRole('tab').allTextContents(), ['歌词动画', '背景', '字体', '字幕', '全局']);
-    assert.equal(await studio.getByRole('radiogroup', { name: '歌词样式', exact: true }).getByRole('radio').count(), 18);
+    assert.equal(await studio.getByRole('radiogroup', { name: '歌词样式', exact: true }).getByRole('radio').count(), 19);
     assert.equal(await studio.getByRole('button', { name: '实时', exact: true }).getAttribute('aria-pressed'), 'true');
     const shelf = studio.locator('[data-style-shelf]');
-    assert.equal(await shelf.locator('img').count(), 17);
+    assert.equal(await shelf.locator('img').count(), 18);
     await shelf.locator('img').first().hover();
     assert.equal(await shelf.locator('canvas,[data-picture]').count(), 0, 'static posters never mount live renderers');
     await studio.getByRole('radio', { name: '绘光', exact: true }).click();
@@ -307,7 +344,7 @@ async function verifyStudio(page, output, checks) {
     await studio.getByRole('button', { name: '默认', exact: true }).click();
     await page.waitForFunction(() => JSON.parse(localStorage.getItem('lumiere_tuning') || '{}').lightIntensity === 1);
     await page.screenshot({ path: output + '/upstream-studio-wide.png' });
-    checks.push('the upstream studio owns the two-column preview, 18 style choices, five tabs, and saved style reset');
+    checks.push('the upstream studio owns the two-column preview, 19 style choices, five tabs, and saved style reset');
     await studio.getByRole('radio', { name: '流光', exact: true }).click();
     const clock = await page.evaluate(() => window.__foliaReadVisualizerProps().currentTime.get());
     await studio.getByRole('button', { name: '实时', exact: true }).click();

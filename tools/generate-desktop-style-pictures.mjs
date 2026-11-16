@@ -7,6 +7,7 @@ import { openDesktopMenu } from '../test/desktop-select.mjs';
 
 // Capture shipped desktop style posters once; the application only loads the resulting PNGs.
 const captureBackgrounds = process.argv.includes('--backgrounds');
+const selectedMode = process.argv.find(value => value.startsWith('--mode='))?.slice('--mode='.length);
 const output = resolve('src/desktopLyrics/visualFeatures', captureBackgrounds ? 'backgroundPictures' : 'stylePictures');
 await mkdir(output, { recursive: true });
 const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.woff2': 'font/woff2' };
@@ -44,7 +45,9 @@ try {
         const modes = await grid.getByRole('radio').evaluateAll(nodes => nodes.map(node => node.dataset.value));
         await studio.locator('section').first().evaluate(node => { node.dataset.posterStage = 'true'; });
         await page.addStyleTag({ content: '[data-poster-stage] [data-visualizer-style], [data-poster-stage] button, [data-poster-stage] [role="group"] { visibility:hidden !important }' });
-        for (const mode of modes.filter(mode => mode !== 'url')) {
+        const selected = modes.filter(mode => mode !== 'url' && (!selectedMode || mode === selectedMode));
+        if (!selected.length) throw new Error(`Unknown background mode: ${selectedMode}`);
+        for (const mode of selected) {
             const tile = grid.locator(`[data-value="${mode}"]`);
             await tile.click();
             const layer = studio.locator('section').first().locator(`[data-visualizer-background="${mode}"]`).last();
@@ -56,7 +59,9 @@ try {
     } else {
         const choices = await studio.getByRole('radio').evaluateAll(nodes => nodes.map(node => node.dataset.value).filter(value => value !== '__random__'));
         // The poster uses a real sample frame, with no controls or hotspots over it.
-        for (const mode of choices) {
+        const selected = choices.filter(mode => !selectedMode || mode === selectedMode);
+        if (!selected.length) throw new Error(`Unknown visualizer mode: ${selectedMode}`);
+        for (const mode of selected) {
             await studio.locator(`[role="radio"][data-value="${mode}"]`).click();
             await page.waitForTimeout(mode === 'machi' ? 8000 : 2000);
             const box = studio.locator('section div[style*="aspect-ratio"]').first();

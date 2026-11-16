@@ -208,6 +208,37 @@ describe('desktop appearance codec', () => {
     expect(exported).not.toHaveProperty('hanabiTuning');
   });
 
+  it.each(['json', 'code'] as const)('roundtrips Metaphor tuning and beat effects through %s', format => {
+    const options = makeOptions();
+    const tuning = { cutPace: 1.4, flip: true, keywordColors: true, grain: 0.4 };
+    const smartBeat = { mode: 'cached', effects: { 'metaphor.annihilation': { on: false, strength: 1.5 } } };
+    const input = { visualizerMode: 'metaphor', visualizerTunings: { metaphor: tuning }, smartBeat };
+    expect(importDesktopVisualConfig(encode(format, input), options)).toEqual({ ok: true, mode: 'metaphor' });
+    expect(useVisualizerSettingsStore.getState().metaphorTuning).toMatchObject(tuning);
+    expect(useVisualizerSettingsStore.getState().smartBeat).toMatchObject(smartBeat);
+    const exported = exportDesktopVisualConfig(format, options, 'metaphor');
+    const decoded = decompressConfig(exported);
+    expect(decoded.visualizerTunings.metaphor).toMatchObject(tuning);
+    expect(decoded.smartBeat).toMatchObject(smartBeat);
+    expect(decoded).not.toHaveProperty('metaphorTuning');
+    useVisualizerSettingsStore.getState().handleResetMetaphorTuning();
+    expect(importDesktopVisualConfig(exported, options)).toEqual({ ok: true, mode: 'metaphor' });
+    expect(useVisualizerSettingsStore.getState().metaphorTuning).toMatchObject(tuning);
+    expect(useVisualizerSettingsStore.getState().smartBeat).toMatchObject(smartBeat);
+    expect(storage.getItem('folia.desktop.mode.v1')).toBe('metaphor');
+  });
+
+  it.each(['query', 'fragment', 'fragment-first', 'query-fallback'])('reads pasted appearance links using %s without opening them', location => {
+    const code = compressConfig({ visualizerMode: 'metaphor', visualizerTunings: { metaphor: { flip: true } } });
+    const url = new URL('https://example.invalid/');
+    if (location === 'query' || location === 'query-fallback') url.searchParams.set('cfg', code);
+    if (location === 'fragment' || location === 'fragment-first') url.hash = new URLSearchParams({ cfg: code }).toString();
+    if (location === 'fragment-first') url.searchParams.set('cfg', compressConfig({ visualizerMode: 'classic' }));
+    if (location === 'query-fallback') url.hash = 'home';
+    expect(importDesktopVisualConfig(url.href, makeOptions())).toEqual({ ok: true, mode: 'metaphor' });
+    expect(useVisualizerSettingsStore.getState().metaphorTuning.flip).toBe(true);
+  });
+
   it('ignores unrelated host fields, validates numeric settings and delegates tuning clamping to the original setters', () => {
     const options = makeOptions(), frameRate = useVisualizerSettingsStore.getState().visualizerFrameRate;
     expect(importDesktopVisualConfig(JSON.stringify({ lyricsFontScale: 'bad', visualizerFrameRate: 1,

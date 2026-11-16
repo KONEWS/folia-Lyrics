@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
-import { extractRepresentativeColors } from '../utils/colorExtractor';
+import { extractColors } from '../utils/colorExtractor';
 import { buildCoverTheme, canRefreshCoverTheme, refreshCoverTheme } from './coverTheme';
 import { DESKTOP_DEFAULT_THEME, DESKTOP_THEME_COLORS } from './desktopTheme';
 import type { Theme } from '../types';
@@ -34,7 +34,7 @@ export function useCoverTheme(cover: string, enabled: boolean) {
           const palette = { colors, theme: buildCoverTheme(colors) };
           remember(cover, palette); setResult({ cover, palette });
         };
-        void extractRepresentativeColors(cover, 5, extraction.signal).then(accept).catch(() => accept([]));
+        void extractColors(cover, 5, extraction.signal).then(accept).catch(() => accept([]));
       }
     }
     return () => { mounted.current = false; revision.current++; extraction?.abort(); };

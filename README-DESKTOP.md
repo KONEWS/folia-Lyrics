@@ -1,8 +1,10 @@
-# folia-Lyrics 0.5.6
+# folia-Lyrics 0.5.7
 
 Windows 歌词显示器，自身不播放音频。使用 Windows GSMTC 获取其他播放器公开的歌曲和进度，使用 WASAPI 默认输出设备的混合声音驱动原版歌词动效。
 
-当前版本为 0.5.6，已发布到 GitHub 并列为最新版，见 [0.5.6 发布页](https://github.com/KONEWS/folia-Lyrics/releases/tag/desktop-v0.5.6)。独立程序为 `FoliaLyrics-0.5.6-win-x64.exe`，同时提供 `SHA256SUMS.txt`。发布附件与本地 `release/0.5.6-ui3/FoliaLyrics-0.5.6-win-x64.exe` 一致；重新编译默认输出到 `release/0.5.6/win-x64/FoliaLyrics.exe`。
+0.5.7 同步至上游 `cdb08291d`（v0.7.29 之后）：新增「隐喻」歌词样式及其搜索、备份和静态预览图，同步封面主题取色与行级 TTML 时轴修复，并修复图片子窗口按 Esc 连带关闭父设置窗口的问题。详见 [上游同步记录](docs/UPSTREAM-SYNC.md)。
+
+当前版本为 0.5.7，正式发布页为 [0.5.7 发布页](https://github.com/KONEWS/folia-Lyrics/releases/tag/desktop-v0.5.7)。独立程序为 `FoliaLyrics-0.5.7-win-x64.exe`，同时提供 `SHA256SUMS.txt`。本地独立程序位于 `release/0.5.7/FoliaLyrics-0.5.7-win-x64.exe`；重新编译默认输出到 `release/0.5.7/win-x64/FoliaLyrics.exe`。此前版本与本地测试包继续保留。
 
 0.5.3 内置 HarmonyOS Sans SC 字体，更新演示歌词，修正窄窗口换行与快捷参数滑块。
 

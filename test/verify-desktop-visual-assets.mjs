@@ -18,7 +18,7 @@ export async function verifyDesktopVisualAssets(page, song, packet, output, samp
   // The kit's link button sits below its label; pointer users activate the complete row.
   await upstream.getByRole('button', { name: '添加图片', exact: true }).locator('..').click();
   const images = page.getByRole('dialog', { name: '画布图片', exact: true }); await images.waitFor();
-  await page.waitForFunction(() => document.querySelector('[role="dialog"][aria-label="画布图片"]')?.contains(document.activeElement));
+  await page.waitForFunction(dialog => dialog.contains(document.activeElement), await images.elementHandle());
   await page.keyboard.press('Escape'); await images.waitFor({ state: 'detached' });
   assert(await visualDialog(page).isVisible(), 'an immediate asset-dialog Escape must not dismiss its parent visual settings');
   const add = upstream.getByRole('button', { name: '添加图片', exact: true });
@@ -40,8 +40,7 @@ export async function verifyDesktopVisualAssets(page, song, packet, output, samp
   const file = images.locator('input[type=file][accept^="image/"]');
   await file.setInputFiles({ name: assetName, mimeType: 'image/png', buffer: PNG.sync.write(png) });
   await images.getByText(assetName, { exact: true }).waitFor();
-  await page.waitForFunction(() => { const dialog = document.querySelector('[role="dialog"][aria-label="画布图片"]');
-    return dialog && [...dialog.querySelectorAll('button')].some(button => button.textContent.trim() === '保存' && !button.disabled); });
+  await page.waitForFunction(button => !button.disabled, await images.getByRole('button', { name: '保存', exact: true }).elementHandle());
   const added = await readVisualCache(page, 'tempera_layer_image_');
   assert.equal(added.length, 1); assert.equal(added[0].data.name, assetName); assert.equal(added[0].data.isBlob, true);
   assert(added[0].data.blobSize > 0); assert.equal(added[0].data.mimeType, 'image/png');

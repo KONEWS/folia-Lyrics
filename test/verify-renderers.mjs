@@ -221,10 +221,11 @@ try {
   const modes = choices.filter(choice => choice.value !== '__random__');
   const modeCount = modes.length;
   assert(modeCount > 0, 'registry must expose dynamic modes');
-  assert.equal(modeCount, 16, 'the desktop exposes all 16 dynamic modes');
+  assert.equal(modeCount, 17, 'the desktop exposes all 17 dynamic modes');
   assert.equal(modes.filter(mode => mode.value === 'still').length, 0);
   assert.equal(modes.filter(mode => mode.label === '绘光').length, 1);
   assert.equal(modes.filter(mode => mode.value === 'hanabi' && mode.label === '花火').length, 1);
+  assert.equal(modes.filter(mode => mode.value === 'metaphor' && mode.label === '隐喻').length, 1);
   const clockMode = () => selectDesktopOption(page, '歌词样式', { label: '流光' });
   for (let i = 0; i < modeCount; i++) {
     if (singleMode !== undefined && i !== Number(singleMode)) continue;

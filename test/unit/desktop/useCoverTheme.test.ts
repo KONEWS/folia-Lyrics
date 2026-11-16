@@ -1,13 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useCoverTheme } from '../../../src/desktopLyrics/useCoverTheme';
-import { extractRepresentativeColors } from '../../../src/utils/colorExtractor';
+import { extractColors } from '../../../src/utils/colorExtractor';
 import { buildCoverTheme } from '../../../src/desktopLyrics/coverTheme';
 import { DESKTOP_DEFAULT_THEME } from '../../../src/desktopLyrics/desktopTheme';
 
 // test/unit/desktop/useCoverTheme.test.ts — exercise real hook callbacks and async guards with persistent hook slots.
 type Slot = { value?: unknown; deps?: readonly unknown[]; cleanup?: (() => void) | void };
 const hooks = vi.hoisted(() => ({ slots: [] as Slot[], cursor: 0, pending: [] as (() => void)[], writes: 0 }));
-vi.mock('../../../src/utils/colorExtractor', () => ({ extractRepresentativeColors: vi.fn() }));
+vi.mock('../../../src/utils/colorExtractor', () => ({ extractColors: vi.fn() }));
 vi.mock('react', () => {
   const same = (a?: readonly unknown[], b?: readonly unknown[]) => !!a && !!b && a.length === b.length && a.every((value, index) => Object.is(value, b[index]));
   const memo = (create: () => unknown, deps: readonly unknown[]) => {
@@ -42,7 +42,7 @@ vi.mock('react', () => {
   };
 });
 const colors = ['#246edc', '#dc5432'];
-const extract = vi.mocked(extractRepresentativeColors);
+const extract = vi.mocked(extractColors);
 let cleanup: (() => void) | undefined;
 beforeEach(() => { hooks.slots = []; hooks.cursor = 0; hooks.pending = []; hooks.writes = 0; extract.mockReset(); });
 afterEach(() => { cleanup?.(); cleanup = undefined; vi.restoreAllMocks(); vi.unstubAllGlobals(); });

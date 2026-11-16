@@ -203,7 +203,7 @@ try {
     ['claddagh', 'claddaghRadiusScale'], ['cappella', 'cappellaAvatarSource'], ['tilt', 'tiltSplitProbability'],
     ['diorama', 'dioramaCameraSpeed'], ['pendolo', 'pendoloWheelCenterX'], ['monet', 'monetFontScale'],
     ['sonnet', 'sonnetTextureResolution'], ['tempera', 'temperaTextureResolution'], ['lumiere', 'lumiereLightIntensity'], ['hanabi', 'hanabiSparkAmount'],
-    ['machi', 'machiCameraSection'], ['nebbia', 'nebbiaStrokeWidth'], ['still'],
+    ['machi', 'machiCameraSection'], ['nebbia', 'nebbiaStrokeWidth'], ['metaphor', 'metaphorCutPace'], ['still'],
   ];
   assert.deepEqual(modes.map(([mode]) => mode).sort(), builtins.styles.sort());
   for (const [mode, parameter] of modes) await attempt(`mode-${mode}`, async () => {
@@ -217,7 +217,10 @@ try {
     ['sonnet', ['sonnetQualitySection', 'sonnetMotionSection', 'sonnetPostProcessSection', 'sonnetDisplaySection']],
     ['tempera', ['temperaImageSection', 'temperaQualitySection', 'temperaMotionSection', 'temperaPostProcessSection', 'temperaLyricSection', 'temperaDisplaySection']],
     ['lumiere', ['lumiereLightSection', 'lumiereAtmosphereSection', 'lumiereTextSection', 'lumiereThemeSection', 'lumierePerformanceSection']],
+    ['metaphor', ['metaphorCameraSection', 'metaphorInkSection', 'lyricRenderSection']],
   ]) for (const section of sections) await attempt(`section-${mode}-${section}`, () => landing(`visualizer.${mode}.options.${section}`, { mode, sectionHeading: true }));
+  await attempt('metaphor-keyword-colors', () => landing('visualizer.metaphor.options.metaphorKeywordColors', { mode: 'metaphor', aria: '关键字着色' }));
+  await attempt('metaphor-beat-effect-strength', () => landing('visualizer.metaphor.beat.metaphor.annihilation.strength', { mode: 'metaphor', type: 'range', effect: 'metaphor.annihilation' }));
   await attempt('diorama-geometry-child-disclosure', async () => {
     const entry = entries.get('visualizer.diorama.options.dioramaGeometryRings');
     await landing(entry.key, { mode: 'diorama', aria: entry.label, legend: entry.context });

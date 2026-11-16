@@ -17,6 +17,7 @@ function translate(key: string): string {
 const PANEL_FILES = [
   'settingsPanels.tsx', 'monet/MonetSettingsPanel.tsx', 'pendolo/PendoloSettingsPanel.tsx',
   'sonnet/SonnetSettingsPanel.tsx', 'tempera/TemperaSettingsPanel.tsx', 'lumiere/LumiereSettingsPanel.tsx', 'hanabi/HanabiSettingsPanel.tsx',
+  'metaphor/MetaphorSettingsPanel.tsx',
   'diorama/DioramaGeometrySettings.tsx', 'diorama/DioramaParticleAppearanceSettings.tsx', 'diorama/DioramaEffectSettings.tsx',
   'backgrounds/common/CommonBackgroundSettingsCard.tsx', 'backgrounds/monet/MonetBackgroundSettingsCard.tsx',
   'backgrounds/latent/LatentBackgroundSettingsCard.tsx', 'backgrounds/sora/SoraBackgroundSettingsCard.tsx',
@@ -129,6 +130,8 @@ describe('desktop settings search', () => {
     expect(searchDesktopSettings(index, '随机候选')[0]).toMatchObject({ key: 'visualizer.options.randomPool', fallback: translate('commandPalette.commands.visualizer-toggle-random-per-song.title') });
     expect(searchDesktopSettings(index, '重抽')[0].key).toBe('visualizer.options.randomVisualizerReroll');
     expect(searchDesktopSettings(index, '云阶 快捷参数').some(entry => entry.mode === 'partita')).toBe(true);
+    expect(searchDesktopSettings(index, '隐喻 关键字着色')[0]).toMatchObject({ mode: 'metaphor', section: 'visualizer', label: '关键字着色' });
+    expect(searchDesktopSettings(index, '湮灭对撞 强度')[0]).toMatchObject({ mode: 'metaphor', fallback: '湮灭对撞' });
     expect(searchDesktopSettings(index, '莫奈背景 quick controls').some(entry => entry.background === 'monet')).toBe(true);
     expect(index.find(entry => entry.key === 'subtitle.options.hidePlayerTranslationSubtitle')?.label).toBe(translate('options.hidePlayerTranslationSubtitle'));
     expect(index.some(entry => entry.key === 'background.options.videoLayerUrl')).toBe(false);

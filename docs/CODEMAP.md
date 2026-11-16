@@ -35,9 +35,11 @@
 | 256+ | `src/types.ts` |
 | 64+ | `src/components/visualizer/definition.ts` |
 | 32+ | `src/components/modal/settings/kit/index.ts` |
+| 32+ | `src/components/visualizer/colorMix.ts` |
 | 32+ | `src/components/visualizer/hanabi/types.ts` |
 | 32+ | `src/components/visualizer/machi/engine/materials.ts` |
 | 32+ | `src/components/visualizer/tuningDefinition.ts` |
+| 32+ | `src/components/visualizer/visualizerSeedHash.ts` |
 | 32+ | `src/desktopLyrics/bridge.ts` |
 | 32+ | `src/i18n/config.ts` |
 | 32+ | `src/stores/useVisualizerSettingsStore.ts` |
@@ -74,6 +76,7 @@
 - `src/components/visualizer/hanabi/entry.tsx`
 - `src/components/visualizer/lumiere/entry.tsx`
 - `src/components/visualizer/machi/entry.tsx`
+- `src/components/visualizer/metaphor/entry.tsx`
 - `src/components/visualizer/monet/entry.tsx`
 - `src/components/visualizer/nebbia/entry.tsx`
 - `src/components/visualizer/partita/entry.tsx`
@@ -98,6 +101,7 @@
 - `src/components/visualizer/hanabi/tuning.ts`
 - `src/components/visualizer/lumiere/tuning.ts`
 - `src/components/visualizer/machi/tuning.ts`
+- `src/components/visualizer/metaphor/tuning.ts`
 - `src/components/visualizer/monet/tuning.ts`
 - `src/components/visualizer/nebbia/tuning.ts`
 - `src/components/visualizer/partita/tuning.ts`

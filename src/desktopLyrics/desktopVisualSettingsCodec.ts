@@ -44,7 +44,11 @@ function sanitize(value: unknown, current: unknown): unknown {
 }
 function configInput(text: string): string {
   const value = text.trim();
-  if (/^https?:\/\//i.test(value)) return new URL(value).searchParams.get('cfg') || value;
+  if (/^https?:\/\//i.test(value)) {
+    const url = new URL(value);
+    // New appearance links keep cfg in the fragment; older links use the query. This only reads text.
+    return new URLSearchParams(url.hash.slice(1)).get('cfg') || url.searchParams.get('cfg') || value;
+  }
   return value;
 }
 export function exportDesktopVisualConfig(format: 'json' | 'code', options: Options, mode?: VisualizerMode): string {
