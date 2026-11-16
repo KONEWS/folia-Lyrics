@@ -10,6 +10,16 @@ const apps = [
 ];
 
 describe('title-bar follow menu options', () => {
+  it('merges the Steam ECHO session with one saved shortcut and preserves an ambiguous copy', () => {
+    const echo = { slot: 4, name: '我的 ECHO', path: 'G:\\Steam\\steamapps\\common\\ECHO\\ECHO.exe', icon: '', launchKind: 'exe' as const };
+    const session = { ...EMPTY, source: 'app.echo.steam', sources: [{ id: 'app.echo.steam', label: 'app.echo.steam', playing: true }] };
+    const options = buildFollowMenuOptions(session, [echo], echo.path);
+    expect(options).toHaveLength(1);
+    expect(options[0]).toMatchObject({ label: '我的 ECHO', running: true, playing: true, selected: true });
+    expect(followMenuSelectedLabel(session, [echo], 'app.echo.steam')).toBe('我的 ECHO');
+    const copies = [echo, { ...echo, slot: 5, path: 'D:\\ECHO\\ECHO.exe' }];
+    expect(buildFollowMenuOptions({ ...session, source: '' }, copies, echo.path)).toHaveLength(3);
+  });
   it('keeps the closed-menu tooltip aligned with selected live, offline, aliased and ambiguous sources', () => {
     const copies = [...apps, { slot: 3, name: '另一份 foobar2000', path: 'D:\\Music\\foobar2000.exe', icon: '', launchKind: 'exe' as const }];
     const sessions = [EMPTY, ...['Salt_player!App', 'foobar2000.exe', 'Foobar Player', 'D:\\Music\\foobar2000.exe', 'unknown'].map(id => ({

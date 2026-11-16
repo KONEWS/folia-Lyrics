@@ -44,7 +44,7 @@ try {
   });
   await installDesktopBridgeMock(page); await installDesktopParserProbe(page);
   // The 8s default above is for in-page assertions; the first dev-server page load gets its own longer budget.
-  await page.goto(url, { waitUntil: 'networkidle', timeout: 60000 });
+  await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
   await page.waitForFunction(() => window.__foliaReadyAt !== null);
   const song = { key: 'test', title: '搜索验证歌曲', artist: '测试歌手', cover: '', source: '测试播放器', sessionId: 'search-session',
     position: 10, duration: 180, rate: 1, playing: false, hasTimeline: true, sources: [{ id: 'search-session', label: '测试播放器' }] };
@@ -83,8 +83,7 @@ try {
   const open = async () => {
     if (!await search().count()) {
       const studio = page.locator('[data-desktop-visual-studio]');
-      if (await studio.count()) await studio.getByRole('button', { name: '搜索全部设置', exact: true }).click();
-      else await page.locator('[data-settings-trigger]').click();
+      if (!await studio.count()) await page.locator('[data-settings-trigger]').click();
       await search().waitFor();
     }
   };
@@ -105,7 +104,7 @@ try {
       return text.includes(label) && text.includes(hint);
     }, { label: entry.label, hint: expected.hint });
     const sample = await page.evaluate(() => {
-      const active = document.activeElement, content = active.closest('.desktop-settings-scroll,.desktop-visual-content');
+      const active = document.activeElement, content = active.closest('.desktop-settings-scroll,.desktop-visual-content,.st-scroll');
       const label = active.closest('label'), parent = label?.parentElement ?? active.parentElement;
       const named = element => element?.getAttribute('aria-label') || element?.getAttribute('aria-labelledby')?.split(/\s+/).map(id => document.getElementById(id)?.textContent ?? '').join(' ');
       return { tag: active.tagName, type: active.getAttribute('type'), role: active.getAttribute('role'), aria: named(active), title: active.getAttribute('title'),
@@ -119,6 +118,11 @@ try {
         contentScrollTop: content?.scrollTop, pageX: scrollX, pageY: scrollY, hint: document.querySelector('.desktop-settings-search-hint')?.textContent ?? '' };
     });
     assert.equal(sample.section, entry.section, `${key}: destination section`);
+    if (entry.section !== 'main') {
+      assert.equal(await page.locator('[data-desktop-visual-settings]').count(), 0, 'no duplicate desktop options overlay');
+      assert.equal(await page.getByRole('button', { name: '桌面选项', exact: true }).count(), 0, 'no duplicate desktop options entry');
+      assert.equal(await page.locator('[data-desktop-visual-studio] [role=dialog]').count(), 1, 'search stays in one studio');
+    }
     if (expected.aria) assert.equal(sample.aria, expected.aria, `${key}: exact named control`);
     if (expected.mode) assert.equal(sample.ownerMode, expected.mode, `${key}: original mode parameter panel`);
     if (expected.background) assert.equal(sample.ownerBackground, expected.background, `${key}: original background parameter panel`);
@@ -171,7 +175,7 @@ try {
     assert.equal(await main().locator('details').filter({ has: page.locator('[data-settings-target="manual-clock"]') }).getAttribute('open'), '');
   });
   for (const [key, expected] of [
-    ['common.options.fontFamily', { aria: '字体' }], ['common.options.fontSize', { aria: '字号', type: 'range' }],
+    ['common.options.fontFamily', { text: '无衬线' }], ['common.options.fontSize', { aria: '字号', type: 'range' }],
     ['common.options.fontWeight', { aria: '自动字重', hint: '自动字重' }],
     ['subtitle.options.fontFamily', { aria: '字幕继承歌词字体', hint: '字幕继承歌词字体' }],
     ['subtitle.options.fontWeight', { aria: '字幕继承歌词字体', hint: '字幕继承歌词字体' }],
@@ -180,7 +184,7 @@ try {
     ['common.options.uploadCustomFont', { text: '选择自定义字体', hint: '选择自定义字体' }],
     ['subtitle.options.chooseSystemFont', { aria: '字幕继承歌词字体', hint: '字幕继承歌词字体' }],
     ['subtitle.options.hidePlayerTranslationSubtitle', { aria: '隐藏底部字幕层' }],
-    ['visualizer.desktopVisual.previewTitle', { text: '样式预览' }],
+    ['visualizer.desktopVisual.previewTitle', { text: '踊' }],
     ['visualizer.options.randomPool', { aria: '每首歌随机歌词动画', hint: '每首歌随机歌词动画' }],
     ['visualizer.options.randomVisualizerReroll', { aria: '每首歌随机歌词动画', hint: '每首歌随机歌词动画' }],
     ['background.options.videoLayerPickFile', { aria: '在歌词后方显示视频', hint: '在歌词后方显示视频' }],
@@ -206,7 +210,7 @@ try {
     const key = parameter ? `visualizer.${mode}.options.${parameter}` : `visualizer.${mode}`;
     await landing(key, parameter ? { mode } : {});
     assert.equal(await page.locator(`[data-visualizer-settings="${mode}"]`).count(), 1);
-    assert.equal(await page.locator('[data-visual-mode="classic"]').getAttribute('aria-pressed'), 'true');
+    assert.equal((await readVisual(page)).mode, 'classic', 'search inspects a style without changing the playing style');
     if (mode !== 'classic') assert((await page.locator('.desktop-search-editing').textContent()).includes(entries.get(`visualizer.${mode}`).label));
   });
   for (const [mode, sections] of [

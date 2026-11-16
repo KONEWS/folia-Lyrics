@@ -43,7 +43,7 @@ export const NEBBIA_GLASS = ['rain', 'dew', 'snow'] as const;
 export type NebbiaGlass = typeof NEBBIA_GLASS[number];
 /** 窗外的默认搭配（只给没存过玻璃的旧 tuning 用）：雨夜街景配雨窗、水族箱配凝露；共用背景不换。 */
 export const NEBBIA_GLASS_FOR: Partial<Record<NebbiaBehind, NebbiaGlass>> = { night: 'rain', aquarium: 'dew' };
-/** 雾笺自己画的窗外场景（着色器按它编，nebbiaShaders.ts）：选了共用背景时水珠里折射的还是街景。 */
+/** 雾笺自己画的窗外场景（着色器按它编，nebbiaShaders.ts）：选了共用背景时水珠里折射的还是街景；透明时选了水族箱就折射水族箱。 */
 export type NebbiaWindowScene = 'night' | 'aquarium';
 /** 水族箱里最多几只水母（着色器里 uniform 数组的长度）。 */
 export const NEBBIA_MAX_JELLIES = 24;
@@ -51,7 +51,7 @@ export const NEBBIA_MAX_JELLIES = 24;
 export const NEBBIA_MAX_BURSTS = 12;
 
 export interface NebbiaTuning {
-    /** 分辨率与抗锯齿（#929）：默认跟随「性能与动效」里的全局挡位（utils/lyricRenderQuality.ts）。 */
+    /** 分辨率与抗锯齿（#929）：默认跟随「动画与性能」里的全局挡位（utils/lyricRenderQuality.ts）。 */
     render: LyricRenderOverride;
     /** 打开的出现方式，至少一种。 */
     appear: NebbiaAppearStyle[];

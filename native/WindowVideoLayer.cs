@@ -89,13 +89,15 @@ internal sealed partial class MainWindow
             {
                 file.Dispose(); Empty(416, "Range Not Satisfiable", $"Content-Range: bytes */{length}"); return;
             }
+            count = VideoLayerFileStore.ResponseCount(count);
+            var partial = range is not null || count < length;
             var headers = $"Content-Type: {VideoLayerFileStore.ContentType(videoLayerPath)}\r\nContent-Length: {count}\r\nAccept-Ranges: bytes\r\nCache-Control: no-store\r\nX-Content-Type-Options: nosniff";
-            if (range is not null) headers += $"\r\nContent-Range: bytes {start}-{start + count - 1}/{length}";
-            if (args.Request.Method == "HEAD") { file.Dispose(); Empty(range is null ? 200 : 206, range is null ? "OK" : "Partial Content", headers); return; }
+            if (partial) headers += $"\r\nContent-Range: bytes {start}-{start + count - 1}/{length}";
+            if (args.Request.Method == "HEAD") { file.Dispose(); Empty(partial ? 206 : 200, partial ? "Partial Content" : "OK", headers); return; }
             var stream = new VideoLayerReadStream(file, start, count);
             videoLayerStreams.RemoveAll(reference => !reference.TryGetTarget(out _));
             videoLayerStreams.Add(new(stream));
-            args.Response = environment.CreateWebResourceResponse(stream, range is null ? 200 : 206, range is null ? "OK" : "Partial Content", VideoLayerCors + headers);
+            args.Response = environment.CreateWebResourceResponse(stream, partial ? 206 : 200, partial ? "Partial Content" : "OK", VideoLayerCors + headers);
         }
         catch (Exception exception)
         {

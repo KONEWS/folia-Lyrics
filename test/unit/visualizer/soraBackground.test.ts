@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act, createElement, StrictMode } from 'react';
+import { act, createElement, StrictMode, Suspense } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import SoraBackground from '../../../src/components/visualizer/backgrounds/sora/SoraBackground';
@@ -59,11 +59,12 @@ afterEach(() => {
 });
 
 describe('Sora background scheduling', () => {
-    it('honors the shared static mode even while playback continues', () => {
-        act(() => root.render(soraEntry.render({
+    it('honors the shared static mode even while playback continues', async () => {
+        // The registry loads the renderer lazily; mirror the real host Suspense boundary before advancing RAF.
+        await act(async () => root.render(createElement(Suspense, { fallback: null }, soraEntry.render({
             theme, isDaylight: false, paused: false, staticMode: true,
             audioPower: motionValue(0), audioBands: {} as AudioBands,
-        })));
+        }))));
         tick(100); tick(200);
         expect(gpu.drawBufferInfo).toHaveBeenCalledTimes(1); expect(frames.size).toBe(0);
     });

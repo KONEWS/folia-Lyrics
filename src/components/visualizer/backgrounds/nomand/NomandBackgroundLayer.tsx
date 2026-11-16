@@ -18,6 +18,7 @@ import {
 } from './nomandShaderAdjustments';
 import { useFirstFrameDrawn } from '../../styleTransition/firstFrame';
 import { PAPER_SHADER_CONTEXT_ATTRIBUTES } from '../../../../utils/paperShaderContext';
+import { resolveNomandSourceUrl } from './nomandBackgroundSource';
 
 // src/components/visualizer/backgrounds/nomand/NomandBackgroundLayer.tsx
 // Renders the selected Paper image shader with the current theme palette.
@@ -53,15 +54,7 @@ const useShaderDrawn = (shaderRef: React.RefObject<PaperShaderElement | null>, s
 };
 
 /** The image the shader draws: the cover, or the uploaded image where that comes first. */
-export const resolveNomandSourceUrl = (
-    coverUrl: string | null | undefined,
-    monetBackgroundImage: MonetBackgroundImage | null | undefined,
-    tuning: NomandBackgroundTuning,
-) => (
-    tuning.imageSource === 'uploaded-global'
-        ? monetBackgroundImage?.url ?? coverUrl
-        : coverUrl ?? monetBackgroundImage?.url
-);
+export { resolveNomandSourceUrl } from './nomandBackgroundSource';
 
 const NomandBackgroundLayer: React.FC<NomandBackgroundLayerProps> = ({
     coverUrl,

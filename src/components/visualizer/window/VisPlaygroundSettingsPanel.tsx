@@ -41,6 +41,8 @@ interface VisPlaygroundSettingsPanelProps {
     backgroundPicture?: (mode: VisualizerBackgroundMode, state: PictureState) => React.ReactNode;
     availableBackgroundModes?: readonly VisualizerBackgroundMode[];
     globalSettings?: React.ReactNode;
+    styleSettings?: React.ReactNode;
+    inspectStyle?: boolean;
     backgroundSettings?: React.ReactNode;
     activeSection: VisPlaygroundEditSection;
     onSectionChange: (section: VisPlaygroundEditSection) => void;
@@ -234,8 +236,9 @@ const VisPlaygroundSettingsPanel: React.FC<VisPlaygroundSettingsPanelProps> = (p
 
     // What the one "default" action does for the open tab; nothing where the tab has nothing to reset.
     // With 随机 chosen the style tab is the pool, and its default is every built-in style.
+    const showingRandomPool = randomEnabled && !props.inspectStyle;
     const resetOpenTab: (() => void) | undefined = activeSection === 'visualizer'
-        ? (randomEnabled
+        ? (showingRandomPool
             ? (randomPool.allOn ? undefined : randomPool.selectAll)
             : (visualizerEntry.renderSettingsPanel ? styleDraft.reset : undefined))
         : activeSection === 'background'
@@ -250,6 +253,7 @@ const VisPlaygroundSettingsPanel: React.FC<VisPlaygroundSettingsPanelProps> = (p
                     : undefined;
 
     const stylePanel = visualizerEntry.renderSettingsPanel?.({
+        backgroundTransparent: backgroundConfig?.transparent ?? false,
         t,
         isDaylight,
         theme,
@@ -277,13 +281,14 @@ const VisPlaygroundSettingsPanel: React.FC<VisPlaygroundSettingsPanelProps> = (p
                 )}
             />
             <StudioColumnBody>
-                <div key={activeSection === 'visualizer' && randomEnabled ? 'random' : activeSection} className="st-page-in">
-                    {activeSection === 'visualizer' && randomEnabled && <RandomPoolGroup />}
+                <div key={activeSection === 'visualizer' && showingRandomPool ? 'random' : activeSection} className="st-page-in" data-visual-section={activeSection}>
+                    {activeSection === 'visualizer' && props.styleSettings && <div className="pt-4">{props.styleSettings}</div>}
+                    {activeSection === 'visualizer' && showingRandomPool && <RandomPoolGroup />}
 
-                    {activeSection === 'visualizer' && !randomEnabled && (
+                    {activeSection === 'visualizer' && !showingRandomPool && (
                         <>
                             {/* The style's own options: kit groups, stacked as they come. */}
-                            <div key={visualizerMode} className="st-page-in">
+                            <div key={visualizerMode} className="st-page-in" data-visualizer-settings={visualizerMode}>
                                 {/* Its 智能动感模式 effects, each named, switched and scaled on its own. */}
                                 <BeatEffectsGroup
                                     t={t}
@@ -324,7 +329,7 @@ const VisPlaygroundSettingsPanel: React.FC<VisPlaygroundSettingsPanelProps> = (p
                                 </div>
                             </Group>
                             {/* The chosen background's own options. */}
-                            <div key={resolvedBackgroundMode} className="st-page-in mt-7">
+                            <div key={resolvedBackgroundMode} className="st-page-in mt-7" data-background-settings={resolvedBackgroundMode}>
                                 {backgroundEntry.renderSettingsPanel?.({
                                     config: backgroundConfig,
                                     actions: backgroundActions,
@@ -358,10 +363,12 @@ const VisPlaygroundSettingsPanel: React.FC<VisPlaygroundSettingsPanelProps> = (p
                                     />
                                 )}
                             />
+                            <Row>
+                                <Button onClick={() => onFontStyleChange('custom')}>{t('options.chooseSystemFont')}</Button>
+                            </Row>
                             <Reveal when={fontStyleValue === 'custom'}>
                                 <Row sub label={t('options.currentFont')}>
                                     <Value tip={currentFontLabel}>{currentFontLabel}</Value>
-                                    <Button onClick={() => onFontStyleChange('custom')}>{t('options.chooseSystemFont')}</Button>
                                 </Row>
                             </Reveal>
                             <SliderRow
@@ -517,10 +524,12 @@ const VisPlaygroundSettingsPanel: React.FC<VisPlaygroundSettingsPanelProps> = (p
                                             />
                                         )}
                                     />
+                                    <Row sub>
+                                        <Button onClick={() => onOpenSubtitleFontPicker?.()}>{t('options.chooseSystemFont')}</Button>
+                                    </Row>
                                     <Reveal when={Boolean(subtitleFontFamily)}>
                                         <Row sub label={t('options.currentFont')}>
                                             <Value tip={subtitleFontFamily ?? undefined}>{subtitleFontFamily}</Value>
-                                            <Button onClick={() => onOpenSubtitleFontPicker?.()}>{t('options.chooseSystemFont')}</Button>
                                         </Row>
                                     </Reveal>
                                     <ToggleRow

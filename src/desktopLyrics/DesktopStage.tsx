@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { lazy, memo, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import type { VisualizerMode } from '../types';
 import type { VisualizerSharedProps } from '../components/visualizer/definition';
 import VisualizerRenderer from '../components/visualizer/VisualizerRenderer';
@@ -6,14 +6,17 @@ import { getVisualizerTuning } from '../components/visualizer/tuningRegistry';
 import { useVisualizerSettingsStore } from '../stores/useVisualizerSettingsStore';
 import { PlayerBottomBarLayoutContext } from '../components/visualizer/PlayerBottomBarLayoutContext';
 import VisualizerBoundary from './VisualizerBoundary';
+import { useSceneSettingsStore } from '../components/scenes/settings/useSceneSettingsStore';
 
 // src/desktopLyrics/DesktopStage.tsx — stable runtime props keep settings drafts outside the original renderer's React path.
 type Scene = VisualizerSharedProps & { mode: VisualizerMode };
-type Props = Scene & { onRecover: () => void; ready: boolean; fallback: ReactNode };
+type Props = Scene & { onRecover: () => void; ready: boolean; fallback: ReactNode; suspended?: boolean };
 export const DESKTOP_HANDOVER_MS = 200;
 const StableRenderer = memo(VisualizerRenderer);
+const SceneRenderer = lazy(() => import('../components/scenes/engine/SceneHost'));
 
-const DesktopStage = memo(function DesktopStage({ onRecover, ready, fallback, ...props }: Props) {
+const DesktopStage = memo(function DesktopStage({ onRecover, ready, fallback, suspended = false, ...props }: Props) {
+  const sceneId = useSceneSettingsStore(state => state.sceneId);
   const committed = useRef<Scene | null>(null);
   const [, expire] = useState(0);
   useLayoutEffect(() => { if (ready) committed.current = props; });
@@ -36,8 +39,9 @@ const DesktopStage = memo(function DesktopStage({ onRecover, ready, fallback, ..
     if (typeof save === 'function') save(patch);
   }, [shownMode]);
   if (!scene) return fallback;
+  const rendererProps = { ...scene, animateStyleSwitch: true, onVisualizerTuningChange, paused: ready ? scene.paused : true };
   return <VisualizerBoundary mode={scene.mode} onRecover={onRecover}><PlayerBottomBarLayoutContext.Provider value={true}>
-    <StableRenderer {...scene} animateStyleSwitch onVisualizerTuningChange={onVisualizerTuningChange} paused={ready ? scene.paused : true}/>
+    {sceneId ? <Suspense fallback={<StableRenderer {...rendererProps}/>}><SceneRenderer {...rendererProps} suspended={suspended || !ready}/></Suspense> : <StableRenderer {...rendererProps}/>}
   </PlayerBottomBarLayoutContext.Provider></VisualizerBoundary>;
 });
 export default DesktopStage;

@@ -28,6 +28,18 @@ const PANEL_FILES = [
 ];
 
 describe('desktop settings search', () => {
+  it('routes all visual controls into the single studio without a desktop options overlay', () => {
+    const entry = (key: string) => index.find(item => item.key === key);
+    expect(entry('common.desktopVisual.frameRate')).toMatchObject({ section: 'global', breadcrumb: '歌词样式设置 · 全局' });
+    expect(entry('common.options.lyricRenderScale')?.section).toBe('global');
+    expect(entry('common.ui.scene')?.section).toBe('global');
+    expect(entry('common.ui.sceneSeat')).toMatchObject({ section: 'global', label: translate('ui.sceneSeat'),
+      context: translate('ui.sceneSettings'), fallback: translate('ui.scene') });
+    expect(entry('common.desktopVisual.configInput')?.section).toBe('global');
+    expect(entry('common.options.fontFamily')?.section).toBe('common');
+    expect(entry('subtitle.options.fontFamily')?.label).toBe(translate('options.subtitleFontFamily'));
+    expect(entry('visualizer.desktopVisual.previewTitle')?.section).toBe('common');
+  });
   it('indexes every built-in mode and background before their panels are opened', () => {
     expect(new Set(index.filter(entry => entry.mode).map(entry => entry.mode))).toEqual(new Set(BUILTIN_VISUALIZER_MODES));
     expect(new Set(index.filter(entry => entry.background).map(entry => entry.background))).toEqual(new Set(BUILTIN_VISUALIZER_BACKGROUND_MODES.filter(mode => mode !== 'url')));

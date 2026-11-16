@@ -12,14 +12,18 @@ export function buildDesktopFeatureSearchEntries(labelFor: (key: string) => stri
         const entry: DesktopSettingsSearchEntry = {
             key: `${section}.${labelKey}`, label: labelFor(labelKey), section, keywords: [labelKey, ...keywords],
             fallback: fallbackKey && labelFor(fallbackKey), context: contextKey && labelFor(contextKey),
-            breadcrumb: `歌词样式设置 · ${{ common: '通用', subtitle: '字幕', visualizer: '歌词动画', background: '背景', main: '设置' }[section]}`,
+            breadcrumb: `歌词样式设置 · ${{ common: '字体', global: '全局', subtitle: '字幕', visualizer: '歌词动画', background: '背景', main: '设置' }[section]}`,
         };
         entries.push(entry);
         return entry;
     };
     add('common', 'options.uploadCustomFont', ['上传字体', '字体文件', 'upload font', 'woff', 'woff2', 'ttf', 'otf'], 'options.chooseSystemFont');
     for (const key of ['lyricRenderScale', 'lyricAntialias']) add('common', `options.${key}`, ['画质', '分辨率', '抗锯齿', 'render quality', 'antialias']);
-    for (const key of ['subtitleOverlayRows', 'subtitleOverlayRow1', 'subtitleOverlayRow2', 'subtitleOverlayRow3']) add('subtitle', `options.${key}`, ['字幕', '字幕行数', 'subtitle rows']);
+    for (const key of ['subtitleOverlayRows', 'subtitleOverlayRow1', 'subtitleOverlayRow2', 'subtitleOverlayRow3', 'subtitleOverlayUpcomingFallback']) add('subtitle', `options.${key}`, ['字幕', '字幕行数', 'subtitle rows']);
+    for (const key of ['sceneSettings', 'scene', 'sceneQuality', 'sceneSeat']) {
+        add('common', `ui.${key}`, ['场景', '影厅', '电影院', '座位', 'cinema', 'scene'], 'ui.scene', 'ui.sceneSettings');
+    }
+    add('common', 'perfCheck.title', ['性能检测', '帧率检测', 'GPU', 'performance', 'benchmark']);
     add('visualizer', 'desktopVisual.previewTitle', ['独立预览', '示例歌词', '动态缩略图', '暂停预览', 'style preview', 'sample lyrics']);
     add('visualizer', RANDOM_TOGGLE, ['随机样式', 'random style', 'random per song']);
     add('visualizer', 'options.randomPool', ['随机候选', '候选样式', '选择随机池', '参与随机的样式', 'random pool'], RANDOM_TOGGLE);
@@ -37,8 +41,8 @@ export function buildDesktopFeatureSearchEntries(labelFor: (key: string) => stri
     for (const key of ['smartBeat', 'smartBeatMode', 'smartBeatOff', 'smartBeatCached', 'smartBeatOn']) {
         add('common', `options.${key}`, beatWords, undefined, 'options.smartBeat');
     }
-    add('common', 'desktopVisual.selectBeatAudio', [...beatWords, '选择音频', '本地音频', 'audio source'], undefined, 'options.smartBeat');
-    add('common', 'desktopVisual.clearBeatAudio', [...beatWords, '清除音频', '解绑音频'], 'desktopVisual.selectBeatAudio', 'options.smartBeat');
+    add('common', 'desktopVisual.selectBeatAudio', [...beatWords, '选择音频', '本地音频', 'audio source']);
+    add('common', 'desktopVisual.clearBeatAudio', [...beatWords, '清除音频', '解绑音频'], 'desktopVisual.selectBeatAudio');
     for (const entry of VISUALIZER_REGISTRY) for (const effect of offeredBeatEffects(entry.beatEffects)) {
         const mode = entry.mode;
         const effectName = labelFor(effect.nameKey);

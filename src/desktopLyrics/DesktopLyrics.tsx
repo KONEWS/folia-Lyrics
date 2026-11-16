@@ -38,6 +38,7 @@ import { useDesktopVisualMode } from './visualFeatures/useDesktopVisualMode';
 import DesktopVideoPlayback from './visualFeatures/video/DesktopVideoPlayback';
 import { useDesktopBeatFx } from './visualFeatures/beat/useDesktopBeatFx';
 import { DesktopBeatContext } from './visualFeatures/beat/desktopBeatContext';
+import { buildDesktopSettingsSearchIndex } from './desktopSettingsSearchIndex';
 
 // src/desktopLyrics/DesktopLyrics.tsx
 const DesktopStage = lazy(() => import('./DesktopStage'));
@@ -157,12 +158,15 @@ export default function DesktopLyrics() {
   return <main ref={glassSurface} style={coverTheme.style} className={`desktop-lyrics ${coverTheme.active ? 'cover-theme' : ''} ${immersive ? 'immersive' : ''} ${cursorHidden ? 'cursor-idle' : ''} ${immersiveToggleHidden ? 'immersive-toggle-idle' : ''} ${controlsRevealed ? 'controls-revealed' : ''} ${topControlsRevealed ? 'top-controls-revealed' : ''} ${state.fullscreen ? 'native-fullscreen' : ''} ${state.appearance.acrylic ? 'native-acrylic' : ''} ${state.appearance.transparent ? 'transparent-background' : ''} ${state.appearance.solid ? 'solid-surfaces' : ''} ${state.appearance.highContrast ? 'high-contrast' : ''}`}>
     {state.appearance.transparent ? <div className="transparent-veil" aria-hidden="true"/> : <AcrylicBackdrop cover={cover}/>}<WindowChrome session={state.session} apps={state.preferences.musicApps} preferred={state.preferences.source}/><div className="desktop-stage">
     <DesktopVideoPlayback clock={runtime.playbackTime} playing={playing} transparent={Boolean(state.appearance.transparent)}>{stageLoaded.current ? <Suspense fallback={waiting}><DesktopStage ready={hasLyrics && fontsReady} fallback={hasLyrics ? null : waiting} duration={duration} mode={mode} onRecover={recoverStage} currentTime={runtime.currentTime} currentLineIndex={runtime.lineIndex} lines={segmentation.lyrics.lines} theme={visual.mergedTheme}
-        audioPower={runtime.audioPower} audioBands={runtime.audioBands} songTitle={title} songArtist={artist} coverUrl={cover || undefined} showText paused={!playing}
+        audioPower={runtime.audioPower} audioBands={runtime.audioBands} songTitle={title} songArtist={artist} coverUrl={cover || undefined} showText paused={!playing || visualSection !== null} suspended={visualSection !== null}
         seed={state.session.key || title || 'desktop'} isPreviewMode={false} {...visual.rendererProps} isPlayerChromeHidden={!footerVisible}/></Suspense> : waiting}</DesktopVideoPlayback></div>
     <DesktopTopbar title={title} artist={artist} cover={cover} mode={mode} onMode={changeMode} visualModel={visual} translated={translated} onTranslated={changeTranslated}
       topmost={state.preferences.topmost} onTopmost={value => send('topmost', value)} playing={playing} connected={Boolean(state.session.key)} manual={manual.enabled}
       panel={panel} onPanel={() => { if (panel) { cancelSettingsOpening(); setPanel(false); } else showSettings(); }} immersive={immersive} onImmersive={() => { cancelSettingsOpening(); setImmersive(!immersive); setPanel(false); setVisualSection(null); setSegmentationOpen(false); }}
-      onVisualSettings={() => showVisualSettings()} animationIntensity={visual.animationIntensity} onAnimationIntensity={visual.setAnimationIntensity}
+      onVisualSettings={() => showVisualSettings()} onSceneSettings={() => {
+        const seat = buildDesktopSettingsSearchIndex().find(entry => entry.key === 'common.ui.sceneSeat');
+        if (seat) navigateSearch(seat);
+      }} animationIntensity={visual.animationIntensity} onAnimationIntensity={visual.setAnimationIntensity}
       onBackgroundSettings={() => { if (visualSection === 'background') { cancelSettingsOpening(); setVisualSection(null); } else showVisualSettings('background'); }}
       backgroundPanel={visualSection === 'background'} backgroundEnabled={visual.backgroundEnabled} backgroundSuppressed={visual.backgroundSuppressed}
       fullscreen={state.fullscreen} onFullscreen={() => send('fullscreen')} canRefreshTheme={coverTheme.canRefresh}

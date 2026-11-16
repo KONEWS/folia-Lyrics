@@ -5,7 +5,6 @@ import {
     type LatentBackgroundColorSource,
     type LatentBackgroundDisplayMode,
 } from '../../../../types';
-import LatentBackground from './LatentBackground';
 import LatentBackgroundSettingsCard from './LatentBackgroundSettingsCard';
 import { defineVisualizerBackground } from '../definition';
 import { cycleValue, QuickControlChip, QuickControlToggle } from '../../../shared/QuickControlChip';
@@ -28,6 +27,8 @@ const LATENT_COLOR_SOURCE_LABEL_KEYS: Record<LatentBackgroundColorSource, string
     'cover-theme': 'options.latentColorSourceCoverTheme',
     'cover-only': 'options.latentColorSourceCoverOnly',
 };
+
+const LatentBackground = React.lazy(() => import('./LatentBackground'));
 
 export default defineVisualizerBackground({
     mode: 'latent',

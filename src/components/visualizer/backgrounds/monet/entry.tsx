@@ -2,7 +2,7 @@ import React from 'react';
 import { Columns3, Wind } from 'lucide-react';
 import { DEFAULT_MONET_BACKGROUND_TUNING, type MonetBackgroundSource, type MonetBackgroundTuning } from '../../../../types';
 import { MonetBackgroundSettingsCard } from './MonetBackgroundSettingsCard';
-import MonetBackgroundLayer, { resolveMonetSourceUrl } from './MonetBackgroundLayer';
+import { resolveMonetSourceUrl } from './monetBackgroundSource';
 import { defineVisualizerBackground } from '../definition';
 import { QuickControlChip, QuickControlToggle } from '../../../shared/QuickControlChip';
 
@@ -13,6 +13,8 @@ const SOURCE_LABEL_KEYS: Record<MonetBackgroundSource, string> = {
     'cover-derived': 'options.monetBackgroundSourceCover',
     'uploaded-global': 'options.monetBackgroundSourceUploaded',
 };
+
+const MonetBackgroundLayer = React.lazy(() => import('./MonetBackgroundLayer'));
 
 export default defineVisualizerBackground({
     mode: 'monet',

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { DEFAULT_MONET_BACKGROUND_TUNING, type MonetBackgroundImage, type MonetBackgroundTuning, type Theme } from '../../../../types';
 import { colorWithAlpha } from '../../colorMix';
@@ -7,6 +7,7 @@ import { buildMonetDriftTrack } from './monetBackgroundDrift';
 import { useReducedMotionFor } from '../../../../hooks/useReducedMotionFor';
 import { ARRIVING_MARK } from '../../preview/frozenPicture';
 import { useFirstFrameDrawn } from '../../styleTransition/firstFrame';
+import { resolveMonetSourceUrl } from './monetBackgroundSource';
 
 // src/components/visualizer/backgrounds/monet/MonetBackgroundLayer.tsx
 // Shared shell-level Monet image background. Its picture is made in a worker; a new theme or setting
@@ -31,13 +32,13 @@ const clamp = (value: number, min: number, max: number) => Math.min(max, Math.ma
  * compositor and costs no main-thread work once started.
  */
 const useMonetBackgroundDrift = (
-    ref: React.RefObject<HTMLDivElement | null>,
     enabled: boolean,
     strength: number,
     reducedMotion: boolean,
 ) => {
-    useEffect(() => {
-        const element = ref.current;
+    // The wrapper may mount after a cover arrives or be replaced by a layout change.
+    // Its ref owns the animation, so every attached node starts and every detached node stops.
+    return useCallback((element: HTMLDivElement | null) => {
         if (!element || !enabled || strength <= 0 || typeof element.animate !== 'function') {
             return;
         }
@@ -52,19 +53,11 @@ const useMonetBackgroundDrift = (
         });
 
         return () => animation.cancel();
-    }, [enabled, ref, strength, reducedMotion]);
+    }, [enabled, strength, reducedMotion]);
 };
 
 /** The image the picture is made from: the cover, or the uploaded image where that comes first. */
-export const resolveMonetSourceUrl = (
-    coverUrl: string | null | undefined,
-    monetBackgroundImage: MonetBackgroundImage | null | undefined,
-    tuning: MonetBackgroundTuning,
-) => (
-    tuning.backgroundSource === 'uploaded-global'
-        ? monetBackgroundImage?.url ?? coverUrl ?? null
-        : coverUrl ?? monetBackgroundImage?.url ?? null
-);
+export { resolveMonetSourceUrl } from './monetBackgroundSource';
 
 const MonetBackgroundLayer: React.FC<MonetBackgroundLayerProps> = ({
     coverUrl,
@@ -155,11 +148,10 @@ const MonetBackgroundLayer: React.FC<MonetBackgroundLayerProps> = ({
         };
     }, [backgroundCacheKey, sourceUrl, transparentBackground, pictureDrawn]);
 
-    const driftRef = useRef<HTMLDivElement | null>(null);
     const driftStrength = clamp(tuning.backgroundDriftStrength ?? 0, 0, 1);
-    const driftEnabled = Boolean(tuning.backgroundDriftEnabled) && !staticMode && driftStrength > 0;
+    const driftEnabled = Boolean(tuning.backgroundDriftEnabled) && !staticMode && !transparentBackground && driftStrength > 0;
     const reduceBackgroundMotion = useReducedMotionFor('monetBackground');
-    useMonetBackgroundDrift(driftRef, driftEnabled, driftStrength, reduceBackgroundMotion);
+    const driftRef = useMonetBackgroundDrift(driftEnabled, driftStrength, reduceBackgroundMotion);
     // Only promote the layer while it actually moves; an idle drift wrapper stays a plain div.
     const driftStyle = useMemo<React.CSSProperties | undefined>(
         () => (driftEnabled ? { willChange: 'transform' } : undefined),

@@ -68,7 +68,7 @@ void main() { outColor = vec4(staticNoise(gl_FragCoord.xy), 1.0); }`;
 
 const MAIN_FS = (fogTex: boolean, uniforms = SCENE_UNIFORMS, dew = false) => /* glsl */ `#version 300 es
 #define NEBBIA_FOG_TEX ${fogTex ? 1 : 0}
-${dew ? '#define NEBBIA_DEW 1\n' : ''}${uniforms}
+${dew ? '#define NEBBIA_DEW 1\n' : ''}${uniforms === AQUA_UNIFORMS ? '#define NEBBIA_SOFT_HIGHLIGHT 1\n' : ''}${uniforms}
 uniform sampler2D uMask, uDrop, uField;
 #ifdef NEBBIA_DEW
 // 凝露玻璃上冷凝水珠的高光（tuning.dewGlint）；细水珠折射的窗外（nebbiaFogGl.ts 预渲染的清晰的那层）
@@ -200,7 +200,7 @@ void main() {
     lens += (lambert - 0.8) * vec3(0.3, 0.3, 0.32) + spec * vec3(0.3, 0.3, 0.33) * uGlint;
     if (uSeeThrough) {
       // 和 raindrop-fx 一样，水珠是一颗透镜，里面是折射过来的背景。透明时拿不到窗后面的画面，折射的还是雾笺自己的
-      // 雨夜街景（和街景模式的水珠一样）。白雾时水珠不透明：街景比雾暗，和透出后面的字一样是暗的；
+      // 窗外（选了水族箱折射水族箱，别的折射雨夜街景）。白雾时水珠不透明：街景比雾暗，和透出后面的字一样是暗的；
       // 深色雾时字透出的后面比雾亮，水珠也要以透出后面为主：街景留一半不到，边上一圈折射的暗边
       float dark = 1.0 - dot(uMistTint, vec3(0.333));
       float rimA = (1.0 - smoothstep(0.975, 0.995, comp.a)) * 0.21;
@@ -219,6 +219,14 @@ void main() {
     }
     col = mix(col, lens, dmask);
   }
+#ifdef NEBBIA_SOFT_HIGHLIGHT
+  // 水族箱：聚光灯、水母、凝露的水珠叠在同一处会加过 1，烧成一块白。最亮的那个通道过了 0.75 以后
+  // 按指数慢慢逼近 1，三个通道同比例压，颜色不变；0.75 以下不动
+  if (!uSeeThrough) {
+    float pk = max(col.r, max(col.g, col.b));
+    if (pk > 0.75) col *= (0.75 + 0.25 * (1.0 - exp((0.75 - pk) / 0.25))) / pk;
+  }
+#endif
   outColor = uSeeThrough ? vec4(max(col, 0.0), alpha) : vec4(col, 1.0);
 }`;
 

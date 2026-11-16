@@ -33,8 +33,8 @@
 | 被依赖量级 | 模块 |
 | --- | --- |
 | 256+ | `src/types.ts` |
+| 64+ | `src/components/visualizer/definition.ts` |
 | 32+ | `src/components/modal/settings/kit/index.ts` |
-| 32+ | `src/components/visualizer/definition.ts` |
 | 32+ | `src/components/visualizer/hanabi/types.ts` |
 | 32+ | `src/components/visualizer/machi/engine/materials.ts` |
 | 32+ | `src/components/visualizer/tuningDefinition.ts` |
@@ -50,6 +50,10 @@
 
 这些地方用 `import.meta.glob` 自动发现成员，**清单随目录变化，不要手写**。
 以下是当前的完整展开：
+
+### `src/components/scenes/registry.ts`
+
+- `src/components/scenes/cinema/entry.ts`
 
 ### `src/components/visualizer/backgrounds/registry.tsx`
 

@@ -15,4 +15,9 @@ const desktopVersion = readFileSync(path.resolve(root, 'native/FoliaLyrics.cspro
 export default defineConfig({ plugins: [react(), traditionalLocalePlugin(), icuFoliaDataPlugin(), nebbiaStrokesPlugin(), desktopAnalysisModelsPlugin()], define: { __DESKTOP_VERSION__: JSON.stringify(desktopVersion) },
   resolve: { alias: { '@': path.resolve(root, 'src') } },
   build: { outDir: 'dist-desktop', emptyOutDir: true, rollupOptions: { input: path.resolve(root, 'desktop.html'),
-    output: { manualChunks(id) { return id.includes('/node_modules/three/') ? 'three' : undefined; } } } } });
+    output: { manualChunks(id) {
+      if (id.includes('/node_modules/three/')) return 'three';
+      // Keep dynamic icon support without unpacking thousands of tiny icon files on a cold desktop launch.
+      const icon = id.match(/\/node_modules\/lucide-react\/dist\/esm\/icons\/([a-z0-9])/);
+      return icon ? `lucide-icons-${icon[1]}` : undefined;
+    } } } } });

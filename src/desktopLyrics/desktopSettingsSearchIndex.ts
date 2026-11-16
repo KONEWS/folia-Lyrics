@@ -4,6 +4,7 @@ import type { DesktopSettingsSearchEntry } from '../types/desktopSettingsSearch'
 import { buildDesktopMainSearchEntries, DESKTOP_COMMON_SEARCH_KEYS, DESKTOP_SUBTITLE_SEARCH_KEYS } from './desktopSettingsSearchMain';
 import { DESKTOP_BACKGROUND_SEARCH_CATALOG, DESKTOP_MODE_SEARCH_CATALOG, desktopVisualSearchCondition } from './desktopSettingsSearchVisual';
 import { buildDesktopFeatureSearchEntries, DESKTOP_QUICK_CONTROL_ALIASES } from './visualFeatures/desktopSettingsSearchFeatures';
+import { desktopStudioSearchEntry } from './desktopStudioSearch';
 
 // src/desktopLyrics/desktopSettingsSearchIndex.ts — search destinations available before any settings panel is opened.
 const SECTION_WORDS = {
@@ -12,6 +13,7 @@ const SECTION_WORDS = {
   visualizer: ['歌词动画', '动画', '歌词样式', '参数', 'visualizer', 'animation'],
   subtitle: ['字幕', '翻译', '罗马音', 'subtitle', 'translation', 'romanization'],
   background: ['背景', '桌面背景', '背景设置', 'background', 'wallpaper'],
+  global: ['全局', '帧率', '画质', 'global', 'performance'],
 } as const;
 
 function labelFor(key: string): string {
@@ -71,7 +73,7 @@ export function buildDesktopSettingsSearchIndex(): DesktopSettingsSearchEntry[] 
   entries.push(...buildDesktopFeatureSearchEntries(labelFor));
   // The generic strength rows are replaced by effect-scoped destinations above.
   const scoped = entries.filter(entry => !['visualizer.diorama.options.dioramaEffectStrength', 'visualizer.diorama.options.dioramaCustomStrength'].includes(entry.key));
-  return scoped.map(entry => ({ ...entry,
+  return scoped.map(entry => desktopStudioSearchEntry(entry, labelFor)).map(entry => ({ ...entry,
     breadcrumb: entry.breadcrumb ?? ['歌词样式设置', entry.section === 'visualizer' ? '歌词动画' : '背景',
       entry.mode ? modeNames.get(entry.mode) : entry.background ? backgroundNames.get(entry.background) : undefined, entry.context].filter(Boolean).join(' · '),
     keywords: [...new Set([...SECTION_WORDS[entry.section], ...entry.keywords ?? []])] }));

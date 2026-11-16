@@ -10,16 +10,16 @@
 .desktop-visual-content>*{flex-shrink:0}
 .desktop-visual-content::-webkit-scrollbar{width:7px}
 .desktop-visual-content::-webkit-scrollbar-thumb{background:var(--glass-line);border-radius:99px;border:2px solid transparent;background-clip:padding-box}
-.desktop-lyrics .desktop-visual-card{display:flex;flex-direction:column;gap:var(--visual-item-gap);border:0;border-radius:0;background:transparent;padding:0;margin:0}
+.desktop-lyrics .desktop-visual-card{display:flex;flex-direction:column;gap:var(--visual-item-gap,14px);border:0;border-radius:0;background:transparent;padding:0;margin:0}
 .desktop-lyrics .desktop-visual-content>:is(.desktop-visual-card,.desktop-visual-original-panel,.desktop-visual-config):not(:first-child){padding-block-start:var(--visual-card-gap);border-top:1px solid var(--glass-line)}
 .desktop-visual-card h3{margin:0;font-size:13px;font-weight:600;line-height:1.5}
 .desktop-visual-hint,.desktop-visual-feedback{margin:0;font-size:11px;line-height:1.7;color:var(--glass-muted);overflow-wrap:anywhere}
 .desktop-visual-feedback{color:var(--glass-text)}
 .desktop-visual-service-feedback{flex:none;margin:0;padding:9px 18px;border-top:1px solid var(--glass-line);font-size:11px;line-height:1.6;color:var(--glass-text);overflow-wrap:anywhere}
-.desktop-visual-field,.desktop-visual-range,.desktop-visual-font{display:flex;flex-direction:column;gap:var(--visual-field-gap);min-width:0;font-size:12px}
+.desktop-visual-field,.desktop-visual-range,.desktop-visual-font{display:flex;flex-direction:column;gap:var(--visual-field-gap,6px);min-width:0;font-size:12px}
 .desktop-visual-font{gap:var(--visual-item-gap)}
 /* Keep explanations close to their own control, while separating independent settings. */
-.desktop-visual-card>:is(.desktop-visual-toggle,.desktop-visual-field,.desktop-visual-size,.desktop-visual-range,button)+.desktop-visual-hint,.desktop-visual-font>.desktop-visual-field+.desktop-visual-hint{margin-block-start:calc(var(--visual-field-gap) - var(--visual-item-gap))}
+.desktop-visual-card>:is(.desktop-visual-toggle,.desktop-visual-field,.desktop-visual-size,.desktop-visual-range,button)+.desktop-visual-hint,.desktop-visual-font>.desktop-visual-field+.desktop-visual-hint{margin-block-start:calc(var(--visual-field-gap,6px) - var(--visual-item-gap,14px))}
 .desktop-visual-field>span,.desktop-visual-range>span{color:var(--glass-text);line-height:1.5}
 .desktop-visual-range>span{display:flex;justify-content:space-between;gap:10px}
 .desktop-visual-range output{color:var(--glass-muted);font-variant-numeric:tabular-nums}

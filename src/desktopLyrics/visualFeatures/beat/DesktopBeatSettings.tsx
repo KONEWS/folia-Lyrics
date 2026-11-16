@@ -12,7 +12,7 @@ export function DesktopBeatSettings() {
     const t = useVisualTranslation();
     const picker = useRef<HTMLInputElement>(null);
     if (!model) return null;
-    return <VisualCard title={t('options.smartBeat')}>
+    return <VisualCard>
         <SmartBeatSettingsCard t={t} descriptionKeyPrefix="desktopVisual.beatMode_"/>
         <p className="desktop-visual-hint">{t('desktopVisual.beatSourceHint')}</p>
         {model.binding ? <p className="desktop-visual-hint">{t('desktopVisual.beatReady')} · {model.binding.name}</p> :

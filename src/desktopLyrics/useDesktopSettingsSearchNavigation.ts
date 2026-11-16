@@ -8,7 +8,7 @@ import { revealDesktopSettingsControl } from './useDesktopSettingsNavigation';
 const controls = 'input:not([type=hidden]):not([type=file]),button,select,textarea,[role=combobox],summary';
 const labels = '[aria-label],[title],[placeholder],label,span,strong,div,button,summary,h3,h4,p';
 const available = (element: HTMLElement) => !element.matches('input[type=file],input[type=hidden]')
-  && !element.closest('[hidden],.hidden,[aria-hidden=true],[inert]');
+  && !element.closest('[hidden],.hidden,[aria-hidden=true],[inert],.st-unfold:not([data-open])');
 const firstControl = (root: HTMLElement) => Array.from(root.querySelectorAll<HTMLElement>(controls))
   .find(element => available(element) && !element.matches(':disabled'));
 function findLabel(root: HTMLElement, label: string): HTMLElement | undefined {
@@ -18,7 +18,8 @@ function findLabel(root: HTMLElement, label: string): HTMLElement | undefined {
     ?? items.find(element => normalizeSearchText(element.getAttribute('title') ?? '') === normalized)
     ?? items.find(element => normalizeSearchText(element.getAttribute('placeholder') ?? '') === normalized)
     ?? items.find(element => element.id && normalizeSearchText(element.textContent ?? '') === normalized)
-    ?? items.find(element => normalizeSearchText(element.textContent ?? '') === normalized)
+    ?? items.find(element => normalizeSearchText(element.textContent ?? '') === normalized
+      && !Array.from(element.children).some(child => normalizeSearchText(child.textContent ?? '') === normalized))
     ?? items.find(element => normalizeSearchText(element.textContent ?? '').startsWith(`${normalized} `));
 }
 // Shared original panels often put a translated span next to the input instead of an HTML label.
@@ -50,7 +51,7 @@ function contextRoot(root: HTMLElement, context?: string) {
   const group = heading?.parentElement;
   return group?.querySelector(controls) ? group : heading?.closest<HTMLElement>('fieldset,section,.desktop-visual-card') ?? root;
 }
-export function useDesktopSettingsSearchNavigation(panel: RefObject<HTMLElement | null>, request?: DesktopSettingsSearchRequest, renderedSection?: string) {
+export function useDesktopSettingsSearchNavigation(panel: RefObject<HTMLElement | null>, request?: DesktopSettingsSearchRequest, renderedSection?: string, contentSelector?: string) {
   const [hint, setHint] = useState('');
   useLayoutEffect(() => {
     setHint('');
@@ -58,44 +59,66 @@ export function useDesktopSettingsSearchNavigation(panel: RefObject<HTMLElement 
     if (!root || !request || renderedSection && renderedSection !== request.entry.section) return;
     const entry = request.entry;
     let highlighted: HTMLElement | undefined;
+    let frame = 0;
     const expanded = new WeakSet<HTMLElement>();
     const reveal = () => {
-      const area = contextRoot(root, entry.context);
-      const target = entry.section === 'main' ? root.querySelector<HTMLElement>(`[data-settings-target="${entry.key.slice(5)}"]`)
-        : entry.background && entry.key === `background.${entry.background}` ? root.querySelector<HTMLElement>(`[data-background-settings="${entry.background}"]`) : null;
-      const label = findLabel(area, entry.label) ?? (entry.key === 'main.manual-start' ? findLabel(area, '暂停计时') : undefined) ?? target;
+      const content = contentSelector ? root.querySelector<HTMLElement>(contentSelector) : root;
+      if (!content) return false;
+      const area = contextRoot(content, entry.context);
+      const target = entry.key === 'common.ui.sceneSeat' ? content.querySelector<HTMLElement>('[data-scene-seat]')
+        : entry.section === 'main' ? content.querySelector<HTMLElement>(`[data-settings-target="${entry.key.slice(5)}"]`)
+        : entry.background && entry.key === `background.${entry.background}` ? content.querySelector<HTMLElement>(`[data-background-settings="${entry.background}"]`)
+        : entry.mode && entry.key === `visualizer.${entry.mode}` ? content.querySelector<HTMLElement>(`[data-visualizer-settings="${entry.mode}"]`) : null;
+      let label = findLabel(area, entry.label) ?? (entry.key === 'main.manual-start' ? findLabel(area, '暂停计时') : undefined) ?? target;
+      // A group's heading must not bypass the prerequisite for its hidden controls.
+      if (entry.fallback && label?.matches('h3,h4,[data-settings-anchor]') && !target) label = null;
       const findPrerequisite = (value: string) => findLabel(area, value);
       const prerequisiteLabel = !label ? [entry.fallback, ...(entry.fallbacks ?? [])]
         .find(value => value && findPrerequisite(value)) : undefined;
       const prerequisite = prerequisiteLabel ? findPrerequisite(prerequisiteLabel) : undefined;
       // Original panels mount nested controls only after a disclosure opens. This does not toggle the effect itself.
-      const disclosureArea = entry.context ? area : prerequisiteLabel ? contextRoot(root, prerequisiteLabel) : undefined;
+      const disclosureArea = entry.context ? area : prerequisiteLabel ? contextRoot(content, prerequisiteLabel) : undefined;
       // Only an explicit option fieldset is a foldable settings group; comboboxes and note buttons are not prerequisites.
       const disclosure = !label && disclosureArea?.matches('fieldset')
         ? disclosureArea.querySelector<HTMLElement>('button[aria-expanded=false]:not([role=combobox])') : undefined;
       if (disclosure && !expanded.has(disclosure)) { expanded.add(disclosure); disclosure.click(); return false; }
       const found = label ?? prerequisite;
       if (!found) return false;
-      const control = target && found === target ? firstControl(target) ?? target : controlFor(found, root);
+      const control = target && found === target ? firstControl(target) ?? target : controlFor(found, content);
+      // A newly opened group can already contain its control while its height is still changing.
+      for (let ancestor = control.parentElement; ancestor && ancestor !== root; ancestor = ancestor.parentElement) {
+        if (ancestor.matches('.st-unfold') && ancestor.getAnimations().some(animation => animation.playState === 'running')) {
+          schedule();
+          return false;
+        }
+      }
       revealDesktopSettingsControl(root, control);
       highlighted = control;
       control.classList.add('desktop-settings-search-target');
       if (prerequisite) setHint(i18n.t('desktopLyrics.settingsSearch.prerequisite', { lng: 'zh-CN', label: entry.label, control: prerequisiteLabel }));
       return true;
     };
-    // Observe only the settings surface while this request waits; stop as soon as its controls exist.
-    const observer = new MutationObserver(() => { if (reveal()) observer.disconnect(); });
-    if (!reveal()) observer.observe(root, { childList: true, subtree: true });
+    // Defer clicks until the effect is committed; StrictMode can replay an effect before a toggle renders.
+    const schedule = () => {
+      if (frame) return;
+      frame = requestAnimationFrame(() => { frame = 0; if (reveal()) observer.disconnect(); });
+    };
+    const observer = new MutationObserver(schedule);
+    observer.observe(root, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-open', 'aria-expanded'] });
+    schedule();
     const timeout = window.setTimeout(() => {
       observer.disconnect();
+      cancelAnimationFrame(frame);
+      frame = 0;
       if (highlighted) return;
-      const group = entry.context ? contextRoot(root, entry.context) : root.querySelector<HTMLElement>('.desktop-visual-original-panel') ?? root;
+      const content = contentSelector ? root.querySelector<HTMLElement>(contentSelector) ?? root : root;
+      const group = entry.context ? contextRoot(content, entry.context) : content.querySelector<HTMLElement>('.desktop-visual-original-panel') ?? content;
       const control = firstControl(group) ?? group;
       revealDesktopSettingsControl(root, control);
       highlighted = control; control.classList.add('desktop-settings-search-target');
       setHint(i18n.t('desktopLyrics.settingsSearch.unavailable', { lng: 'zh-CN', label: entry.label }));
     }, 2500);
-    return () => { observer.disconnect(); window.clearTimeout(timeout); highlighted?.classList.remove('desktop-settings-search-target'); };
-  }, [panel, request, renderedSection]);
+    return () => { observer.disconnect(); cancelAnimationFrame(frame); window.clearTimeout(timeout); highlighted?.classList.remove('desktop-settings-search-target'); };
+  }, [panel, request, renderedSection, contentSelector]);
   return hint;
 }

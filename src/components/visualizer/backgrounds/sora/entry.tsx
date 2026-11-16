@@ -1,13 +1,14 @@
 import React from 'react';
 import { Square } from 'lucide-react';
 import { DEFAULT_SORA_BACKGROUND_TUNING } from '../../../../types';
-import SoraBackground from './SoraBackground';
 import SoraBackgroundSettingsCard from './SoraBackgroundSettingsCard';
 import { defineVisualizerBackground } from '../definition';
 import { QuickControlToggle } from '../../../shared/QuickControlChip';
 
 // src/components/visualizer/backgrounds/sora/entry.tsx
 // Registers the shader-based Sora starfield shell background.
+
+const SoraBackground = React.lazy(() => import('./SoraBackground'));
 
 export default defineVisualizerBackground({
     mode: 'sora',

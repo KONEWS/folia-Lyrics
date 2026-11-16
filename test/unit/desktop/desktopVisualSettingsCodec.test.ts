@@ -5,6 +5,7 @@ import { applyTypographyPatch } from '@/desktopLyrics/desktopVisualFields';
 import { useVisualizerSettingsStore } from '@/stores/useVisualizerSettingsStore';
 import { useTypographySettingsStore } from '@/stores/useTypographySettingsStore';
 import { useThemeSettingsStore } from '@/stores/useThemeSettingsStore';
+import { useSceneSettingsStore } from '@/components/scenes/settings/useSceneSettingsStore';
 import { useDesktopPanelSettingsStore, DEFAULT_SETTINGS_TRANSPARENCY, DESKTOP_SETTINGS_TRANSPARENCY_KEY } from '@/stores/useDesktopPanelSettingsStore';
 
 // test/unit/desktop/desktopVisualSettingsCodec.test.ts — verify portable desktop visual settings at the original store boundary.
@@ -29,16 +30,49 @@ function makeOptions() {
 const encode = (format: 'json' | 'code', config: object) => format === 'code' ? compressConfig(config) : JSON.stringify(config);
 
 beforeEach(() => {
+  useSceneSettingsStore.setState({ sceneId: null, sceneOptions: {} });
   storage = makeStorage(); vi.stubGlobal('localStorage', storage); vi.stubGlobal('window', { localStorage: storage });
   useVisualizerSettingsStore.setState(originalVisualizer); useTypographySettingsStore.setState(originalTypography); useThemeSettingsStore.setState(originalTheme);
   useDesktopPanelSettingsStore.setState({ settingsTransparency: DEFAULT_SETTINGS_TRANSPARENCY });
 });
 afterEach(() => {
+  useSceneSettingsStore.setState({ sceneId: null, sceneOptions: {} });
   useVisualizerSettingsStore.setState(originalVisualizer); useTypographySettingsStore.setState(originalTypography); useThemeSettingsStore.setState(originalTheme);
   vi.unstubAllGlobals();
 });
 
 describe('desktop appearance codec', () => {
+  it.each(['json', 'code'] as const)('restores built-in scene, seat and quality without accepting extensions through %s', format => {
+    useSceneSettingsStore.getState().setSceneId('cinema');
+    useSceneSettingsStore.getState().setSceneOptions('cinema', { quality: 'high', viewpoint: 'R7-12', values: { houseLights: true, curtainsOnPause: false } });
+    const saved = exportDesktopVisualConfig(format, makeOptions(), 'classic');
+    useSceneSettingsStore.setState({ sceneId: null, sceneOptions: {} });
+    expect(importDesktopVisualConfig(saved, makeOptions())).toEqual({ ok: true, mode: 'classic' });
+    expect(useSceneSettingsStore.getState()).toMatchObject({ sceneId: 'cinema', sceneOptions: {
+      cinema: { quality: 'high', viewpoint: 'R7-12', values: { houseLights: true, curtainsOnPause: false } },
+    } });
+    importDesktopVisualConfig(encode(format, { desktopScene: { id: 'mod:remote:scene', options: { 'mod:remote:scene': { quality: 'high' } } } }), makeOptions());
+    expect(useSceneSettingsStore.getState().sceneId).toBe('cinema');
+    expect(useSceneSettingsStore.getState().sceneOptions).not.toHaveProperty('mod:remote:scene');
+    importDesktopVisualConfig(encode(format, { desktopScene: { id: null } }), makeOptions());
+    expect(useSceneSettingsStore.getState().sceneId).toBeNull();
+  });
+
+  it.each(['json', 'code'] as const)('restores mirror layouts, ring translations and subtitle-only rows through %s', format => {
+    const v = useVisualizerSettingsStore.getState();
+    v.handleSetMonetTuning({ mirrorLayout: true, portraitSource: 'none', customDescription: 'Local description', descriptionVisibility: 'always' });
+    v.handleSetPendoloTuning({ mirrorLayout: true, hubView: true, hubViewBack: 1.6, parallaxDepth: 1.4 });
+    v.handleSetCladdaghTuning({ positionX: 12, showTranslation: true, translationScale: 1.5 });
+    useTypographySettingsStore.getState().handleSetSubtitleOverlayLayout('translation+romanization|only');
+    const saved = exportDesktopVisualConfig(format, makeOptions(), 'pendolo');
+    useVisualizerSettingsStore.setState(originalVisualizer);
+    useTypographySettingsStore.setState(originalTypography);
+    expect(importDesktopVisualConfig(saved, makeOptions())).toEqual({ ok: true, mode: 'pendolo' });
+    expect(useVisualizerSettingsStore.getState().monetTuning).toMatchObject({ mirrorLayout: true, portraitSource: 'none', customDescription: 'Local description', descriptionVisibility: 'always' });
+    expect(useVisualizerSettingsStore.getState().pendoloTuning).toMatchObject({ mirrorLayout: true, hubView: true, hubViewBack: 1.6, parallaxDepth: 1.4 });
+    expect(useVisualizerSettingsStore.getState().claddaghTuning).toMatchObject({ positionX: 12, showTranslation: true, translationScale: 1.5 });
+    expect(useTypographySettingsStore.getState().subtitleOverlayLayout).toBe('translation+romanization|only');
+  });
   it.each(['json', 'code'] as const)('keeps new styles, subtitle rows and render quality through %s', format => {
     const store = useVisualizerSettingsStore.getState();
     store.handleSetMachiTuning({ timeOfDay: 'night' });

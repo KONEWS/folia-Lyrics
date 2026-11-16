@@ -15,6 +15,8 @@ function matches(source: Session['sources'][number], app: MusicAppBinding) {
   if (app.launchKind === 'store') return false;
   if (/[\\/]/.test(source.id)) return pathKey(source.id) === pathKey(app.path);
   const name = executable(app.path);
+  // Steam ECHO publishes this fixed media identity instead of its executable name.
+  if (comparable(source.id) === 'app.echo.steam' && name === 'echo') return true;
   const sourceName = comparable(source.id.split(/[\\/]/).at(-1) ?? '').replace(/\.exe$/, '');
   return Boolean(name && (name === sourceName || comparable(source.id) === comparable(app.name)
     || comparable(source.label) === comparable(app.name)));

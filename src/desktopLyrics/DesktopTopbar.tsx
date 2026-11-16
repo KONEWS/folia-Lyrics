@@ -15,7 +15,7 @@ type Props = {
   translated: boolean; onTranslated: (value: boolean) => void; topmost: boolean; onTopmost: (value: boolean) => void;
   playing: boolean; connected: boolean; manual: boolean; panel: boolean; onPanel: () => void; immersive: boolean; onImmersive: () => void;
   fullscreen: boolean; onFullscreen: () => void;
-  onVisualSettings: () => void; animationIntensity: Theme['animationIntensity']; onAnimationIntensity: (value: Theme['animationIntensity']) => void;
+  onVisualSettings: () => void; onSceneSettings: () => void; animationIntensity: Theme['animationIntensity']; onAnimationIntensity: (value: Theme['animationIntensity']) => void;
   onBackgroundSettings: () => void; backgroundPanel: boolean; backgroundEnabled: boolean; backgroundSuppressed: boolean;
   canRefreshTheme: boolean; refreshingTheme: boolean; refreshThemeUnavailableReason: string | null; onRefreshTheme: () => Promise<boolean>;
   visualModel?: DesktopVisualSettingsModel;
@@ -60,6 +60,7 @@ export default function DesktopTopbar(p: Props) {
       title={i18n.t('desktopVisual.intensityHint', { lng: 'zh-CN', state: intensityLabel })}
       onClick={() => p.onAnimationIntensity(nextIntensity)}>{intensityLabel}</button>
     <div className="topbar-actions">
+      {p.visualModel && <DesktopVisualQuickControls sceneOnly mode={p.mode} model={p.visualModel} onVisualSettings={p.onVisualSettings} onBackgroundSettings={p.onBackgroundSettings} onSceneSettings={p.onSceneSettings}/>}
       {p.visualModel && <DesktopVisualQuickControls mode={p.mode} model={p.visualModel} onVisualSettings={p.onVisualSettings} onBackgroundSettings={p.onBackgroundSettings}/>}
       <button type="button" data-background-settings-trigger className={`icon-button background-settings-button ${p.backgroundPanel ? 'selected' : ''}`}
         aria-label={visualText('backgroundTitle')} aria-expanded={p.backgroundPanel}

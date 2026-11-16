@@ -7,7 +7,7 @@ import './settings-search.css';
 
 // src/desktopLyrics/DesktopSettingsSearch.tsx — one searchable entry point for every desktop settings surface.
 const text = (key: string) => i18n.t(`desktopLyrics.settingsSearch.${key}`, { lng: 'zh-CN' });
-export default function DesktopSettingsSearch({ onNavigate }: { onNavigate: (entry: DesktopSettingsSearchEntry) => void }) {
+export default function DesktopSettingsSearch({ onNavigate, compact = false }: { onNavigate: (entry: DesktopSettingsSearchEntry) => void; compact?: boolean }) {
   const id = useId(), input = useRef<HTMLInputElement>(null), list = useRef<HTMLDivElement>(null);
   const index = useMemo(buildDesktopSettingsSearchIndex, []);
   const [query, setQuery] = useState(''), [active, setActive] = useState(0), [open, setOpen] = useState(false);
@@ -36,7 +36,7 @@ export default function DesktopSettingsSearch({ onNavigate }: { onNavigate: (ent
       move(event.key === 'Home' ? 0 : event.key === 'End' ? hits.length - 1 : (active + (event.key === 'ArrowDown' ? 1 : -1) + hits.length) % hits.length);
     }
   };
-  return <div className="desktop-settings-search" onBlur={event => {
+  return <div className={`desktop-settings-search${compact ? ' desktop-settings-search-compact' : ''}`} onBlur={event => {
     if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpen(false);
   }}>
     <div className="desktop-settings-search-input"><Search size={15} aria-hidden="true"/>

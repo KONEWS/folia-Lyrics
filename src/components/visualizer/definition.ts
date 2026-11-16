@@ -143,6 +143,8 @@ export interface VisualizerSettingsPanelProps<T = any> {
     t: (key: string) => string;
     isDaylight: boolean;
     theme: Theme;
+    /** Whether the desktop background is transparent, for contextual settings hints. */
+    backgroundTransparent?: boolean;
     controlCardBg: string;
     rangeInputClass: string;
     /** The style's tuning as the window shows it: with a slider's value while the slider is held. */

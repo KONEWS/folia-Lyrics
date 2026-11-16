@@ -26,7 +26,9 @@ internal static class MediaSourcePreference
         if (file.Length == 0 || saved.Count(binding => Compare.Equals(FileName(binding.Path), file)) != 1) return preferred;
         var stem = Path.GetFileNameWithoutExtension(file);
         var catalog = MusicAppCatalog.Identify(target.Path, target.Name);
-        var aliases = new[] { file, stem, target.Name }.Concat(catalog?.Aliases ?? []);
+        // An explicitly saved shortcut may be renamed; its known media identity still belongs to the executable.
+        catalog ??= MusicAppCatalog.Apps.FirstOrDefault(app => app.MediaSources is { Length: > 0 } && app.Executables.Contains(file, Compare));
+        var aliases = new[] { file, stem, target.Name }.Concat(catalog?.Aliases ?? []).Concat(catalog?.MediaSources ?? []);
         var matching = live.Where(source => !source.Contains('\\') && !source.Contains('/') && !source.Contains('!')
             && aliases.Any(alias => alias.Length > 0 && Compare.Equals(source, alias))).ToArray();
         return matching.Length == 1 ? matching[0] : preferred;

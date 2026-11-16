@@ -1,7 +1,7 @@
 import React from 'react';
 import { Layers } from 'lucide-react';
 import { DEFAULT_NOMAND_BACKGROUND_TUNING, type NomandBackgroundSource, type NomandBackgroundTuning } from '../../../../types';
-import NomandBackgroundLayer, { resolveNomandSourceUrl } from './NomandBackgroundLayer';
+import { resolveNomandSourceUrl } from './nomandBackgroundSource';
 import NomandBackgroundSettingsCard from './NomandBackgroundSettingsCard';
 import { EFFECT_LABEL_KEYS, EFFECTS } from './NomandBackgroundEffectSettings';
 import { defineVisualizerBackground } from '../definition';
@@ -14,6 +14,8 @@ const SOURCE_LABEL_KEYS: Record<NomandBackgroundSource, string> = {
     'cover-derived': 'options.monetBackgroundSourceCover',
     'uploaded-global': 'options.monetBackgroundSourceUploaded',
 };
+
+const NomandBackgroundLayer = React.lazy(() => import('./NomandBackgroundLayer'));
 
 export default defineVisualizerBackground({
     mode: 'nomand',

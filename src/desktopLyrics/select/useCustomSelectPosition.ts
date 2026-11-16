@@ -3,10 +3,10 @@ import type { CustomSelectMenuPosition } from './DesktopCustomSelectMenu';
 
 // src/desktopLyrics/select/useCustomSelectPosition.ts — viewport placement shared by normal and glass selects.
 type Options = { open: boolean; container: RefObject<HTMLDivElement | null>; menu: RefObject<HTMLDivElement | null>;
-    minWidth: number; getClipElement?: () => HTMLElement | null; getAnchorElement?: () => HTMLElement | null; close: () => void };
+    minWidth: number; maxHeight?: number; getClipElement?: () => HTMLElement | null; getAnchorElement?: () => HTMLElement | null; close: () => void };
 const GAP = 4, GUTTER = 8, MAX_HEIGHT = 240, MIN_HEIGHT = 160;
 
-export function useCustomSelectPosition({ open, container, menu, minWidth, getClipElement, getAnchorElement, close }: Options) {
+export function useCustomSelectPosition({ open, container, menu, minWidth, maxHeight = MAX_HEIGHT, getClipElement, getAnchorElement, close }: Options) {
     const [position, setPosition] = useState<CustomSelectMenuPosition | null>(null);
     useLayoutEffect(() => {
         if (!open) { setPosition(null); return; }
@@ -23,7 +23,7 @@ export function useCustomSelectPosition({ open, container, menu, minWidth, getCl
             const width = Math.min(Math.max(rect.width, minWidth), window.innerWidth - GUTTER * 2);
             const next: CustomSelectMenuPosition = {
                 left: Math.max(GUTTER, Math.min(rect.left, window.innerWidth - width - GUTTER)), width,
-                maxHeight: Math.max(72, placement === 'viewport' ? available : Math.min(MAX_HEIGHT, available)), placement,
+                maxHeight: Math.max(72, placement === 'viewport' ? available : Math.min(maxHeight, available)), placement,
                 ...(placement === 'viewport' ? { top: GUTTER } : placement === 'top' ? { bottom: window.innerHeight - rect.top + GAP } : { top: rect.bottom + GAP }),
             };
             setPosition(previous => previous && previous.left === next.left && previous.width === next.width && previous.maxHeight === next.maxHeight
@@ -40,6 +40,6 @@ export function useCustomSelectPosition({ open, container, menu, minWidth, getCl
         update(); window.addEventListener('resize', schedule); window.addEventListener('scroll', schedule, true);
         return () => { cancelAnimationFrame(frame); clipElement?.removeEventListener('animationend', finishEntrance);
             window.removeEventListener('resize', schedule); window.removeEventListener('scroll', schedule, true); };
-    }, [open, container, menu, minWidth, getClipElement, getAnchorElement, close]);
+    }, [open, container, menu, minWidth, maxHeight, getClipElement, getAnchorElement, close]);
     return position;
 }

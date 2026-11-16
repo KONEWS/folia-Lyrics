@@ -7,6 +7,7 @@ import { SettingsKitThemeContext, settingsTokens } from '../modal/settings/kit/k
 import { kitMotionTokens, kitTransition, useKitReducedMotion } from '../modal/settings/kit/motion';
 import { tabStops } from './Sheet';
 import { tabTarget } from './sheetKeys';
+import StudioSplitView from './StudioSplitView';
 
 // src/components/shared/StudioWindow.tsx
 // The frame of a work window that shows what it edits: a header (back, title, a slot, actions), a
@@ -30,6 +31,8 @@ type StudioWindowProps = {
     backLabel: string;
     /** Beside the title, as wide as the header leaves: a choice of what is edited, a hint that may be cut short. */
     slot?: React.ReactNode;
+    /** A full-width, persistent host toolbar below the title row. */
+    belowHeader?: React.ReactNode;
     /** At the right end of the header. */
     actions?: React.ReactNode;
     /** The left part: the sample, and what belongs under it. A column; a child with a height of 100% or `flex-1` fills it. */
@@ -59,7 +62,7 @@ const ARRIVE_FROM = { opacity: 0, y: 12, scale: 0.985 };
 const LEAVE_TO = { opacity: 0, y: 8, scale: 0.99 };
 
 export const StudioWindow: React.FC<StudioWindowProps> = ({
-    title, onBack, backLabel, slot, actions, stage, children, over, onOverClose, isDaylight, theme, ponderId, sideBySide = false, uiScale = 1,
+    title, onBack, backLabel, slot, belowHeader, actions, stage, children, over, onOverClose, isDaylight, theme, ponderId, sideBySide = false, uiScale = 1,
 }) => {
     const reduced = useKitReducedMotion();
     // False from the moment the window starts to leave: nothing in it can be used then, and the
@@ -191,10 +194,11 @@ export const StudioWindow: React.FC<StudioWindowProps> = ({
                 exit={{ ...LEAVE_TO, scale: LEAVE_TO.scale * uiScale, transition: kitTransition('move', reduced) }}
                 className="st-window relative grid h-[780px] max-h-full w-[1240px] max-w-full grid-rows-[64px_minmax(0,1fr)] overflow-hidden rounded-2xl bg-[var(--st-win)] text-[color:var(--st-t1)] shadow-[0_36px_90px_rgba(0,0,0,0.5),0_0_0_1px_var(--st-line2)]"
                 // The window holds focus without a mark of its own.
-                style={{ outline: 'none', ...settingsTokens(isDaylight, theme), ...kitMotionTokens(reduced) }}
+                style={{ outline: 'none', ...settingsTokens(isDaylight, theme), ...kitMotionTokens(reduced),
+                    gridTemplateRows: `${sideBySide ? 56 : 64}px ${belowHeader ? 'auto ' : ''}minmax(0, 1fr)` }}
             >
                 <SettingsKitThemeContext.Provider value={kitTheme}>
-                    <header inert={hasOver} className="flex min-w-0 items-center gap-2 pl-4 pr-5">
+                    <header inert={hasOver} className="relative z-[60] flex min-w-0 items-center gap-2 pl-4 pr-5" data-studio-header>
                         <Tooltip text={backLabel} className="inline-flex shrink-0">
                             <button
                                 type="button"
@@ -205,16 +209,17 @@ export const StudioWindow: React.FC<StudioWindowProps> = ({
                                 <ChevronLeft size={18} />
                             </button>
                         </Tooltip>
-                        <h2 id={titleId} className="ml-1 mr-2 shrink-0 whitespace-nowrap text-xl font-semibold leading-8">{title}</h2>
+                        <h2 id={titleId} className="ml-1 mr-2 min-w-0 truncate text-xl font-semibold leading-8">{title}</h2>
                         <div className="flex min-w-0 flex-1 items-center gap-2">{slot}</div>
                         {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
                     </header>
-                    <div inert={hasOver} className={sideBySide ? 'grid min-h-0 grid-cols-[minmax(0,1fr)_minmax(220px,40%)] overflow-hidden' : 'st-scroll flex min-h-0 flex-col overflow-y-auto lg:grid lg:grid-cols-[minmax(0,1fr)_420px] lg:overflow-hidden'}>
-                        <section className={sideBySide ? 'flex min-h-0 min-w-0 flex-col px-3 pb-4 sm:px-5' : 'flex h-[64vh] min-h-[380px] min-w-0 shrink-0 flex-col gap-4 px-4 pb-6 sm:px-6 lg:h-auto lg:min-h-0'}>{stage}</section>
-                        <aside className={sideBySide ? 'flex min-h-0 min-w-0 flex-col border-l border-[var(--st-line)] [&>div.st-scroll]:min-h-0 [&>div.st-scroll]:flex-1 [&>div.st-scroll]:overflow-y-auto' : 'flex min-w-0 shrink-0 flex-col border-t border-[var(--st-line)] lg:min-h-0 lg:border-l lg:border-t-0'}>
+                    {belowHeader && <div inert={hasOver} className="relative z-50 min-w-0" data-studio-toolbar>{belowHeader}</div>}
+                    {sideBySide ? <div inert={hasOver} className="contents"><StudioSplitView stage={stage}>{children}</StudioSplitView></div> : <div inert={hasOver} className="st-scroll flex min-h-0 flex-col overflow-y-auto lg:grid lg:grid-cols-[minmax(0,1fr)_420px] lg:overflow-hidden">
+                        <section className="flex h-[64vh] min-h-[380px] min-w-0 shrink-0 flex-col gap-4 px-4 pb-6 sm:px-6 lg:h-auto lg:min-h-0">{stage}</section>
+                        <aside className="flex min-w-0 shrink-0 flex-col border-t border-[var(--st-line)] lg:min-h-0 lg:border-l lg:border-t-0">
                             {children}
                         </aside>
-                    </div>
+                    </div>}
                     {hasOver && <div ref={overRef} className="contents">{over}</div>}
                 </SettingsKitThemeContext.Provider>
             </motion.div>

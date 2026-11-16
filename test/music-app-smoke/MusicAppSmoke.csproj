@@ -12,6 +12,7 @@
     <Compile Include="../../native/MusicAppIcon.cs" Link="MusicAppIcon.cs"/>
     <Compile Include="../../native/MusicAppCatalog.cs" Link="MusicAppCatalog.cs"/>
     <Compile Include="../../native/MusicAppInstalledPaths.cs" Link="MusicAppInstalledPaths.cs"/>
+    <Compile Include="../../native/MusicAppSteamPaths.cs" Link="MusicAppSteamPaths.cs"/>
     <Compile Include="../../native/MusicAppDiscoveryPolicy.cs" Link="MusicAppDiscoveryPolicy.cs"/>
     <Compile Include="../../native/MusicAppDiscovery.cs" Link="MusicAppDiscovery.cs"/>
     <Compile Include="../../native/MusicAppStore.cs" Link="MusicAppStore.cs"/>

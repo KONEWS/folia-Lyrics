@@ -80,7 +80,19 @@ internal sealed partial class MainWindow : Form
         var quoted = JsonSerializer.Serialize(source);
         var range = await Evaluate($"const r=await fetch({quoted},{{headers:{{Range:'bytes=5-24'}}}});return {{status:r.status,range:r.headers.get('content-range'),bytes:[...new Uint8Array(await r.arrayBuffer())]}};");
         Check(range.GetProperty("status").GetInt32() == 206 && range.GetProperty("range").GetString() == $"bytes 5-24/{new FileInfo(sample).Length}", "WebView2 receives HTTP 206 and the exact Content-Range");
-        Check(range.GetProperty("bytes").EnumerateArray().Select(value => value.GetByte()).SequenceEqual(File.ReadAllBytes(sample).Skip(5).Take(20)), "WebView2 reads the exact requested bytes");
+        var expected = new byte[20];
+        using (var file = File.OpenRead(sample)) { file.Position = 5; file.ReadExactly(expected); }
+        Check(range.GetProperty("bytes").EnumerateArray().Select(value => value.GetByte()).SequenceEqual(expected), "WebView2 reads the exact requested bytes");
+        if (new FileInfo(sample).Length > VideoLayerFileStore.MaximumResponseBytes)
+        {
+            foreach (var headers in new[] { "{}", "{Range:'bytes=0-'}" })
+            {
+                var bounded = await Evaluate($"const r=await fetch({quoted},{{headers:{headers}}});return {{status:r.status,length:(await r.arrayBuffer()).byteLength,range:r.headers.get('content-range')}};");
+                Check(bounded.GetProperty("status").GetInt32() == 206 && bounded.GetProperty("length").GetInt64() == VideoLayerFileStore.MaximumResponseBytes
+                    && bounded.GetProperty("range").GetString() == $"bytes 0-{VideoLayerFileStore.MaximumResponseBytes - 1}/{new FileInfo(sample).Length}",
+                    "large video responses stay bounded, including requests without a byte range: " + headers);
+            }
+        }
         var denied = await Evaluate($"return (await fetch({quoted}+ '?path=C:/Windows/win.ini')).status;");
         Check(denied.GetInt32() == 404, "an altered token or appended path cannot read another file");
         var media = await Evaluate($"const v=document.createElement('video');window.video=v;v.muted=true;v.loop=true;document.body.append(v);v.src={quoted};await new Promise((ok,fail)=>{{v.onloadedmetadata=ok;v.onerror=()=>fail(Error('decode '+v.error?.code));}});await v.play();await new Promise(ok=>setTimeout(ok,350));v.pause();return {{duration:v.duration,time:v.currentTime,muted:v.muted,paused:v.paused}};");

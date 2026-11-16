@@ -6,11 +6,11 @@ internal static class Program
 {
     [STAThread] private static int Main(string[] args)
     {
-        if (args.Length != 1 || !File.Exists(args[0])) throw new ArgumentException("Provide a short local MP4 or WebM test video.");
+        if (args.Length is < 1 or > 2 || !File.Exists(args[0])) throw new ArgumentException("Provide a local test video, optionally with --read-only-source.");
         ApplicationConfiguration.Initialize();
         Directory.CreateDirectory(DataFiles.Root);
-        var path = Path.Combine(DataFiles.Root, "sample" + Path.GetExtension(args[0]));
-        File.Copy(Path.GetFullPath(args[0]), path);
+        var path = args.Contains("--read-only-source") ? Path.GetFullPath(args[0]) : Path.Combine(DataFiles.Root, "sample" + Path.GetExtension(args[0]));
+        if (!args.Contains("--read-only-source")) File.Copy(Path.GetFullPath(args[0]), path);
         using var window = new MainWindow(path);
         Application.Run(window);
         Console.WriteLine(JsonSerializer.Serialize(new { window.Checks, window.Failure, profile = DataFiles.Root }));

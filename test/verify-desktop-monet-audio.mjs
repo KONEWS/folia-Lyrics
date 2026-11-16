@@ -5,7 +5,7 @@ import { openVisualSettings, closeVisualSettings, readVisual, waitVisual, visual
 // test/verify-desktop-monet-audio.mjs — actual upstream 2D audio canvas consumes the stable GSMTC-spectrum MotionValues.
 export async function verifyDesktopMonetAudio(page, output, samples) {
   const panel = await openVisualSettings(page, 'visualizer');
-  await panel.locator('[data-visual-mode="monet"]').click(); await waitVisual(page, { mode: 'monet', isPreviewMode: false });
+  await page.locator('[data-style-shelf] [role="radio"][data-value="monet"]').click(); await waitVisual(page, { mode: 'monet', isPreviewMode: false });
   await page.waitForFunction(() => Boolean(window.__foliaReadResolvedVisualizerProps('monet')));
   await closeVisualSettings(page);
   const canvas = page.locator('.desktop-stage canvas.h-full.w-full'); await canvas.waitFor(); assert.equal(await canvas.count(), 1);

@@ -1,6 +1,6 @@
 // native/MusicAppCatalog.cs — known desktop music executables and bounded installation locations.
 namespace FoliaLyrics;
-internal sealed record MusicAppDefinition(string Name, string[] Executables, string[] Aliases, string[] Locations, string[]? PackageFamilies = null);
+internal sealed record MusicAppDefinition(string Name, string[] Executables, string[] Aliases, string[] Locations, string[]? PackageFamilies = null, string? SteamAppId = null, string[]? MediaSources = null);
 internal static class MusicAppCatalog
 {
     internal static readonly MusicAppDefinition[] Apps =
@@ -12,6 +12,7 @@ internal static class MusicAppCatalog
         new("foobar2000", ["foobar2000.exe"], ["foobar2000"], ["foobar2000"]),
         new("Spotify", ["Spotify.exe"], ["Spotify"], ["Spotify"], ["SpotifyAB.SpotifyMusic_zpdnekdrzrea0"]),
         new("MusicBee", ["MusicBee.exe"], ["MusicBee"], ["MusicBee"]),
+        new("ECHO", ["ECHO.exe"], ["ECHO"], ["ECHO"], SteamAppId: "5105090", MediaSources: ["app.echo.steam"]),
         new("AIMP", ["AIMP.exe"], ["AIMP"], ["AIMP"]),
         new("椒盐音乐", ["SaltPlayer.exe", "Salt Player for Windows.exe", "MusicPlayer.exe"], ["椒盐音乐", "SaltPlayer", "Salt Player"], ["SaltPlayer", "Salt Player"], ["Sakawish.SaltPlayerforWindows_q65q631pyh094"]),
         new("YesPlayMusic", ["YesPlayMusic.exe"], ["YesPlayMusic"], ["YesPlayMusic"]),
@@ -27,7 +28,9 @@ internal static class MusicAppCatalog
         var name = Path.GetFileName(path);
         var app = Apps.FirstOrDefault(app => app.Executables.Contains(name, StringComparer.OrdinalIgnoreCase));
         // A generic MusicPlayer filename needs music-app metadata before it can be discovered automatically.
-        return name.Equals("MusicPlayer.exe", StringComparison.OrdinalIgnoreCase) && (app is null || !Matches(product, app)) ? null : app;
+        // ECHO is also a common executable name outside music players, so require matching product metadata.
+        var needsMetadata = name.Equals("MusicPlayer.exe", StringComparison.OrdinalIgnoreCase) || name.Equals("ECHO.exe", StringComparison.OrdinalIgnoreCase);
+        return needsMetadata && (app is null || !Matches(product, app)) ? null : app;
     }
     internal static bool Matches(string? displayName, MusicAppDefinition app) => !string.IsNullOrWhiteSpace(displayName)
         && app.Aliases.Any(alias => displayName.Contains(alias, StringComparison.OrdinalIgnoreCase));

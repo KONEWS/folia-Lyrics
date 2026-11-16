@@ -4,7 +4,7 @@ import type { VisualizerBackgroundMode, VisualizerMode } from '../types';
 export type DesktopSettingsSearchEntry = {
   key: string;
   label: string;
-  section: 'main' | 'common' | 'visualizer' | 'subtitle' | 'background';
+  section: 'main' | 'common' | 'visualizer' | 'subtitle' | 'background' | 'global';
   keywords?: string[];
   breadcrumb?: string;
   context?: string;

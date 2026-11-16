@@ -7,6 +7,7 @@ internal static class MusicAppInstalledPaths
     internal static IEnumerable<string> Read(CancellationToken token)
     {
         var result = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var steamRoots = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var hive in new[] { RegistryHive.CurrentUser, RegistryHive.LocalMachine })
         foreach (var view in new[] { RegistryView.Registry64, RegistryView.Registry32 })
         {
@@ -14,6 +15,9 @@ internal static class MusicAppInstalledPaths
             try
             {
                 using var root = RegistryKey.OpenBaseKey(hive, view);
+                using var steam = root.OpenSubKey(@"SOFTWARE\Valve\Steam");
+                foreach (var key in new[] { "SteamPath", "InstallPath" })
+                    if (LocalFolder(steam?.GetValue(key) as string) is { } steamRoot) steamRoots.Add(steamRoot);
                 using var appPaths = root.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths");
                 foreach (var name in MusicAppCatalog.ExecutableNames)
                 {
@@ -49,6 +53,7 @@ internal static class MusicAppInstalledPaths
             token.ThrowIfCancellationRequested();
             AddFolder(Path.Combine(root, location), app, result);
         }
+        result.UnionWith(MusicAppSteamPaths.Read(steamRoots, token));
         return result;
     }
 
@@ -79,11 +84,12 @@ internal static class MusicAppInstalledPaths
         var path = RegisteredExecutable(value, icon);
         if (path is not null) result.Add(path);
     }
-    private static string? LocalFolder(string? value)
+    internal static string? LocalFolder(string? value)
     {
         if (string.IsNullOrWhiteSpace(value)) return null;
         var path = Environment.ExpandEnvironmentVariables(value.Trim().Trim('"'));
         return path.Length > 2 && char.IsAsciiLetter(path[0]) && path[1] == ':' && path[2] is '\\' or '/'
-            && Path.IsPathFullyQualified(path) && !path.AsSpan(2).Contains(':') ? path : null;
+            && Path.IsPathFullyQualified(path) && !path.AsSpan(2).Contains(':') && path.IndexOfAny(Path.GetInvalidPathChars()) < 0
+            ? Path.GetFullPath(path) : null;
     }
 }

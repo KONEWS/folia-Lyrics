@@ -12,7 +12,7 @@ export async function verifyDesktopVisualAssets(page, song, packet, output, samp
     png.data[offset + 2] = (x + y) % 2 ? 160 : 240; png.data[offset + 3] = 255;
   }
   const section = await openVisualSettings(page, 'visualizer');
-  await section.locator('[data-visual-mode="tempera"]').click(); await waitVisual(page, { mode: 'tempera' });
+  await page.locator('[data-style-shelf] [role="radio"][data-value="tempera"]').click(); await waitVisual(page, { mode: 'tempera' });
   const upstream = section.locator('[data-visualizer-settings="tempera"]');
   assert.equal((await readVisual(page)).visualizerTunings.tempera.layerImages.length, 0, 'fresh isolated browser image pool');
   // The kit's link button sits below its label; pointer users activate the complete row.

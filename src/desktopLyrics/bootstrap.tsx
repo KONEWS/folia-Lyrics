@@ -9,7 +9,6 @@ import './settings.css';
 import './window-chrome.css';
 import DesktopLyrics from './DesktopLyrics';
 import { getVisualizerRegistryEntry } from '../components/visualizer/registry';
-import { prewarmVisualizersWhenIdle } from '../components/visualizer/prewarmVisualizers';
 import './reference-glass.css';
 import './cover-immersion.css';
 import './topbar.css';
@@ -26,4 +25,3 @@ const render = () => createRoot(document.getElementById('root')!).render(<React.
 render();
 const savedMode = localStorage.getItem('folia.desktop.mode.v1');
 if (savedMode) getVisualizerRegistryEntry(savedMode).prewarm?.();
-prewarmVisualizersWhenIdle();

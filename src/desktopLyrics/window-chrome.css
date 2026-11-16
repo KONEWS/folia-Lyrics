@@ -2,7 +2,8 @@
 .window-chrome{position:absolute;z-index:60;top:0;left:0;right:0;height:38px;display:flex;align-items:center;padding:4px 8px 0 16px;background:transparent;user-select:none}
 .window-drag{flex:1;height:100%;display:flex;align-items:center;gap:9px;color:#d9e7f3;min-width:0;cursor:default}.window-drag span{font-size:11px;letter-spacing:.6px}.window-drag svg{color:#d6edff}
 .window-buttons{display:flex;gap:6px}.window-buttons button{display:grid;place-items:center;width:36px;height:27px;padding:0;border-radius:9px;font-size:11px}.window-buttons .window-close:hover{background-color:#ca476366;border-color:#ffb0c39e}
-.window-edge{position:absolute;z-index:80}.edge-n,.edge-s{left:9px;right:9px;height:5px;cursor:ns-resize}.edge-n{top:0}.edge-s{bottom:0}.edge-w,.edge-e{top:9px;bottom:9px;width:5px;cursor:ew-resize}.edge-w{left:0}.edge-e{right:0}.edge-nw,.edge-ne,.edge-sw,.edge-se{width:9px;height:9px}.edge-nw{top:0;left:0;cursor:nwse-resize}.edge-ne{top:0;right:0;cursor:nesw-resize}.edge-sw{bottom:0;left:0;cursor:nesw-resize}.edge-se{bottom:0;right:0;cursor:nwse-resize}
+/* Thin frame edges stay reachable while a settings surface covers the rest of the window. */
+.window-edge{position:absolute;z-index:400}.edge-n,.edge-s{left:9px;right:9px;height:5px;cursor:ns-resize}.edge-n{top:0}.edge-s{bottom:0}.edge-w,.edge-e{top:9px;bottom:9px;width:5px;cursor:ew-resize}.edge-w{left:0}.edge-e{right:0}.edge-nw,.edge-ne,.edge-sw,.edge-se{width:9px;height:9px}.edge-nw{top:0;left:0;cursor:nwse-resize}.edge-ne{top:0;right:0;cursor:nesw-resize}.edge-sw{bottom:0;left:0;cursor:nesw-resize}.edge-se{bottom:0;right:0;cursor:nwse-resize}
 .window-fullscreen .window-drag{pointer-events:none}.high-contrast .window-drag{color:CanvasText}
 /* Fullscreen's compact controls use the caption area; the inactive caption must not cover their hit targets. */
 .native-fullscreen .window-chrome{opacity:0;visibility:hidden;pointer-events:none}

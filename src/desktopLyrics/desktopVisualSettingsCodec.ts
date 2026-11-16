@@ -13,6 +13,8 @@ import { applyTypographyPatch, applyVisualizerPatch, typographySetters, visualiz
 import { normalizeLyricRenderQuality } from '../utils/lyricRenderQuality';
 import { setStoredString } from '../stores/storagePrimitives';
 import { desktopBackgroundMode } from './desktopBackgrounds';
+import { sanitizeSceneOptions, useSceneSettingsStore } from '../components/scenes/settings/useSceneSettingsStore';
+import { isSceneId } from '../types/sceneIds';
 
 // src/desktopLyrics/desktopVisualSettingsCodec.ts — original shortcode/JSON format with a desktop field whitelist; never import song colours or asset URLs.
 export type DesktopVisualImportResult = { ok: boolean; error?: string; mode?: VisualizerMode };
@@ -55,6 +57,7 @@ export function exportDesktopVisualConfig(format: 'json' | 'code', options: Opti
   const config = { ...visualizer, ...typography, visualizerTunings: collectVisualizerTunings(v as unknown as Record<string, unknown>),
     visualizerMode: mode, theme: { light: metadata, dark: metadata }, desktopBackgroundEnabled: options.backgroundEnabled,
     desktopSettingsTransparency: useDesktopPanelSettingsStore.getState().settingsTransparency,
+    desktopScene: { id: useSceneSettingsStore.getState().sceneId, options: useSceneSettingsStore.getState().sceneOptions },
     useCoverColorBg: theme.useCoverColorBg, staticMode: theme.staticMode,
     showSubtitleTranslation: t.showSubtitleTranslation, subtitleContentMode: t.subtitleContentMode,
     lyricsCustomFontFamily: t.lyricsCustomFont?.source === 'system' ? t.lyricsCustomFont.family : null };
@@ -108,6 +111,14 @@ export function importDesktopVisualConfig(text: string, options: Options): Deskt
     if (typeof config.desktopSettingsTransparency === 'number' && Number.isFinite(config.desktopSettingsTransparency)) useDesktopPanelSettingsStore.getState().setSettingsTransparency(config.desktopSettingsTransparency);
     if (typeof config.useCoverColorBg === 'boolean') useThemeSettingsStore.getState().handleToggleCoverColorBg(config.useCoverColorBg);
     if (typeof config.staticMode === 'boolean') useThemeSettingsStore.getState().handleToggleStaticMode(config.staticMode);
+    // Scenes belong to this desktop backup; upstream OBS configurations do not carry them.
+    if (object(config.desktopScene)) {
+      const scene = useSceneSettingsStore.getState();
+      for (const [id, value] of Object.entries(sanitizeSceneOptions(config.desktopScene.options))) {
+        if (value) scene.setSceneOptions(id, value);
+      }
+      if (config.desktopScene.id === null || isSceneId(config.desktopScene.id)) scene.setSceneId(config.desktopScene.id);
+    }
     const mode = hasVisualizerMode(String(config.visualizerMode)) ? config.visualizerMode as VisualizerMode : undefined;
     if (mode) {
       useVisualizerSettingsStore.getState().handleSetVisualizerMode(mode, { notify: false, preserveRandom: true });

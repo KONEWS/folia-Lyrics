@@ -5,6 +5,9 @@
 - `desktopLyrics/main.tsx` → `bootstrap.tsx` → `DesktopLyrics.tsx`：桌面界面装配、媒体时钟和窗口控件。
 - `components/visualizer/registry.tsx`：自动发现各样式 `entry.tsx`；`backgrounds/registry.tsx` 发现本地背景。
 - `components/visualizer/window/`：歌词样式与背景设置、实时预览。
+- `desktopLyrics/visualFeatures/DesktopVisualStudio.tsx`：唯一的视觉设置入口；桌面专有控制接入现有「全局」页签，搜索直接定位各页签，不再叠加第二套设置弹窗。
+- `components/scenes/`：随包提供的影厅场景、视点与本地设置；运行体按需加载，不处理播放器音频或外部扩展。
+- `components/perfCheck/`：静音性能对比与结果建议，只使用包内分析模型；桌面入口在 `desktopLyrics/visualFeatures/performance/`。
 - `utils/lyrics/`、`workers/lyricsParser.worker.ts`：本地及在线歌词的解析、时序和分词。
 - `services/onlineMusic/qq/qrcDecrypt.ts`：QQ QRC 的本地解密，没有平台请求。
 - `services/analysis/`、`workers/audioAnalysis.worker.ts`：用户选择的本地音频分析；权重由桌面宿主注册并从包内读取。

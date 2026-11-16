@@ -5,6 +5,9 @@ namespace FoliaLyrics;
 internal static class VideoLayerFileStore
 {
     internal const string FileName = "video-layer.json";
+    // WebView2 marshals response streams into its own buffers before consuming them. Bound even open-ended ranges.
+    internal const long MaximumResponseBytes = 2 * 1024 * 1024;
+    internal static long ResponseCount(long requested) => Math.Min(requested, MaximumResponseBytes);
     internal static string ContentType(string path) => Path.GetExtension(path).ToLowerInvariant() switch
     {
         ".mp4" or ".m4v" => "video/mp4", ".webm" => "video/webm", ".mov" => "video/quicktime",

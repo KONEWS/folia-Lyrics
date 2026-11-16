@@ -15,6 +15,32 @@ try
 {
     CheckCache();
     CheckSpectrum();
+    var retry = new AudioCaptureRetry();
+    retry.Failed("device-a", 1000);
+    Check(!retry.CanAttempt("device-a", 5999) && retry.CanAttempt("device-a", 6000) && retry.CanAttempt("device-b", 1001), "failed audio device backs off while a changed device reconnects immediately");
+    retry.Failed("device-a", 6000);
+    Check(!retry.CanAttempt("device-a", 15999) && retry.CanAttempt("device-a", 16000), "repeated audio failure increases the retry delay");
+    retry.Reset();
+    Check(retry.CanAttempt("device-a", 6001), "explicitly toggling capture resets its retry delay");
+    retry.Started("device-a", 20_000);
+    retry.Failed("device-a", 20_001);
+    retry.Started("device-a", 25_001);
+    retry.Failed("device-a", 25_002);
+    Check(!retry.CanAttempt("device-a", 35_001) && retry.CanAttempt("device-a", 35_002),
+        "a worker that starts then immediately fails retains increasing retry delays");
+    retry.Started("device-a", 35_002);
+    retry.Failed("device-a", 40_002);
+    Check(!retry.CanAttempt("device-a", 45_001) && retry.CanAttempt("device-a", 45_002),
+        "capture that runs stably resets the next failure to the initial retry delay");
+    retry.Failed("", 50_000); retry.Failed("", 55_000);
+    Check(!retry.CanAttempt("", 64_999) && retry.CanAttempt("", 65_000),
+        "failure before an output device is available also retains its retry backoff");
+    retry.Reset();
+    retry.Started("device-a", 100_000); retry.Failed("device-a", 100_001);
+    Check(retry.CanAttempt("device-a", 120_000), "delayed maintenance may retry once the original failure deadline has passed");
+    retry.Started("device-a", 120_000); retry.Failed("device-a", 120_001);
+    Check(!retry.CanAttempt("device-a", 130_000) && retry.CanAttempt("device-a", 130_001),
+        "delayed maintenance does not count time after capture stopped as stable recovery");
     if (args.Contains("--checks-only")) { Console.WriteLine($"PASS {checks.Count} startup/audio checks"); return; }
     var archivePath = Path.Combine(workspace, "native", "web-assets.zip");
     var digest = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(archivePath)));

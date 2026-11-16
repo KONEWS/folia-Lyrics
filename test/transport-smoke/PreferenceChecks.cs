@@ -8,6 +8,12 @@ internal static class PreferenceChecks
         const string copy = @"D:\Music\foobar2000.exe";
         const string qq = @"C:\Music\QQMusic.exe";
         var saved = new[] { new SavedMediaExecutable("foobar2000", foobar), new SavedMediaExecutable("QQ 音乐", qq) };
+        const string echo = @"G:\Steam\steamapps\common\ECHO\ECHO.exe";
+        var echoBinding = new SavedMediaExecutable("我的播放器", echo);
+        check(MediaSourcePreference.Resolve(echo, ["app.echo.steam"], [echoBinding]) == "app.echo.steam",
+            "saved Steam ECHO follows its published media identity even with a custom shortcut name");
+        check(MediaSourcePreference.Resolve(echo, ["app.echo.steam"], [echoBinding, echoBinding with { Path = @"D:\ECHO\ECHO.exe" }]) == echo,
+            "Steam media identity does not guess between multiple saved ECHO executables");
         check(MediaSourcePreference.Resolve("", ["foobar2000.exe"], saved) == "", "automatic source preference remains automatic");
         check(MediaSourcePreference.Resolve("Foobar2000.EXE", ["foobar2000.exe"], saved) == "foobar2000.exe",
             "legacy raw source preference keeps its original meaning");

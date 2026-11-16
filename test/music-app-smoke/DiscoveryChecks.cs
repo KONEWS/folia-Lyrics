@@ -10,6 +10,7 @@ internal static class DiscoveryChecks
         File.WriteAllBytes(executable, []);
         try
         {
+            SteamDiscoveryChecks.Run(check, directory);
             check(MusicAppCatalog.Identify(executable)?.Name == "QQ 音乐", "known music executable is recognized");
             check(MusicAppCatalog.Identify(Path.Combine(directory, "Game.exe")) is null, "unrelated executable is never discovered");
             check(MusicAppCatalog.Identify(Path.Combine(directory, "MusicPlayer.exe")) is null, "generic music-player name needs metadata");

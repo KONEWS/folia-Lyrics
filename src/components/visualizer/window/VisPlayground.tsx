@@ -17,6 +17,7 @@ import { VISUALIZER_REGISTRY, getVisualizerModeLabel, getVisualizerRegistryEntry
 import VisPlaygroundPreviewHotspots, { type VisPlaygroundEditSection, type VisPlaygroundHotspotSection } from './VisPlaygroundPreviewHotspots';
 import VisPlaygroundSampleStage, { SampleBox } from './VisPlaygroundSampleStage';
 import VisPlaygroundSettingsPanel from './VisPlaygroundSettingsPanel';
+import VisPlaygroundStyleShelf from './VisPlaygroundStyleShelf';
 import FontPicker, { type LocalFontEntry } from './FontPicker';
 import { useTuningDrafts } from './useTuningDrafts';
 import { useVisualizerStyleAssets } from '../useVisualizerStyleAssets';
@@ -35,13 +36,21 @@ interface VisPlaygroundProps {
     livePreviewSource?: LivePreviewSource;
     /** Desktop uses a large live stage and a compact, static shelf above the controls. */
     compactStyleShelf?: boolean;
+    /** A host panel covers the studio; retain its draft and stop drawing the hidden preview. */
+    suspended?: boolean;
     stylePicture?: (mode: VisualizerMode, state: PictureState) => React.ReactNode;
     backgroundPicture?: (mode: VisualizerBackgroundMode, state: PictureState) => React.ReactNode;
     availableBackgroundModes?: readonly VisualizerBackgroundMode[];
     uiScale?: number;
     headerActions?: React.ReactNode;
     headerSlot?: React.ReactNode;
+    headerContent?: React.ReactNode;
+    previewRenderer?: React.ComponentType<React.ComponentProps<typeof VisualizerRenderer> & { suspended?: boolean }>;
     globalSettings?: React.ReactNode;
+    styleSettings?: React.ReactNode;
+    /** Inspect a style without changing the saved per-song random selection. */
+    inspectStyle?: boolean;
+    onEditSectionChange?: (section: VisPlaygroundEditSection) => void;
     backgroundSettings?: React.ReactNode;
     onRandomModeSelected?: () => void;
     editSequence?: number;
@@ -139,7 +148,7 @@ const SHELF_COLUMNS = { wide: 7, narrow: 4 };
 
 const VisPlayground: React.FC<VisPlaygroundProps> = ({
     theme,
-    livePreviewSource, compactStyleShelf = false, stylePicture = drawLyricStyleChoice, backgroundPicture, availableBackgroundModes, uiScale, headerActions, headerSlot, globalSettings, backgroundSettings, onRandomModeSelected, loadFonts, editSequence,
+    livePreviewSource, compactStyleShelf = false, suspended = false, stylePicture = drawLyricStyleChoice, backgroundPicture, availableBackgroundModes, uiScale, headerActions, headerSlot, headerContent, previewRenderer, globalSettings, styleSettings, inspectStyle, onEditSectionChange, backgroundSettings, onRandomModeSelected, loadFonts, editSequence,
     isDaylight,
     visualizerMode,
     initialEditSection = 'visualizer',
@@ -199,16 +208,17 @@ const VisPlayground: React.FC<VisPlaygroundProps> = ({
     const backgroundOpacity = backgroundConfig?.common?.opacity ?? 0.75;
     const [previewPlaceholderId, setPreviewPlaceholderId] = useState<PreviewPlaceholderId>('default');
     const [isPreviewPaused, setIsPreviewPaused] = useState(false);
+    const previewPaused = isPreviewPaused || suspended;
     const [previewSource, setPreviewSource] = useState<PreviewSource>(livePreviewSource ? 'live' : 'builtin');
     const previewBoxRef = useRef<HTMLDivElement>(null);
     // What the player shows now, when the sample is set aside for it; null while it has no lyrics.
-    const livePreview = useLivePreviewFeed({ source: livePreviewSource, enabled: previewSource === 'live', paused: isPreviewPaused, stageRef: previewBoxRef });
+    const livePreview = useLivePreviewFeed({ source: livePreviewSource, enabled: previewSource === 'live', paused: previewPaused, stageRef: previewBoxRef });
     const live = livePreview.content;
     // The small pictures still use the sample's clock while the big preview shows the live picture.
-    const previewClock = usePreviewClock({ mode: visualizerMode, placeholderId: previewPlaceholderId, paused: isPreviewPaused || (compactStyleShelf && live !== null) });
+    const previewClock = usePreviewClock({ mode: visualizerMode, placeholderId: previewPlaceholderId, paused: previewPaused || (compactStyleShelf && live !== null) });
     const previewPlaceholder = previewClock.placeholder;
     // The sample, paused, has no change of time for a style mounted anew (a switch from the live picture).
-    useStillClockPulse({ time: previewClock.currentTime, still: isPreviewPaused && live === null, boxRef: previewBoxRef, restartKey: previewSource });
+    useStillClockPulse({ time: previewClock.currentTime, still: !suspended && isPreviewPaused && live === null, boxRef: previewBoxRef, restartKey: previewSource });
     const shown = live
         ? {
             key: 'live',
@@ -245,6 +255,10 @@ const VisPlayground: React.FC<VisPlaygroundProps> = ({
     const [draftFontWeight, setDraftFontWeight] = useState<number | null>(fontWeight);
     const [draftSubtitleFontWeight, setDraftSubtitleFontWeight] = useState<number | null>(subtitleFontWeight);
     const [activeEditSection, setActiveEditSection] = useState<VisPlaygroundEditSection>(initialEditSection);
+    const editSection = (section: VisPlaygroundEditSection) => {
+        setActiveEditSection(section);
+        onEditSectionChange?.(section);
+    };
     // The tunings of the lyric styles and the backgrounds: what is saved, and the one draft over it.
     const settings = useVisualizerSettingsStore(useShallow(selectVisualizerSettingsSnapshot));
     const tuningDrafts = useTuningDrafts(settings);
@@ -494,8 +508,8 @@ const VisPlayground: React.FC<VisPlaygroundProps> = ({
     };
 
     const shelf = (
-        <div className={compactStyleShelf ? 'flex max-h-[34%] min-h-0 shrink-0 flex-col border-b border-[var(--st-line)] px-4 pb-3' : 'flex shrink-0 flex-col'} data-style-shelf>
-            <h3 className="mb-2 flex min-h-6 items-center px-1 text-[13px] font-semibold leading-5 text-[color:var(--st-t2)]">
+        <VisPlaygroundStyleShelf compact={compactStyleShelf} resizeLabel={t('options.resizeLyricStyles')} resizeHint={t('options.dragToResize')}>
+            <h3 className="mb-2 flex min-h-6 shrink-0 items-center px-1 text-[13px] font-semibold leading-5 text-[color:var(--st-t2)]">
                 {t('options.lyricStyles')}
                 <span className="ml-1.5 font-normal text-[color:var(--st-t3)]">{modeOptions.length}</span>
             </h3>
@@ -507,14 +521,15 @@ const VisPlayground: React.FC<VisPlaygroundProps> = ({
                 onChange={mode => {
                     if (mode === RANDOM_VISUALIZER_CHOICE) onRandomModeSelected?.();
                     selectLyricStyleChoice(mode, next => onVisualizerModeChange?.(next));
-                    setActiveEditSection('visualizer');
+                    editSection('visualizer');
                 }}
                 label={t('ui.animationMode')}
-                maxHeight={compactStyleShelf ? 190 : 250}
-                className="-mx-4 min-h-0"
+                maxHeight={compactStyleShelf ? undefined : 250}
+                className={compactStyleShelf ? '-mx-4 min-h-0 flex-1' : '-mx-4 min-h-0'}
             />
-        </div>
+        </VisPlaygroundStyleShelf>
     );
+    const PreviewRenderer = previewRenderer ?? VisualizerRenderer;
     const stage = (
         <>
             {/* The sample always shows the theme being previewed, whatever the window's own colours. */}
@@ -535,7 +550,8 @@ const VisPlayground: React.FC<VisPlaygroundProps> = ({
                         transition={kitTransition('move', reducedKitMotion)}
                         className="absolute inset-0"
                     >
-                        <VisualizerRenderer
+                        <PreviewRenderer
+                            suspended={suspended}
                             mode={visualizerMode}
                             animateStyleSwitch
                             currentTime={shown.currentTime}
@@ -551,7 +567,7 @@ const VisPlayground: React.FC<VisPlaygroundProps> = ({
                             showText
                             staticMode={staticMode}
                             isPreviewMode
-                            paused={isPreviewPaused}
+                            paused={previewPaused}
                             visualizerOpacity={draftVisualizerOpacity}
                             coverUrl={shown.coverUrl}
                             background={draftBackgroundConfig}
@@ -575,7 +591,7 @@ const VisPlayground: React.FC<VisPlaygroundProps> = ({
                 </VisPlaygroundSampleStage>
                 <VisPlaygroundPreviewHotspots
                     activeSection={activeEditSection}
-                    onSectionChange={setActiveEditSection}
+                    onSectionChange={editSection}
                     theme={previewTheme}
                     labels={hotspotLabels}
                 />
@@ -599,9 +615,11 @@ const VisPlayground: React.FC<VisPlaygroundProps> = ({
             backgroundPicture={backgroundPicture}
             availableBackgroundModes={availableBackgroundModes}
             globalSettings={globalSettings}
+            styleSettings={styleSettings}
+            inspectStyle={inspectStyle}
             backgroundSettings={backgroundSettings}
             activeSection={activeEditSection}
-            onSectionChange={setActiveEditSection}
+            onSectionChange={editSection}
             t={t}
             isDaylight={isDaylight}
             theme={previewTheme}
@@ -691,6 +709,7 @@ const VisPlayground: React.FC<VisPlaygroundProps> = ({
                 title={t('options.lyricsStyleSettings')}
                 actions={headerActions}
                 slot={headerSlot}
+                belowHeader={headerContent}
                 onBack={onClose}
                 backLabel={t('ui.back')}
                 isDaylight={isDaylight}

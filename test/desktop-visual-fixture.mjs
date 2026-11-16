@@ -2,56 +2,41 @@ import assert from 'node:assert/strict';
 import { openDesktopMenu } from './desktop-select.mjs';
 
 // test/desktop-visual-fixture.mjs — isolated UI helpers and read-only production renderer/storage observations.
-export const visualDialog = page => page.getByRole('dialog', { name: '歌词样式设置', exact: true });
-export const backgroundDialog = page => page.getByRole('dialog', { name: '背景设置', exact: true });
-export const visualSurface = page => page.locator('[data-desktop-visual-settings]');
+export const visualDialog = page => page.locator('[data-desktop-visual-studio]').getByRole('dialog', { name: '歌词样式', exact: true });
+export const backgroundDialog = visualDialog;
+export const visualSurface = page => page.locator('[data-desktop-visual-studio]');
 export const visualFrame = page => page.evaluate(() => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done))));
 export const emitVisual = (page, type, data) => page.evaluate(({ type, data }) => window.__foliaEmit(type, data), { type, data });
 
 export async function openVisualSettings(page, section = 'visualizer') {
-  if (section === 'background') return openBackgroundSettings(page);
-  await closeBackgroundSettings(page);
   if (!await visualDialog(page).count()) {
-    if (!await page.locator('[data-desktop-visual-studio]').count()) {
+    if (section === 'background') await page.locator('[data-background-settings-trigger]').click();
+    else {
       await openDesktopMenu(page, '歌词样式');
       await page.locator('.desktop-top-menu [data-custom-select-footer]').click();
     }
-    await page.locator('[data-desktop-visual-studio]').getByRole('button', { name: '桌面选项', exact: true }).click();
     await visualDialog(page).waitFor();
     await page.locator('.desktop-top-menu').waitFor({ state: 'detached' });
   }
-  const name = { common: '通用', visualizer: '歌词动画', subtitle: '字幕' }[section];
+  const name = { common: '字体', visualizer: '歌词动画', subtitle: '字幕', background: '背景', global: '全局' }[section];
   await visualDialog(page).getByRole('tab', { name, exact: true }).click();
-  const panel = visualDialog(page).locator(`[role="tabpanel"][data-visual-section="${section}"]`);
+  const panel = visualDialog(page).locator(`[data-visual-section="${section}"]`);
   await panel.waitFor(); return panel;
 }
 export async function closeVisualSettings(page) {
   if (await visualDialog(page).count()) {
-    await visualDialog(page).getByRole('button', { name: '关闭歌词样式设置', exact: true }).click();
+    await visualDialog(page).getByRole('button', { name: '返回', exact: true }).click();
     await visualDialog(page).waitFor({ state: 'detached' });
   }
-  await closeBackgroundSettings(page);
-  if (await page.locator('[data-desktop-visual-studio]').count()) await page.locator('[data-desktop-visual-studio]').getByRole('button', { name: '返回', exact: true }).click();
 }
 
-// Background settings have a persistent topbar opener instead of a tab inside the visual settings dialog.
+// The topbar background opener lands on the same studio's background tab.
 export async function openBackgroundSettings(page) {
-  if (await visualDialog(page).count()) await closeVisualSettings(page);
-  if (!await backgroundDialog(page).count()) {
-    if (!await page.locator('[data-desktop-visual-studio]').count()) await page.locator('[data-background-settings-trigger]').click();
-    await page.locator('[data-desktop-visual-studio]').getByRole('button', { name: '桌面选项', exact: true }).click();
-    await backgroundDialog(page).waitFor();
-  }
-  const content = backgroundDialog(page).locator('[data-visual-section="background"]');
-  await content.waitFor(); return content;
+  return openVisualSettings(page, 'background');
 }
 
 export async function closeBackgroundSettings(page) {
-  if (await backgroundDialog(page).count()) {
-    await backgroundDialog(page).getByRole('button', { name: '关闭背景设置', exact: true }).click();
-    await backgroundDialog(page).waitFor({ state: 'detached' });
-    if (await page.locator('[data-desktop-visual-studio]').count()) await page.locator('[data-desktop-visual-studio]').getByRole('button', { name: '返回', exact: true }).click();
-  }
+  await closeVisualSettings(page);
 }
 
 // Read the original renderer's committed props rather than a second implementation or settings draft.

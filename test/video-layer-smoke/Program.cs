@@ -15,6 +15,8 @@ Range("bytes=-20", 100, 80, 20);
 Range("bytes=-200", 100, 0, 100);
 Range("bytes=90-999999999999", 100, 90, 10);
 Range("bytes=0-9223372036854775807", long.MaxValue, 0, long.MaxValue);
+Check(VideoLayerFileStore.ResponseCount(6_634_505_530) == VideoLayerFileStore.MaximumResponseBytes
+    && VideoLayerFileStore.ResponseCount(20) == 20, "large response bodies are bounded while short ranges remain exact");
 foreach (var bad in new[] { "bytes=100-", "bytes=20-10", "bytes=-0", "bytes=0-1,5-9", "bytes=-", "bytes=-1-2", "bytes=+1-9", "items=1-9", "bytes=999999999999999999999-" })
     Check(!VideoLayerFileStore.TryRange(bad, 100, out _, out _), $"invalid range rejected: {bad}");
 Check(!VideoLayerFileStore.TryRange(null, 0, out _, out _), "empty media is rejected");

@@ -16,7 +16,13 @@
 .desktop-settings-search-hint{margin:0;padding:5px 22px 9px;font-size:11px;line-height:1.5;color:var(--glass-muted)}
 .desktop-search-editing{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;color:var(--glass-text)}
 .desktop-search-editing button{font-size:11px}
+/* The studio keeps a small search at the right of its title; suggestions can still show full breadcrumbs. */
+.desktop-settings-search-compact{width:clamp(120px,24vw,280px);padding:0;border-bottom:0}
+.desktop-settings-search-compact .desktop-settings-search-results{top:calc(100% + 8px);left:auto;right:0;width:min(360px,calc(100vw - 56px));max-height:min(320px,calc(100vh - 125px))}
+.desktop-settings-search-compact .desktop-settings-search-input{gap:6px}
+.desktop-lyrics .desktop-settings-search-compact .desktop-settings-search-input input{height:30px;font-size:11px}
 .solid-surfaces .desktop-settings-search-results{background:var(--desktop-glass-base);backdrop-filter:none}
 .high-contrast .desktop-settings-search-results{background:Canvas;color:CanvasText;backdrop-filter:none}
 @media(max-height:400px){.desktop-settings-search{padding-block:6px}.desktop-lyrics .desktop-settings-search-input input{height:29px}.desktop-settings-search-results{max-height:calc(100vh - 180px)}}
+@media(max-height:400px){.desktop-settings-search-compact{padding-block:0}.desktop-settings-search-compact .desktop-settings-search-results{max-height:calc(100vh - 110px)}}
 @media(forced-colors:active){.desktop-settings-search-results{background:Canvas;border-color:CanvasText;backdrop-filter:none}.desktop-settings-search-target{outline-color:Highlight}}

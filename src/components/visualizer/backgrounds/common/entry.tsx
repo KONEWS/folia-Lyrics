@@ -3,11 +3,13 @@ import { Aperture, Cone } from 'lucide-react';
 import { defineVisualizerBackground } from '../definition';
 import { QuickControlToggle } from '../../../shared/QuickControlChip';
 import CommonBackgroundSettingsCard from './CommonBackgroundSettingsCard';
-import FluidBackground from './FluidBackground';
-import GeometricBackground from './GeometricBackground';
 
 // src/components/visualizer/backgrounds/common/entry.tsx
 // Registers the built-in cover-color and geometric shell background.
+
+const FluidBackground = React.lazy(() => import('./FluidBackground'));
+
+const GeometricBackground = React.lazy(() => import('./GeometricBackground'));
 
 export default defineVisualizerBackground({
     mode: 'common',
